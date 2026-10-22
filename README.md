@@ -94,3 +94,7 @@ Galaxy Wearable이 이 알림을 밴드로 보내 진동합니다. 그래서 휴
 ## License
 
 [MIT](LICENSE)
+
+## Try my other projects
+
+Like this? I make other small open source tools too: Android apps, a Claude chat game, Claude add-ons and more. See them all at [wonjoonseol-ws.github.io](https://wonjoonseol-ws.github.io/?from=fitgymlog).
