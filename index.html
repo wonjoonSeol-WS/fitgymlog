@@ -3,34 +3,206 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>FitGymLog</title>
-  <meta name="description" content="A workout log for Android that you can drive from a Galaxy Fit band.">
-  <style>
-    :root { color-scheme: light dark; --ink: #15171a; --muted: #5c6370; --blue: #1f7ae0; --bg: #ffffff; }
-    @media (prefers-color-scheme: dark) { :root { --ink: #f1f2f4; --muted: #a3a9b3; --blue: #4a9bff; --bg: #000000; } }
-    body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-    main { max-width: 640px; margin: 0 auto; padding: 56px 20px; }
-    h1 { font-size: 34px; margin: 0 0 8px; }
-    h2 { font-size: 20px; margin: 36px 0 8px; }
-    p, li { color: var(--muted); }
-    a { color: var(--blue); }
-  </style>
+  <title>FitGymLog: a workout log you can run from a Galaxy Fit</title>
+  <meta name="description" content="A workout log for Android. Complete sets with your Galaxy Fit's music buttons, feel a buzz when rest is over, and load the bar by tapping plates.">
+  <meta property="og:title" content="FitGymLog">
+  <meta property="og:description" content="A workout log for Android that you can run from a Galaxy Fit band.">
+  <meta property="og:image" content="https://wonjoonseol-ws.github.io/fitgymlog/images/fold-en.webp">
+  <link rel="alternate" hreflang="ko" href="https://wonjoonseol-ws.github.io/fitgymlog/ko/">
+  <link rel="icon" href="assets/icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@600;700;800&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
-<main>
-  <h1>FitGymLog</h1>
-  <p>A workout log for Android. Log sets, rest between them, and drive the workout from a Galaxy Fit band: play completes a set, next moves to the next exercise, previous takes a rep off.</p>
-  <ul>
-    <li>Your workouts stay on your phone. Sync, if you turn it on, uses a hidden folder in your own Google Drive.</li>
-    <li>Imports and exports Hevy and Strong files.</li>
-    <li>English and Korean.</li>
-  </ul>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="./"><img src="assets/icon.svg" alt="" width="30" height="30">FitGymLog</a>
+      <nav class="site-nav">
+        <a href="#setup">Set up</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="https://github.com/wonjoonSeol-WS/fitgymlog">GitHub</a>
+      </nav>
+      <nav class="languages" aria-label="Language">
+        <a href="./" lang="en" aria-current="true">EN</a>
+        <a href="ko/" lang="ko">한국어</a>
+      </nav>
+    </div>
+  </header>
 
-  <h2 lang="ko">한국어</h2>
-  <p lang="ko">Android용 운동 기록 앱입니다. 세트와 휴식을 기록하고, Galaxy Fit 밴드로 조작할 수 있습니다. 재생은 세트 완료, 다음은 다음 운동, 이전은 횟수 하나 빼기입니다. 기록은 휴대폰에 저장되고, 동기화를 켜면 본인 Google Drive의 숨김 폴더를 씁니다.</p>
+  <main>
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div>
+          <h1>Log the set from your wrist.</h1>
+          <p class="lead">FitGymLog is a workout log for Android. Press play on your Galaxy Fit to complete a set, feel a buzz when
+            rest is over, and load the bar by tapping plates.</p>
+          <div class="buttons">
+            <a class="button primary" href="#setup">Set it up</a>
+            <a class="button" href="https://github.com/wonjoonSeol-WS/fitgymlog">GitHub</a>
+          </div>
+          <p class="fine">Android 13 or newer. Tested with a Galaxy Fit3 and a Galaxy Z Fold. Not on Google Play yet.</p>
+        </div>
+        <div class="stack">
+          <div class="phone"><img src="images/workout-en.webp" width="624" height="930" alt="A workout in progress: squat sets of 60 kg for 8 reps with done boxes"></div>
+          <svg class="fit3" viewBox="0 0 240 400" role="img" aria-label="Illustration of a Galaxy Fit3 showing the current set in its music controls">
+            <defs><clipPath id="fit3-screen-en"><rect x="54" y="70" width="132" height="260"/></clipPath></defs>
+            <path class="wave" d="M22 160q-10 40 0 80"/><path class="wave far" d="M9 145q-14 55 0 110"/>
+            <path class="wave" d="M218 160q10 40 0 80"/><path class="wave far" d="M231 145q14 55 0 110"/>
+            <rect class="strap" x="64" y="0" width="112" height="72" rx="10"/><rect class="strap" x="64" y="328" width="112" height="72" rx="10"/>
+            <rect class="lug" x="60" y="56" width="120" height="16" rx="5"/><rect class="lug" x="60" y="328" width="120" height="16" rx="5"/>
+            <rect class="frame" x="36" y="62" width="168" height="276" rx="30"/><rect class="bezel" x="40" y="66" width="160" height="268" rx="27"/>
+            <rect class="screen" x="46" y="72" width="148" height="256" rx="22"/>
+            <text class="clock" x="120" y="104" text-anchor="middle">07:40</text>
+            <g clip-path="url(#fit3-screen-en)"><text class="title" x="120" y="138" text-anchor="middle">Squat (Barbell) 1/5</text></g>
+            <text class="sub" x="120" y="162" text-anchor="middle">60 kg x 8</text>
+            <circle class="btn" cx="80" cy="222" r="17"/><circle class="btn ring" cx="120" cy="222" r="24"/><circle class="btn" cx="160" cy="222" r="17"/>
+            <path class="glyph" d="M73 214h3v16h-3zM88 214v16l-11-8z"/>
+            <path class="glyph" d="M113 212h5v20h-5zM122 212h5v20h-5z"/>
+            <path class="glyph" d="M153 214l11 8-11 8zM164 214h3v16h-3z"/>
+            <path class="mute" d="M112 268h5l7-6v20l-7-6h-5zM128 266l-18 18"/>
+            <rect class="handle" x="106" y="296" width="28" height="4" rx="2"/>
+          </svg>
+        </div>
+      </div>
+    </section>
 
-  <h2>More</h2>
-  <p><a href="privacy.html">Privacy policy (개인정보처리방침)</a></p>
-</main>
+    <section class="loaded" aria-label="Plate loading example">
+      <div class="wrap">
+        <div class="loaded-row">
+          <p class="total num">212.5<small>kg</small></p>
+          <p class="total-note">A 20 kg bar and six plates a side. Tap them on and the app adds up the total.</p>
+        </div>
+        <div class="barbell" aria-hidden="true">
+          <span class="sleeve"></span>
+          <span class="plate p1">1.25</span><span class="plate p10">10</span><span class="plate p15">15</span><span class="plate p20">20</span><span class="plate p25">25</span><span class="plate p25">25</span>
+          <span class="collar"></span><span class="shaft"></span><span class="collar"></span>
+          <span class="plate p25">25</span><span class="plate p25">25</span><span class="plate p20">20</span><span class="plate p15">15</span><span class="plate p10">10</span><span class="plate p1">1.25</span>
+          <span class="sleeve"></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="block band">
+      <div class="wrap split">
+        <div>
+          <h2>Three buttons and a buzz</h2>
+          <p class="lead">The band's music controls drive the workout, so the phone can stay in your bag.</p>
+          <ul class="buttons-map">
+            <li><span class="key"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5l9 7-9 7z"/><path d="M16 5v14M20 5v14"/></svg></span>
+              <div><strong>Play or pause</strong><span>Completes the set and starts the rest timer.</span></div></li>
+            <li><span class="key"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 5l10 7-10 7z"/><path d="M19 5v14"/></svg></span>
+              <div><strong>Next</strong><span>Moves to the next exercise. After the last one it goes back to the first.</span></div></li>
+            <li><span class="key"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M19 5L9 12l10 7z"/><path d="M5 5v14"/></svg></span>
+              <div><strong>Previous</strong><span>Takes one rep off the set on the band. Past zero it goes back to the planned reps, so a wrong press is easy to undo.</span></div></li>
+            <li><span class="key buzz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="8" y="3" width="8" height="18" rx="2"/><path d="M4 8v8M20 8v8"/></svg></span>
+              <div><strong>Buzz</strong><span>When rest is over, a notification buzzes the band and shows the next set.</span></div></li>
+          </ul>
+          <div class="catch"><strong>One catch: music</strong>
+            <p>The band's music buttons go to whichever app started playing most recently. With YouTube Music, Spotify or a form
+              video playing, presses can switch back and forth between that app and FitGymLog. The rest buzz is a notification,
+              so it always comes through.</p></div>
+        </div>
+        <div class="phone"><img src="images/settings-band-en.webp" width="624" height="930" alt="Settings with the Galaxy Fit setup and the band music button switch" loading="lazy"></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="wrap split flip">
+        <div>
+          <h2>Load the bar, not a keypad</h2>
+          <p class="lead">Tap a plate to put one on each side, or tap a plate on the bar to take it off. Pick a 20, 15 or 10 kg bar
+            (45, 35 or 25 lb), and one switch copies the weight to the sets after this one. Reps come from a number pad.</p>
+          <ul class="chips" aria-label="Kilogram plates">
+            <li class="p25">25</li><li class="p20">20</li><li class="p15">15</li><li class="p10">10</li><li class="p5">5</li><li class="p2">2.5</li><li class="p1">1.25</li>
+          </ul>
+        </div>
+        <div class="phone"><img src="images/plates-en.webp" width="624" height="930" alt="The weight sheet with 212.5 kg loaded as plates on a barbell" loading="lazy"></div>
+      </div>
+    </section>
+
+    <section class="block soft">
+      <div class="wrap split">
+        <div>
+          <h2>Form check between sets</h2>
+          <p class="lead">Squat, bench press, deadlift, overhead press and barbell row come with StrongLifts' videos and written
+            guides. Add a YouTube or web link to any exercise and it shows with its picture and title. Videos open in YouTube.</p>
+        </div>
+        <div class="phone"><img src="images/form-guide-en.webp" width="624" height="930" alt="The bench press form guide with a StrongLifts video and article" loading="lazy"></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="wrap">
+        <h2>Unfold for the form guide</h2>
+        <p class="lead">On an unfolded Galaxy Fold the current set, the rest timer and the form guide sit on the left, and the sets
+          on the right keep their done boxes at the edge, under your thumb. History opens as a list with the workout beside it.</p>
+        <div class="wide-shot"><img src="images/fold-en.webp" width="1600" height="1143" alt="Unfolded Fold: the squat form video on the left, the sets on the right" loading="lazy"></div>
+      </div>
+    </section>
+
+    <section class="block soft" id="hevy">
+      <div class="wrap">
+        <h2>Try it. Go back anytime.</h2>
+        <p class="lead">Coming from Hevy? Bring your whole history in with one import, even an export written in Korean. If
+          FitGymLog isn't for you, export a Strong CSV, the format Hevy's own importer takes, and carry on in Hevy. Strong
+          exports import too.</p>
+        <ol class="flow" aria-label="From Hevy to FitGymLog and back">
+          <li class="app-chip">Hevy</li>
+          <li class="step">Export CSV, then Import</li>
+          <li class="app-chip ours">FitGymLog</li>
+          <li class="step">Export Strong CSV</li>
+          <li class="app-chip">Hevy</li>
+        </ol>
+        <p class="fine-print">Sets, weights and reps go both ways. Warm-up, drop and failure marks don't make it into the Strong CSV yet.</p>
+      </div>
+    </section>
+
+    <section class="block" id="setup">
+      <div class="wrap">
+        <h2>Set up in five sets</h2>
+        <p class="lead">About five minutes. Tick them off as you go.</p>
+        <table class="sets">
+          <thead><tr><th scope="col">Set</th><th scope="col">What to do</th><th scope="col">Done</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td><strong>Add a routine</strong><p>On the Workout tab, StrongLifts 5x5 adds workouts A and B. Or build your own with New routine.</p></td>
+              <td><input class="check" type="checkbox" aria-label="Done: add a routine"></td></tr>
+            <tr><td>2</td><td><strong>Allow notifications</strong><p>The end of each rest arrives as a notification. Settings, then Set up your Galaxy Fit, walks you through it.</p></td>
+              <td><input class="check" type="checkbox" aria-label="Done: allow notifications"></td></tr>
+            <tr><td>3</td><td><strong>Turn on FitGymLog in Galaxy Wearable</strong><p>In Galaxy Wearable, open Notifications and switch on FitGymLog. Only apps switched on there reach the band.</p></td>
+              <td><input class="check" type="checkbox" aria-label="Done: turn on FitGymLog in Galaxy Wearable"></td></tr>
+            <tr><td>4</td><td><strong>Send a test buzz</strong><p>Tap the test button, then lock your phone. The band should buzz about five seconds later.</p></td>
+              <td><input class="check" type="checkbox" aria-label="Done: send a test buzz"></td></tr>
+            <tr><td>5</td><td><strong>Optional: Samsung Health and Drive</strong><p>In Settings, turn on Write workouts to Health Connect, and Connect Google Drive to keep two phones in step.</p></td>
+              <td><input class="check" type="checkbox" aria-label="Done: Samsung Health and Drive"></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="block soft">
+      <div class="wrap split flip">
+        <div>
+          <h2>Your data stays with you</h2>
+          <dl class="facts">
+            <div><dt>On your phone</dt><dd>Workouts live on your phone, and backups and exports are files you keep. No account, no ads, no analytics.</dd></div>
+            <div><dt>Samsung Health</dt><dd>Finished workouts go to Health Connect, where Samsung Health picks them up. It keeps the time and type, not the sets.</dd></div>
+            <div><dt>Google Drive sync, in your Drive</dt><dd>Optional. One file in a hidden folder of your own Drive keeps your phones in step. The app cannot see your other files.</dd></div>
+          </dl>
+        </div>
+        <div class="phone"><img src="images/settings-data-en.webp" width="624" height="930" alt="Settings with Google Drive sync, import and the three export options" loading="lazy"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-row">
+      <span>FitGymLog</span>
+      <a href="privacy.html">Privacy policy</a>
+      <a href="https://github.com/wonjoonSeol-WS/fitgymlog">GitHub</a>
+      <span>Not affiliated with Samsung, Hevy, Strong or StrongLifts. Form videos and guides belong to their creators and open on their own sites.</span>
+    </div>
+  </footer>
 </body>
 </html>
