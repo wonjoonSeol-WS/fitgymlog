@@ -158,8 +158,8 @@ private fun ButtonRow(symbol: String, text: String) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier.size(36.dp).background(MaterialTheme.colorScheme.surface, CircleShape),
-        ) { Text(symbol) }
+            modifier = Modifier.size(36.dp).background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+        ) { Text(symbol, color = MaterialTheme.colorScheme.onPrimaryContainer) }
         Text(text, style = MaterialTheme.typography.bodyMedium)
     }
 }

@@ -11,6 +11,8 @@
 
     <queries>
         <package android:name="com.google.android.apps.healthdata" />
+        <!-- Without this, Android 11+ hides Galaxy Wearable and its launch intent looks missing. -->
+        <package android:name="com.samsung.android.app.watchmanager" />
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="https" />
@@ -20,7 +22,8 @@
     <application
         android:name=".FitGymLogApp"
         android:allowBackup="true"
-        android:icon="@drawable/ic_fitgymlog"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
