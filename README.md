@@ -40,8 +40,10 @@ uses that screen as a remote.
 
    The screen and the band both pass the set they expect to complete, so a tap and a band press at the same moment
    cannot complete two sets.
-4. **Rest on the band.** While resting, the title reads "Rest 1:23" over the next set, refreshed every five seconds,
-   and the session's duration and position carry the rest length and elapsed time.
+4. **Rest on the band.** While resting, the title counts down ("Rest 1:55") over the set just done, which is the set
+   previous corrects. The title changes in five-second steps timed to the end of the rest, so the band gets few updates.
+   The session's duration is the rest length and its position runs at normal speed from 0:00, so the band's progress
+   ring around the pause button fills as the rest goes by, like a song, without the app sending it anything per second.
 5. **The buzz.** When rest ends, an exact alarm (`AlarmManager.setExactAndAllowWhileIdle`) fires `RestOverReceiver`,
    which posts a high-priority notification with vibration. Galaxy Wearable forwards notifications from apps switched
    on in its Notifications settings, so the band buzzes and shows the next set.
@@ -82,7 +84,8 @@ and with the debug key otherwise.
 
 Galaxy Fit 밴드로 조작하는 Android 운동 기록 앱입니다. 밴드는 다른 앱을 실행할 수 없지만 휴대폰의 음악을 조작할 수 있어서,
 FitGymLog는 운동 중에 소리 없이 "재생 중"인 미디어 세션을 열어 둡니다. 지금 세트가 곡 제목과 아티스트 자리에 보이고,
-재생/일시정지는 세트 완료, 다음은 다음 운동, 이전은 횟수 하나 빼기로 받습니다. 휴식이 끝나면 정확한 알람으로 알림을 띄우고,
+재생/일시정지는 세트 완료, 다음은 다음 운동, 이전은 횟수 하나 빼기로 받습니다. 휴식 중에는 제목에 남은 시간이 5초 단위로(1:55, 1:50)
+보이고, 휴식 시간이 곡 길이가 되어 일시정지 버튼 둘레의 진행 링이 음악처럼 채워집니다. 휴식이 끝나면 정확한 알람으로 알림을 띄우고,
 Galaxy Wearable이 이 알림을 밴드로 보내 진동합니다. 그래서 휴대폰에서도 음악처럼 보입니다. 상태 표시줄 왼쪽 위에 지금 세트가
 뜨고, 누르면 미디어 플레이어가 열리며 플레이어를 누르면 FitGymLog가 열립니다. 이 플레이어와 잠금 화면 조작도 밴드와 똑같이 동작하는 의도된 설계입니다. 다른 앱이
 음악이나 영상을 재생하면 버튼이 그 앱과 오갈 수 있습니다.
