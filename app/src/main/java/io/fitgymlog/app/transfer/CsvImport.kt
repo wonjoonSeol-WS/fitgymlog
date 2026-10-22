@@ -48,8 +48,11 @@ internal suspend fun importWorkouts(
 internal fun inferKind(sets: List<WorkoutSet>): ExerciseKind = when {
     sets.any { (it.weightKg ?: 0.0) > 0 } -> ExerciseKind.WEIGHT_REPS
     sets.any { it.reps != null } -> ExerciseKind.BODYWEIGHT_REPS
+    sets.any { it.distanceMeters != null || (it.durationSeconds ?: 0) >= CARDIO_SECONDS } -> ExerciseKind.CARDIO
     sets.any { it.durationSeconds != null } -> ExerciseKind.DURATION
     else -> ExerciseKind.WEIGHT_REPS
 }
+
+private const val CARDIO_SECONDS = 5 * 60
 
 private fun sameExerciseKey(name: String): String = ExerciseMatcher.normalize(name).ifEmpty { name }

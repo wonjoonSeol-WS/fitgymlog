@@ -72,14 +72,20 @@ class SetEditingTest {
     }
 
     @Test
-    fun `cardio is entered in whole minutes and stored in seconds`() {
+    fun `cardio is picked in minutes and stored in seconds`() {
         assertEquals(300, ExerciseKind.CARDIO.secondsOf(5))
-        assertEquals(45, ExerciseKind.DURATION.secondsOf(45))
-        assertEquals(5, WorkoutSet(durationSeconds = 300).amount(ExerciseKind.CARDIO))
-        assertEquals(6, WorkoutSet(durationSeconds = 330).amount(ExerciseKind.CARDIO))
-        assertEquals(5, WorkoutSet(durationSeconds = 270).amount(ExerciseKind.CARDIO))
-        assertEquals(300, WorkoutSet(durationSeconds = 300).amount(ExerciseKind.DURATION))
-        assertTrue(5 in ExerciseKind.CARDIO.amountChoices())
+        assertEquals(listOf(1, 90), ExerciseKind.CARDIO.amountChoices().let { listOf(it.first(), it.last()) })
         assertEquals(ExerciseKind.CARDIO.amountChoices().sorted(), ExerciseKind.CARDIO.amountChoices())
+    }
+
+    @Test
+    fun `stored cardio seconds show as the nearest whole minute, and never as zero once something was logged`() {
+        assertEquals(listOf(5, 6, 5, 1, 0), listOf(300, 330, 270, 20, 0).map { WorkoutSet(durationSeconds = it).amount(ExerciseKind.CARDIO) })
+    }
+
+    @Test
+    fun `other timed sets stay in seconds`() {
+        assertEquals(45, ExerciseKind.DURATION.secondsOf(45))
+        assertEquals(300, WorkoutSet(durationSeconds = 300).amount(ExerciseKind.DURATION))
     }
 }

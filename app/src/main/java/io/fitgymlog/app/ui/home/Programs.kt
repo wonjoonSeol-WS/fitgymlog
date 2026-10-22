@@ -8,16 +8,16 @@ import io.fitgymlog.app.model.RoutineExercise
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-enum class Program(@StringRes val title: Int, @StringRes val summary: Int) {
+enum class Program(@param:StringRes val title: Int, @param:StringRes val summary: Int) {
     STRONGLIFTS(R.string.stronglifts_5x5, R.string.program_stronglifts_summary),
     FULL_BODY(R.string.program_full_body, R.string.program_full_body_summary),
     UPPER_LOWER(R.string.program_upper_lower, R.string.program_upper_lower_summary),
     PUSH_PULL_LEGS(R.string.program_push_pull_legs, R.string.program_push_pull_legs_summary),
     ;
 
-    fun routines(name: (Int) -> String, restSeconds: Int): List<Routine> {
-        fun routine(@StringRes title: Int, vararg lifts: RoutineExercise) = Routine(name = name(title), exercises = lifts.toList())
-        fun lift(id: String, sets: Int, reps: Int) = RoutineExercise(id, sets, reps, null, restSeconds)
+    fun routines(restSeconds: Int): List<PlannedRoutine> {
+        fun routine(@StringRes name: Int, vararg lifts: RoutineExercise) = PlannedRoutine(name, lifts.toList())
+        fun lift(id: String, sets: Int, reps: Int) = RoutineExercise(id, sets, reps, weightKg = null, restSeconds = restSeconds)
         return when (this) {
             STRONGLIFTS -> listOf(
                 routine(
@@ -69,18 +69,27 @@ enum class Program(@StringRes val title: Int, @StringRes val summary: Int) {
     }
 }
 
+data class PlannedRoutine(@param:StringRes val name: Int, val exercises: List<RoutineExercise>)
+
 object Programs {
     private val adding = Mutex()
 
-    /** Returns how many of the program's routines were missing and added. */
-    suspend fun add(program: Program, routines: RoutineRepository, name: (Int) -> String, restSeconds: Int): Int =
-        addMissing(program.routines(name, restSeconds), existing = { routines.all() }, save = { routines.save(it) })
+    suspend fun add(program: Program, routines: RoutineRepository, namesOf: (Int) -> List<String>, restSeconds: Int): Int =
+        addMissing(program.routines(restSeconds), namesOf, existing = { routines.all() }, save = { routines.save(it) })
 
-    internal suspend fun addMissing(wanted: List<Routine>, existing: suspend () -> List<Routine>, save: suspend (Routine) -> Unit): Int =
-        adding.withLock {
-            val names = existing().map { it.name }.toSet()
-            val missing = wanted.filter { it.name !in names }
-            missing.forEach { save(it) }
-            missing.size
-        }
+    /**
+     * [namesOf] gives a routine's name in the app language first, then in the other languages, so a routine
+     * added before the app language changed still counts as there.
+     */
+    internal suspend fun addMissing(
+        wanted: List<PlannedRoutine>,
+        namesOf: (Int) -> List<String>,
+        existing: suspend () -> List<Routine>,
+        save: suspend (Routine) -> Unit,
+    ): Int = adding.withLock {
+        val taken = existing().map { it.name }.toSet()
+        val missing = wanted.filter { planned -> namesOf(planned.name).none { it in taken } }
+        missing.forEach { save(Routine(name = namesOf(it.name).first(), exercises = it.exercises)) }
+        missing.size
+    }
 }

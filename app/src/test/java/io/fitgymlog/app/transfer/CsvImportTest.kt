@@ -100,6 +100,13 @@ class CsvImportTest {
     }
 
     @Test
+    fun `a distance or a long duration makes a new exercise cardio, a short hold stays timed`() {
+        assertEquals(ExerciseKind.CARDIO, inferKind(listOf(WorkoutSet(durationSeconds = 1_800))))
+        assertEquals(ExerciseKind.CARDIO, inferKind(listOf(WorkoutSet(distanceMeters = 5_000.0, durationSeconds = 120))))
+        assertEquals(ExerciseKind.DURATION, inferKind(listOf(WorkoutSet(durationSeconds = 60))))
+    }
+
+    @Test
     fun `the name, kind and link entered in the dialog win over the imported ones`() = runTest {
         val file = pending(workout("Day A", "Hollow Hold" to timed), unmatched = listOf("Hollow Hold"))
         val choice = ExerciseChoice.Create(NewExercise("Hollow Body Hold", ExerciseKind.WEIGHT_REPS, listOf("https://example.com/hollow")))

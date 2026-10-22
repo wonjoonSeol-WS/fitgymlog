@@ -9,12 +9,14 @@ import io.fitgymlog.app.data.ExerciseRepository
 import io.fitgymlog.app.data.SettingsRepository
 import io.fitgymlog.app.data.WorkoutRepository
 import io.fitgymlog.app.health.HealthConnectWriter
+import io.fitgymlog.app.model.ExerciseKind
 import io.fitgymlog.app.model.Routine
 import io.fitgymlog.app.model.Workout
 import io.fitgymlog.app.model.WorkoutExercise
 import io.fitgymlog.app.model.WorkoutSet
 import io.fitgymlog.app.model.defaultRestSeconds
 import io.fitgymlog.app.model.defaultSets
+import io.fitgymlog.app.model.isTimed
 import io.fitgymlog.app.ui.name
 import java.time.Instant
 import kotlinx.coroutines.flow.first
@@ -34,6 +36,7 @@ class WorkoutActions(
     suspend fun startRoutine(routine: Routine): ActiveWorkout {
         val planned = routine.exercises.mapIndexed { index, planned ->
             val previous = workouts.previousSets(planned.exerciseId)
+            val kind = exercises.find(planned.exerciseId).kind
             WorkoutExercise(
                 key = index + 1L,
                 exerciseId = planned.exerciseId,
@@ -42,9 +45,9 @@ class WorkoutActions(
                     val last = previous.getOrNull(setIndex) ?: previous.lastOrNull()
                     WorkoutSet(
                         weightKg = planned.weightKg ?: lastKnownWeight(previous, setIndex),
-                        reps = planned.reps ?: last?.reps,
-                        durationSeconds = last?.durationSeconds,
-                        level = last?.level,
+                        reps = if (kind.isTimed) null else planned.reps ?: last?.reps,
+                        durationSeconds = last?.durationSeconds?.takeIf { kind.isTimed },
+                        level = last?.level?.takeIf { kind == ExerciseKind.CARDIO },
                     )
                 },
             )
@@ -52,15 +55,17 @@ class WorkoutActions(
         return workouts.start(routine.name, routine, planned, Instant.now()).also { WorkoutService.start(context) }
     }
 
-    suspend fun addExercise(exerciseId: String) {
-        val sets = prefilledSets(exerciseId)
-        val rest = exercises.find(exerciseId).kind.defaultRestSeconds(settings.settings.value.defaultRestSeconds)
+    /** [kind] is passed for an exercise created a moment ago, which the exercise list may not hold yet. */
+    suspend fun addExercise(exerciseId: String, kind: ExerciseKind = exercises.find(exerciseId).kind) {
+        val sets = prefilledSets(exerciseId, kind)
+        val rest = kind.defaultRestSeconds(settings.settings.value.defaultRestSeconds)
         workouts.update { it.addExercise(exerciseId, sets, rest, Instant.now()) }
     }
 
-    suspend fun replaceExercise(index: Int, exerciseId: String) {
-        val sets = prefilledSets(exerciseId)
-        workouts.update { it.replaceExercise(index, exerciseId, sets) }
+    suspend fun replaceExercise(index: Int, exerciseId: String, kind: ExerciseKind = exercises.find(exerciseId).kind) {
+        val sets = prefilledSets(exerciseId, kind)
+        val rest = kind.defaultRestSeconds(settings.settings.value.defaultRestSeconds)
+        workouts.update { it.replaceExercise(index, exerciseId, sets, rest) }
     }
 
     suspend fun finish(endedAt: Instant = Instant.now()): Workout? {
@@ -82,16 +87,16 @@ class WorkoutActions(
     }
 
     /** Same sets as last time this exercise was done, or empty sets the first time. */
-    private suspend fun prefilledSets(exerciseId: String): List<WorkoutSet> {
+    private suspend fun prefilledSets(exerciseId: String, kind: ExerciseKind): List<WorkoutSet> {
         val previous = workouts.previousSets(exerciseId)
-        if (previous.isEmpty()) return List(exercises.find(exerciseId).kind.defaultSets()) { WorkoutSet() }
+        if (previous.isEmpty()) return List(kind.defaultSets()) { WorkoutSet() }
         return previous.mapIndexed { index, set ->
             WorkoutSet(
                 type = set.type,
                 weightKg = lastKnownWeight(previous, index),
                 reps = set.reps,
-                durationSeconds = set.durationSeconds,
-                level = set.level,
+                durationSeconds = set.durationSeconds?.takeIf { kind.isTimed },
+                level = set.level?.takeIf { kind == ExerciseKind.CARDIO },
             )
         }
     }

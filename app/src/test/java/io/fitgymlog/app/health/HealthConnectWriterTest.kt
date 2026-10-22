@@ -2,6 +2,7 @@ package io.fitgymlog.app.health
 
 import androidx.health.connect.client.records.ExerciseSegment
 import androidx.health.connect.client.records.ExerciseSessionRecord
+import io.fitgymlog.app.catalog.ExerciseCatalog
 import io.fitgymlog.app.model.Exercise
 import io.fitgymlog.app.model.ExerciseKind
 import io.fitgymlog.app.model.Workout
@@ -15,22 +16,32 @@ import org.junit.Test
 class HealthConnectWriterTest {
     private val start = Instant.parse("2026-10-19T10:00:00Z")
     private val workout = Workout(id = 7, uuid = "0b1c9e", title = "Day A", startedAt = start, exercises = emptyList())
+    private val base = "fitgymlog-workout-0b1c9e"
 
     private val exercises = listOf(
         Exercise("treadmill", "Treadmill", ExerciseKind.CARDIO, ExerciseSegment.EXERCISE_SEGMENT_TYPE_RUNNING_TREADMILL),
-        Exercise("squat_barbell", "Squat (Barbell)", ExerciseKind.WEIGHT_REPS, ExerciseSegment.EXERCISE_SEGMENT_TYPE_SQUAT),
+        Exercise("stationary_bike", "Cycling", ExerciseKind.CARDIO, ExerciseSegment.EXERCISE_SEGMENT_TYPE_BIKING_STATIONARY),
         Exercise("stair_machine", "Stair Machine (Floors)", ExerciseKind.CARDIO, ExerciseSegment.EXERCISE_SEGMENT_TYPE_STAIR_CLIMBING_MACHINE),
+        Exercise("squat_barbell", "Squat (Barbell)", ExerciseKind.WEIGHT_REPS, ExerciseSegment.EXERCISE_SEGMENT_TYPE_SQUAT),
+        Exercise("bench_press_barbell", "Bench Press (Barbell)", ExerciseKind.WEIGHT_REPS, ExerciseSegment.EXERCISE_SEGMENT_TYPE_BENCH_PRESS),
+        Exercise("plank", "Plank", ExerciseKind.DURATION, ExerciseSegment.EXERCISE_SEGMENT_TYPE_PLANK),
     ).associateBy { it.id }
 
     private fun at(minutes: Long): Instant = start.plusSeconds(minutes * 60)
 
     private fun exercise(id: String, vararg sets: WorkoutSet) = WorkoutExercise(key = id.hashCode().toLong(), exerciseId = id, restSeconds = 0, sets = sets.toList())
 
+    private fun lift(minute: Long) = WorkoutSet(weightKg = 60.0, reps = 5, completedAt = at(minute))
+
+    private fun cardio(minutes: Int, tickedAt: Long) = WorkoutSet(durationSeconds = minutes * 60, completedAt = at(tickedAt))
+
     private fun sessions(workout: Workout) = sessionsOf(workout, ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING, exercises::getValue) { it.englishName }
+
+    private fun summary(workout: Workout) = sessions(workout).map { listOf(it.exerciseType, it.startTime, it.endTime, it.metadata.clientRecordId) }
 
     @Test
     fun `records are keyed by the workout uuid, not the local row id`() {
-        assertEquals("fitgymlog-workout-0b1c9e", clientRecordIdOf(workout))
+        assertEquals(base, clientRecordIdOf(workout))
     }
 
     @Test
@@ -43,39 +54,96 @@ class HealthConnectWriterTest {
         val day = workout.copy(
             endedAt = at(21),
             exercises = listOf(
-                exercise("treadmill", WorkoutSet(durationSeconds = 300, completedAt = at(5))),
-                exercise("squat_barbell", WorkoutSet(weightKg = 60.0, reps = 5, completedAt = at(8)), WorkoutSet(weightKg = 60.0, reps = 5, completedAt = at(11))),
-                exercise("stair_machine", WorkoutSet(durationSeconds = 300, completedAt = at(20))),
+                exercise("treadmill", cardio(minutes = 5, tickedAt = 3)),
+                exercise("squat_barbell", lift(8), lift(11)),
+                exercise("stair_machine", cardio(minutes = 5, tickedAt = 20)),
             ),
         )
-
-        val written = sessions(day).map { listOf(it.exerciseType, it.startTime, it.endTime, it.metadata.clientRecordId, it.title) }
 
         assertEquals(
             listOf(
-                listOf(ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING, at(5), at(15), "fitgymlog-workout-0b1c9e", "Day A"),
-                listOf(ExerciseSessionRecord.EXERCISE_TYPE_RUNNING_TREADMILL, at(0), at(5), "fitgymlog-workout-0b1c9e-0-0", "Treadmill"),
-                listOf(ExerciseSessionRecord.EXERCISE_TYPE_STAIR_CLIMBING_MACHINE, at(15), at(20), "fitgymlog-workout-0b1c9e-2-0", "Stair Machine (Floors)"),
+                listOf(ExerciseSessionRecord.EXERCISE_TYPE_RUNNING_TREADMILL, at(-2), at(3), "$base-0-0"),
+                listOf(ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING, at(3), at(15), base),
+                listOf(ExerciseSessionRecord.EXERCISE_TYPE_STAIR_CLIMBING_MACHINE, at(15), at(20), "$base-2-0"),
             ),
-            written,
+            summary(day),
         )
-        assertEquals(listOf(ExerciseSegment.EXERCISE_SEGMENT_TYPE_SQUAT, ExerciseSegment.EXERCISE_SEGMENT_TYPE_SQUAT), sessions(day).first().segments.map { it.segmentType })
+        assertEquals(listOf(listOf(at(7), at(8)), listOf(at(10), at(11))), sessions(day)[1].segments.map { listOf(it.startTime, it.endTime) })
+    }
+
+    @Test
+    fun `cardio in the middle splits lifting in two, and a block never reaches back past the set before it`() {
+        val day = workout.copy(
+            endedAt = at(32),
+            exercises = listOf(
+                exercise("squat_barbell", lift(8), lift(11)),
+                exercise("stationary_bike", cardio(minutes = 20, tickedAt = 25)),
+                exercise("bench_press_barbell", lift(28), lift(31)),
+            ),
+        )
+
+        assertEquals(
+            listOf(
+                listOf(ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING, at(0), at(11), base),
+                listOf(ExerciseSessionRecord.EXERCISE_TYPE_BIKING_STATIONARY, at(11), at(25), "$base-1-0"),
+                listOf(ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING, at(25), at(32), "$base-lifting-1"),
+            ),
+            summary(day),
+        )
+    }
+
+    @Test
+    fun `back-to-back cardio sets follow each other, each with its own record`() {
+        val day = workout.copy(
+            endedAt = at(30),
+            exercises = listOf(
+                exercise("treadmill", cardio(minutes = 10, tickedAt = 10), cardio(minutes = 20, tickedAt = 25)),
+            ),
+        )
+
+        assertEquals(
+            listOf(
+                listOf(ExerciseSessionRecord.EXERCISE_TYPE_RUNNING_TREADMILL, at(0), at(10), "$base-0-0"),
+                listOf(ExerciseSessionRecord.EXERCISE_TYPE_RUNNING_TREADMILL, at(10), at(25), "$base-0-1"),
+            ),
+            summary(day),
+        )
     }
 
     @Test
     fun `a workout without cardio is one session from start to finish`() {
-        val day = workout.copy(endedAt = at(30), exercises = listOf(exercise("squat_barbell", WorkoutSet(weightKg = 60.0, reps = 5, completedAt = at(8)))))
+        val day = workout.copy(endedAt = at(30), exercises = listOf(exercise("squat_barbell", lift(8))))
 
-        assertEquals(listOf(listOf(at(0), at(30))), sessions(day).map { listOf(it.startTime, it.endTime) })
+        assertEquals(listOf(listOf(ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING, at(0), at(30), base)), summary(day))
     }
 
     @Test
-    fun `cardio alone writes no lifting session, and a cardio set without a duration is skipped`() {
+    fun `deleting removes exactly the records writing made, which for cardio alone has no lifting record`() {
+        val cardioOnly = workout.copy(endedAt = at(12), exercises = listOf(exercise("treadmill", cardio(minutes = 10, tickedAt = 10), WorkoutSet(completedAt = at(11)))))
+        val mixed = workout.copy(endedAt = at(30), exercises = listOf(exercise("squat_barbell", lift(8)), exercise("stair_machine", cardio(minutes = 5, tickedAt = 20))))
+
+        assertEquals(listOf("$base-0-0"), clientRecordIdsOf(cardioOnly, exercises::getValue))
+        assertEquals(listOf(base, "$base-1-0"), clientRecordIdsOf(mixed, exercises::getValue))
+        assertEquals(sessions(mixed).map { it.metadata.clientRecordId }, clientRecordIdsOf(mixed, exercises::getValue))
+    }
+
+    @Test
+    fun `a timed lift's segment lasts its duration, and other sets get a minute whatever duration they carry`() {
         val day = workout.copy(
-            endedAt = at(12),
-            exercises = listOf(exercise("treadmill", WorkoutSet(durationSeconds = 600, completedAt = at(10)), WorkoutSet(completedAt = at(11)))),
+            endedAt = at(30),
+            exercises = listOf(
+                exercise("plank", WorkoutSet(durationSeconds = 120, completedAt = at(10))),
+                exercise("squat_barbell", lift(20).copy(durationSeconds = 600)),
+            ),
         )
 
-        assertEquals(listOf(ExerciseSessionRecord.EXERCISE_TYPE_RUNNING_TREADMILL), sessions(day).map { it.exerciseType })
+        assertEquals(listOf(listOf(at(8), at(10)), listOf(at(19), at(20))), sessions(day).single().segments.map { listOf(it.startTime, it.endTime) })
+    }
+
+    @Test
+    fun `every built-in cardio exercise has a Health Connect session type of its own`() {
+        val unmapped = ExerciseCatalog.all.filter { it.kind == ExerciseKind.CARDIO && it.segmentType !in CARDIO_SESSION_TYPES }
+
+        assertEquals(emptyList<String>(), unmapped.map { it.id })
     }
 }

@@ -1,15 +1,15 @@
 package io.fitgymlog.app.data
 
 import android.content.Context
-import android.content.res.Configuration
 import androidx.health.connect.client.records.ExerciseSegment
+import io.fitgymlog.app.SHIPPED_LANGUAGES
 import io.fitgymlog.app.catalog.ExerciseCatalog
 import io.fitgymlog.app.links.WebLinks
 import io.fitgymlog.app.model.Exercise
 import io.fitgymlog.app.model.ExerciseKind
 import io.fitgymlog.app.model.NewExercise
+import io.fitgymlog.app.resourcesIn
 import io.fitgymlog.app.transfer.ExerciseMatcher
-import java.util.Locale
 import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
@@ -65,10 +65,9 @@ class ExerciseRepository(
 
     /** Names in every language we ship plus custom names, so imports match regardless of the source app's language. */
     suspend fun matcher(): ExerciseMatcher {
-        val korean = context.createConfigurationContext(Configuration(context.resources.configuration).apply { setLocale(Locale.KOREAN) })
-        val english = context.createConfigurationContext(Configuration(context.resources.configuration).apply { setLocale(Locale.ENGLISH) })
+        val languages = SHIPPED_LANGUAGES.map(context::resourcesIn)
         val names = ExerciseCatalog.all.associate { builtin ->
-            builtin.id to listOf(builtin.hevyName, english.getString(builtin.nameRes), korean.getString(builtin.nameRes))
+            builtin.id to listOf(builtin.hevyName) + languages.map { it.getString(builtin.nameRes) }
         } + dao.allNow().associate { it.id to listOf(it.name) }
         return ExerciseMatcher(names)
     }
