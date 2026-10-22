@@ -2,7 +2,7 @@ package io.gymlog.app.transfer
 
 /** RFC 4180 CSV with the quirks real exports have: a BOM, CRLF or LF, no final newline, comma or semicolon. */
 object Csv {
-    private const val BOM = '﻿'
+    private const val BOM = '\uFEFF'
 
     fun read(text: String): List<List<String>> {
         val body = text.removePrefix(BOM.toString())

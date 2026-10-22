@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="exercise_squat_barbell">Squat (Barbell)</string>
+    <string name="exercise_bench_press_barbell">Bench Press (Barbell)</string>
+    <string name="exercise_deadlift_barbell">Deadlift (Barbell)</string>
+    <string name="exercise_overhead_press_barbell">Overhead Press (Barbell)</string>
+    <string name="exercise_bent_over_row_barbell">Bent Over Row (Barbell)</string>
+    <string name="exercise_pendlay_row_barbell">Pendlay Row (Barbell)</string>
+    <string name="exercise_front_squat">Front Squat</string>
+    <string name="exercise_romanian_deadlift_barbell">Romanian Deadlift (Barbell)</string>
+    <string name="exercise_incline_bench_press_barbell">Incline Bench Press (Barbell)</string>
+    <string name="exercise_hip_thrust_barbell">Hip Thrust (Barbell)</string>
+    <string name="exercise_shrug_barbell">Shrug (Barbell)</string>
+    <string name="exercise_bench_press_dumbbell">Bench Press (Dumbbell)</string>
+    <string name="exercise_incline_bench_press_dumbbell">Incline Bench Press (Dumbbell)</string>
+    <string name="exercise_shoulder_press_dumbbell">Shoulder Press (Dumbbell)</string>
+    <string name="exercise_lateral_raise_dumbbell">Lateral Raise (Dumbbell)</string>
+    <string name="exercise_bent_over_row_dumbbell">Bent Over Row (Dumbbell)</string>
+    <string name="exercise_chest_supported_incline_row_dumbbell">Chest Supported Incline Row (Dumbbell)</string>
+    <string name="exercise_bicep_curl_dumbbell">Bicep Curl (Dumbbell)</string>
+    <string name="exercise_hammer_curl_dumbbell">Hammer Curl (Dumbbell)</string>
+    <string name="exercise_romanian_deadlift_dumbbell">Romanian Deadlift (Dumbbell)</string>
+    <string name="exercise_lunge_dumbbell">Lunge (Dumbbell)</string>
+    <string name="exercise_bulgarian_split_squat">Bulgarian Split Squat</string>
+    <string name="exercise_lat_pulldown_cable">Lat Pulldown (Cable)</string>
+    <string name="exercise_seated_cable_row_v_grip">Seated Cable Row - V Grip (Cable)</string>
+    <string name="exercise_triceps_pushdown">Triceps Pushdown</string>
+    <string name="exercise_face_pull">Face Pull</string>
+    <string name="exercise_leg_press_machine">Leg Press (Machine)</string>
+    <string name="exercise_leg_extension_machine">Leg Extension (Machine)</string>
+    <string name="exercise_lying_leg_curl_machine">Lying Leg Curl (Machine)</string>
+    <string name="exercise_seated_leg_curl_machine">Seated Leg Curl (Machine)</string>
+    <string name="exercise_chest_fly_machine">Chest Fly (Machine)</string>
+    <string name="exercise_standing_calf_raise_machine">Standing Calf Raise (Machine)</string>
+    <string name="exercise_pull_up">Pull Up</string>
+    <string name="exercise_pull_up_weighted">Pull Up (Weighted)</string>
+    <string name="exercise_pull_up_assisted">Pull Up (Assisted)</string>
+    <string name="exercise_chin_up">Chin Up</string>
+    <string name="exercise_chest_dip">Chest Dip</string>
+    <string name="exercise_chest_dip_weighted">Chest Dip (Weighted)</string>
+    <string name="exercise_push_up">Push Up</string>
+    <string name="exercise_plank">Plank</string>
+</resources>

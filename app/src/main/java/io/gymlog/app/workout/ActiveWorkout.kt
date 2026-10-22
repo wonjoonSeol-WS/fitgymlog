@@ -102,6 +102,10 @@ data class ActiveWorkout(
         if (set.isCompleted) set.copy(reps = reps) else set.copy(reps = reps, targetReps = reps)
     }
 
+    fun setDuration(ref: SetRef, seconds: Int?): ActiveWorkout = updateSet(ref) { it.copy(durationSeconds = seconds) }
+
+    fun setType(ref: SetRef, type: SetType): ActiveWorkout = updateSet(ref) { it.copy(type = type) }
+
     fun cycleSetType(ref: SetRef): ActiveWorkout = updateSet(ref) { set ->
         set.copy(type = SetType.entries[(set.type.ordinal + 1) % SetType.entries.size])
     }

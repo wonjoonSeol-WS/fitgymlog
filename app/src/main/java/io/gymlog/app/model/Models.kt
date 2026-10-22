@@ -14,14 +14,23 @@ enum class SetType { NORMAL, WARMUP, DROP, FAILURE }
 
 enum class WorkoutSource { APP, HEVY, STRONG, BACKUP }
 
+enum class WeightUnit { KG, LB }
+
+/**
+ * Built-in exercises carry a string resource so their name follows the app language; custom ones
+ * keep the name the user typed.
+ */
 data class Exercise(
     val id: String,
-    val name: String,
     val englishName: String,
     val kind: ExerciseKind,
-    val links: List<String>,
-    val isCustom: Boolean,
-)
+    val segmentType: Int,
+    val links: List<String> = emptyList(),
+    val nameRes: Int? = null,
+    val customName: String? = null,
+) {
+    val isCustom: Boolean get() = nameRes == null
+}
 
 data class WorkoutSet(
     val type: SetType = SetType.NORMAL,

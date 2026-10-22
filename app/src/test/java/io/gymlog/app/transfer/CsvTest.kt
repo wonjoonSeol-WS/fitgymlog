@@ -13,7 +13,7 @@ class CsvTest {
 
     @Test
     fun `reads CRLF line endings and strips a byte order mark`() {
-        val rows = Csv.read("﻿date,weight_kg\r\n\"29 8월 2026, 00:00\",78\r\n")
+        val rows = Csv.read("\uFEFFdate,weight_kg\r\n\"29 8월 2026, 00:00\",78\r\n")
 
         assertEquals(listOf(listOf("date", "weight_kg"), listOf("29 8월 2026, 00:00", "78")), rows)
     }

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="exercise_squat_barbell">스쿼트 (바벨)</string>
+    <string name="exercise_bench_press_barbell">벤치 프레스 (바벨)</string>
+    <string name="exercise_deadlift_barbell">데드리프트 (바벨)</string>
+    <string name="exercise_overhead_press_barbell">오버헤드 프레스 (바벨)</string>
+    <string name="exercise_bent_over_row_barbell">벤트 오버 로우 (바벨)</string>
+    <string name="exercise_pendlay_row_barbell">펜들레이 로우 (바벨)</string>
+    <string name="exercise_front_squat">프론트 스쿼트</string>
+    <string name="exercise_romanian_deadlift_barbell">루마니안 데드리프트 (바벨)</string>
+    <string name="exercise_incline_bench_press_barbell">인클라인 벤치 프레스 (바벨)</string>
+    <string name="exercise_hip_thrust_barbell">힙 쓰러스트 (바벨)</string>
+    <string name="exercise_shrug_barbell">슈러그 (바벨)</string>
+    <string name="exercise_bench_press_dumbbell">벤치 프레스 (덤벨)</string>
+    <string name="exercise_incline_bench_press_dumbbell">인클라인 벤치 프레스 (덤벨)</string>
+    <string name="exercise_shoulder_press_dumbbell">숄더 프레스 (덤벨)</string>
+    <string name="exercise_lateral_raise_dumbbell">레터럴 레이즈 (덤벨)</string>
+    <string name="exercise_bent_over_row_dumbbell">벤트 오버 로우 (덤벨)</string>
+    <string name="exercise_chest_supported_incline_row_dumbbell">체스트 서포티드 인클라인 로우 (덤벨)</string>
+    <string name="exercise_bicep_curl_dumbbell">바이셉 컬 (덤벨)</string>
+    <string name="exercise_hammer_curl_dumbbell">해머 컬 (덤벨)</string>
+    <string name="exercise_romanian_deadlift_dumbbell">루마니안 데드리프트 (덤벨)</string>
+    <string name="exercise_lunge_dumbbell">런지 (덤벨)</string>
+    <string name="exercise_bulgarian_split_squat">불가리안 스플릿 스쿼트</string>
+    <string name="exercise_lat_pulldown_cable">랫 풀다운 (케이블)</string>
+    <string name="exercise_seated_cable_row_v_grip">시티드 케이블 로우 - V 그립 (케이블)</string>
+    <string name="exercise_triceps_pushdown">트라이셉스 푸시다운</string>
+    <string name="exercise_face_pull">페이스 풀</string>
+    <string name="exercise_leg_press_machine">레그 프레스 (머신)</string>
+    <string name="exercise_leg_extension_machine">레그 익스텐션 (머신)</string>
+    <string name="exercise_lying_leg_curl_machine">라잉 레그 컬 (머신)</string>
+    <string name="exercise_seated_leg_curl_machine">시티드 레그 컬 (머신)</string>
+    <string name="exercise_chest_fly_machine">체스트 플라이 (머신)</string>
+    <string name="exercise_standing_calf_raise_machine">스탠딩 카프 레이즈 (머신)</string>
+    <string name="exercise_pull_up">풀 업</string>
+    <string name="exercise_pull_up_weighted">풀 업 (중량)</string>
+    <string name="exercise_pull_up_assisted">풀 업 (어시스트)</string>
+    <string name="exercise_chin_up">친 업</string>
+    <string name="exercise_chest_dip">체스트 딥</string>
+    <string name="exercise_chest_dip_weighted">체스트 딥 (중량)</string>
+    <string name="exercise_push_up">푸시 업</string>
+    <string name="exercise_plank">플랭크</string>
+</resources>
