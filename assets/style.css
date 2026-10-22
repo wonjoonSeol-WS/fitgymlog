@@ -191,6 +191,14 @@ section.soft { background: var(--bg-soft); }
 .facts dt { font: 700 21px/1.25 var(--display); }
 .facts dd { margin: 4px 0 0; color: var(--muted); }
 
+.coach { align-items: start; margin-top: 8px; }
+.coach h3 { font-size: 24px; margin: 0 0 12px; }
+.prices { width: 100%; border-collapse: collapse; font-size: 16px; }
+.prices th, .prices td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); }
+.prices th { font-weight: 600; color: var(--muted); font-size: 14px; }
+.prices td + td, .prices th + th { text-align: right; white-space: nowrap; }
+.note { color: var(--muted); font-size: 14px; margin: 12px 0 0; }
+
 .faq { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 8px 56px; align-items: start; }
 .faq dl { margin: 0; }
 .faq dl div { padding: 22px 0; border-top: 1px solid var(--line); }

@@ -18,6 +18,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@600;700;800&display=swap">
   <link rel="stylesheet" href="assets/style.css">
+  <script data-goatcounter="https://fitgymlog.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </head>
 <body>
   <header class="site-header">
@@ -43,10 +44,11 @@
           <p class="lead">FitGymLog is a workout log for Android. Press play on your Galaxy Fit to complete a set, feel a buzz when
             rest is over, and load the bar by tapping plates.</p>
           <div class="buttons">
-            <a class="button primary" href="#setup">Set it up</a>
+            <a class="button primary" href="https://github.com/wonjoonSeol-WS/fitgymlog/releases/latest">Download the APK</a>
+            <a class="button" href="#setup">Set it up</a>
             <a class="button" href="https://github.com/wonjoonSeol-WS/fitgymlog">GitHub</a>
           </div>
-          <p class="fine">Android 13 or newer. Tested with a Galaxy Fit3 and a Galaxy Z Fold. Not on Google Play yet.</p>
+          <p class="fine">Free and open source under the MIT License. Android 13 or newer, tested with a Galaxy Fit3 and a Galaxy Z Fold. Not on Google Play yet.</p>
         </div>
         <div class="stack">
           <div class="phone"><img src="images/workout-en.webp" width="540" height="1110" alt="A workout in progress: squat sets of 60 kg for 8 reps with done boxes"></div>
@@ -170,7 +172,7 @@
         <table class="sets">
           <thead><tr><th scope="col">Set</th><th scope="col">What to do</th><th scope="col">Done</th></tr></thead>
           <tbody>
-            <tr><td>1</td><td><strong>Add a routine</strong><p>On the Workout tab, StrongLifts 5x5 adds workouts A and B. Or build your own with New routine.</p></td>
+            <tr><td>1</td><td><strong>Add a routine</strong><p>On the Workout tab, Programs adds StrongLifts 5x5, full body, upper/lower or push/pull/legs. Or build your own with New routine.</p></td>
               <td><input class="check" type="checkbox" aria-label="Done: add a routine"></td></tr>
             <tr><td>2</td><td><strong>Allow notifications</strong><p>The end of each rest arrives as a notification. Settings, then Set up your Galaxy Fit, walks you through it.</p></td>
               <td><input class="check" type="checkbox" aria-label="Done: allow notifications"></td></tr>
@@ -185,13 +187,51 @@
       </div>
     </section>
 
+    <section class="block soft" id="cardio">
+      <div class="wrap">
+        <h2>Cardio and ready-made programs</h2>
+        <p class="lead">Log the treadmill, the stair machine or the bike in minutes, with the incline or level, and plan them in a routine: 20 minutes at incline 12 is filled in when you start. Each block goes to Samsung Health as its own session. Start from StrongLifts 5x5, full body, upper/lower or push/pull/legs, or build your own.</p>
+      </div>
+    </section>
+
+    <section class="block" id="coach">
+      <div class="wrap">
+        <h2>An optional coach, on your own AI account</h2>
+        <p class="lead">Turn it on in Settings and connect your own AI account. The app works out the numbers with its own rules; the model reads your history, explains, and adjusts only within the limits the app sets. It stays off unless you turn it on.</p>
+        <div class="split coach">
+          <dl class="facts">
+            <div><dt>Today's targets</dt><dd>When a workout starts, the app works out each lift's next weight from your last three sessions. The model may adjust it within those limits, for a sore knee or repeated misses, and says why in a line. Nothing changes until you tap Apply all.</dd></div>
+            <div><dt>After-workout notes</dt><dd>What went well and what to change next time, read from your sets and rest times.</dd></div>
+            <div><dt>Food for the day</dt><dd>Protein and a calorie target worked out by the app from your bodyweight, height, sex, age and the training you logged, for building muscle, keeping it, losing fat, or building muscle while losing fat. The model adds meal ideas but never makes up the numbers. Nothing to log.</dd></div>
+            <div><dt>Ask, and it remembers</dt><dd>Ask about a sore knee or what to eat. It can change today's targets, within the same limits, as cards you apply. Facts are saved only when you tap Save, short-lived ones like a sore knee expire on their own, and you can edit or delete any of them.</dd></div>
+            <div><dt>Your key, your data</dt><dd>Works with OpenAI, Gemini, Anthropic, OpenRouter, Groq, DeepSeek or any OpenAI-compatible address. The key is encrypted on your phone and sent only to that provider, and your height and birth year are not sent at all. Preview exactly what is sent.</dd></div>
+          </dl>
+          <div>
+            <h3>About what it costs a month</h3>
+            <table class="prices">
+              <thead><tr><th scope="col">Model</th><th scope="col">3 days a week</th><th scope="col">Every day</th></tr></thead>
+              <tbody>
+                <tr><td>Gemini 3.8 Flash, free tier</td><td>Free</td><td>Free (daily cap)</td></tr>
+                <tr><td>GPT-6 Luna</td><td>$0.01</td><td>$0.02</td></tr>
+                <tr><td>Claude Haiku 5.5</td><td>$0.01</td><td>$0.03</td></tr>
+                <tr><td>Gemini 3.8 Flash, paid</td><td>$0.10</td><td>$0.25</td></tr>
+                <tr><td>Claude Sonnet 5.5</td><td>$0.20</td><td>$0.45</td></tr>
+                <tr><td>GPT-6 Astra</td><td>$0.90</td><td>$2.10</td></tr>
+              </tbody>
+            </table>
+            <p class="note">Estimated from the app's measured requests: about 2,300 tokens in and 400 out per workout, plus three chat messages a week, or one a day for every-day training. List prices from each provider on October 22, 2026, before tax; Gemini Flash prices double from January 2027. The Gemini free tier may use your requests to improve Google's products and can't be used in the EEA, the UK or Switzerland. For comparison, Hevy Pro is ₩4,000 a month.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="block soft">
       <div class="wrap split flip">
         <div>
           <h2>Your data stays with you</h2>
           <dl class="facts">
             <div><dt>On your phone</dt><dd>Workouts live on your phone, and backups and exports are files you keep. No account, no ads, no analytics.</dd></div>
-            <div><dt>Samsung Health</dt><dd>FitGymLog writes every set to Health Connect. Samsung Health picks the workout up from there, but it doesn't show the individual sets.</dd></div>
+            <div><dt>Samsung Health</dt><dd>FitGymLog writes every set to Health Connect, and each cardio block as a session of its own. Samsung Health picks them up from there, but it doesn't show the individual sets.</dd></div>
             <div><dt>Google Drive sync, in your Drive</dt><dd>Optional. One file in a hidden folder of your own Drive keeps your phones in step. The app cannot see your other files.</dd></div>
           </dl>
         </div>
@@ -207,6 +247,8 @@
             <dd>The time in the title changes every five seconds, so the phone sends the band fewer updates. In between, the ring around the pause button fills as the rest goes by, the way it does for a song.</dd></div>
           <div><dt>Do I need a Galaxy Fit band?</dt>
             <dd>No. The app logs workouts on its own. The band lets you leave the phone in your bag.</dd></div>
+          <div><dt>What does the coach cost?</dt>
+            <dd>Nothing from FitGymLog. You pay your AI provider for what you use, usually a few cents a month; see <a href="#coach">the coach section</a>. The app works fully without it.</dd></div>
           <div><dt>Does it work with other watches?</dt>
             <dd>FitGymLog is built and tested with a Galaxy Fit3. A watch that controls your phone's music and shows its notifications may work the same way, but it hasn't been tested.</dd></div>
         </dl>
