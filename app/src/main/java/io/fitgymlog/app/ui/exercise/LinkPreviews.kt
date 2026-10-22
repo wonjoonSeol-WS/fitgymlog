@@ -10,14 +10,11 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import io.fitgymlog.app.catching
+import io.fitgymlog.app.exchangeCancellable
 import io.fitgymlog.app.links.LinkPreview
 import io.fitgymlog.app.links.PreviewParser
 import java.net.HttpURLConnection
 import java.net.URL
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.awaitCancellation
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.withTimeoutOrNull
 
 /** Small in-memory caches for link cards; the guide screen is opened often mid-workout. */
@@ -61,27 +58,13 @@ object LinkPreviews {
         return result
     }
 
-    /** Blocking socket reads ignore cancellation, so closing the connection is what ends them. */
     private suspend fun <T> fetch(url: String, read: (HttpURLConnection) -> T): T? = withTimeoutOrNull(REQUEST_DEADLINE_MILLIS) {
         val connection = (URL(url).openConnection() as HttpURLConnection).apply {
             connectTimeout = TIMEOUT_MILLIS
             readTimeout = TIMEOUT_MILLIS
             setRequestProperty("User-Agent", "Mozilla/5.0 (Android) FitGymLog")
         }
-        val closer = launch(Dispatchers.IO) {
-            try {
-                awaitCancellation()
-            } finally {
-                connection.disconnect()
-            }
-        }
-        try {
-            runInterruptible(Dispatchers.IO) {
-                if (connection.responseCode !in 200..299) null else read(connection)
-            }
-        } finally {
-            closer.cancel()
-        }
+        connection.exchangeCancellable { if (it.responseCode !in 200..299) null else read(it) }
     }
 
     private suspend fun download(url: String): ImageBitmap? = fetch(url) { connection ->
