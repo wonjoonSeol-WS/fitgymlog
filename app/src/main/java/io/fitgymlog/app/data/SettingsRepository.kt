@@ -7,6 +7,7 @@ import io.fitgymlog.app.model.WeightUnit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 data class Settings(
     val unit: WeightUnit = WeightUnit.KG,
@@ -32,7 +33,11 @@ class SettingsRepository(context: Context) {
     val settings: StateFlow<Settings> = _settings.asStateFlow()
 
     fun update(transform: (Settings) -> Settings) {
-        val next = transform(_settings.value)
+        _settings.update(transform)
+        synchronized(prefs) { save(_settings.value) }
+    }
+
+    private fun save(next: Settings) {
         prefs.edit {
             putString(UNIT, next.unit.name)
             putInt(DEFAULT_REST, next.defaultRestSeconds)
@@ -47,7 +52,6 @@ class SettingsRepository(context: Context) {
             putString(SYNC_ACCOUNT, next.syncAccount)
             if (next.lastSyncAt == null) remove(LAST_SYNC_AT) else putLong(LAST_SYNC_AT, next.lastSyncAt)
         }
-        _settings.value = next
     }
 
     private fun load(): Settings {

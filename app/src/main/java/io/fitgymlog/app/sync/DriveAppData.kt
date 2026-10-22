@@ -3,6 +3,7 @@ package io.fitgymlog.app.sync
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import com.google.android.gms.auth.api.identity.AuthorizationRequest
 import com.google.android.gms.auth.api.identity.ClearTokenRequest
 import com.google.android.gms.auth.api.identity.Identity
@@ -11,10 +12,14 @@ import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
+import java.time.Instant
 import java.util.UUID
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import org.json.JSONObject
 
 /** Google sign-in limited to the app's own hidden Drive folder. */
@@ -37,27 +42,43 @@ class DriveAuth(private val context: Context) {
     fun finish(data: Intent?): String? = runCatching { client.getAuthorizationResultFromIntent(data).accessToken }.getOrNull()
 
     /** A token without showing anything, or null when the user has to sign in again. */
-    suspend fun silentToken(): String? = (runCatching { start() }.getOrNull() as? Start.Granted)?.token
+    suspend fun silentToken(): String? = try {
+        (start() as? Start.Granted)?.token
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (error: Exception) {
+        Log.w(TAG, "No silent token", error)
+        null
+    }
 
     suspend fun forget(token: String) {
-        runCatching { client.clearToken(ClearTokenRequest.builder().setToken(token).build()).await() }
+        try {
+            client.clearToken(ClearTokenRequest.builder().setToken(token).build()).await()
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            Log.w(TAG, "Could not clear the rejected token", error)
+        }
     }
 
     private companion object {
+        const val TAG = "DriveAuth"
         const val DRIVE_APPDATA = "https://www.googleapis.com/auth/drive.appdata"
     }
 }
 
 class DriveAuthException : IOException("Google Drive rejected the sign-in")
 
+class DriveHttpException(val code: Int, detail: String) : IOException("Google Drive returned $code $detail")
+
 /** The one sync file in the user's Drive app data folder, over the Drive v3 REST API. */
 class DriveAppData(private val token: String) {
     data class RemoteFile(val id: String)
 
+    /** Drive allows several files with one name and lists them in no set order, so every phone settles on the oldest. */
     suspend fun find(): RemoteFile? = withContext(Dispatchers.IO) {
         val query = URLEncoder.encode("name = '$FILE_NAME'", "UTF-8").replace("+", "%20")
-        val files = JSONObject(request("GET", "$FILES?spaces=appDataFolder&fields=files(id)&q=$query")).getJSONArray("files")
-        if (files.length() == 0) null else RemoteFile(files.getJSONObject(0).getString("id"))
+        oldestOf(request("GET", "$FILES?spaces=appDataFolder&orderBy=createdTime&fields=files(id,createdTime)&q=$query"))
     }
 
     suspend fun download(file: RemoteFile): String = withContext(Dispatchers.IO) { request("GET", "$FILES/${file.id}?alt=media") }
@@ -97,7 +118,7 @@ class DriveAppData(private val token: String) {
             if (code == HttpURLConnection.HTTP_UNAUTHORIZED) throw DriveAuthException()
             if (code >= 400) {
                 val detail = connection.errorStream?.use { it.readBytes().decodeToString() }.orEmpty().take(ERROR_PREVIEW)
-                throw IOException("Google Drive returned $code $detail")
+                throw DriveHttpException(code, detail)
             }
             return connection.inputStream.use { it.readBytes().decodeToString() }
         } finally {
@@ -105,12 +126,23 @@ class DriveAppData(private val token: String) {
         }
     }
 
-    private companion object {
-        const val FILE_NAME = "fitgymlog-sync.json"
-        const val API = "https://www.googleapis.com/drive/v3"
-        const val FILES = "$API/files"
-        const val UPLOAD = "https://www.googleapis.com/upload/drive/v3/files"
-        const val TIMEOUT_MILLIS = 15_000
-        const val ERROR_PREVIEW = 300
+    @Serializable
+    private class FileList(val files: List<Listed> = emptyList())
+
+    @Serializable
+    private class Listed(val id: String, val createdTime: String)
+
+    companion object {
+        private val json = Json { ignoreUnknownKeys = true }
+
+        fun oldestOf(listing: String): RemoteFile? =
+            json.decodeFromString(FileList.serializer(), listing).files.minByOrNull { Instant.parse(it.createdTime) }?.let { RemoteFile(it.id) }
+
+        private const val FILE_NAME = "fitgymlog-sync.json"
+        private const val API = "https://www.googleapis.com/drive/v3"
+        private const val FILES = "$API/files"
+        private const val UPLOAD = "https://www.googleapis.com/upload/drive/v3/files"
+        private const val TIMEOUT_MILLIS = 15_000
+        private const val ERROR_PREVIEW = 300
     }
 }

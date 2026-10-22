@@ -13,6 +13,13 @@ object TombstoneKind {
     fun linkKey(exerciseId: String, url: String) = "$exerciseId\n$url"
 }
 
+/** Links open in an ACTION_VIEW intent, so a sync file must not bring in intent:, file: or javascript: ones. */
+fun isWebUrl(url: String): Boolean = url.startsWith("https://", ignoreCase = true) || url.startsWith("http://", ignoreCase = true)
+
+class NewerSyncFormatException(version: Int) : IllegalStateException("sync file version $version is newer than this app")
+
+class CorruptSyncFileException(cause: Throwable? = null) : IllegalStateException("the sync file is not a readable FitGymLog sync file", cause)
+
 /**
  * Everything that syncs between phones, as stored in the Drive app data file. In-progress
  * workouts and settings stay on each phone.
@@ -43,11 +50,23 @@ data class SyncSnapshot(
         const val VERSION = 1
         private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
-        fun decode(text: String): SyncSnapshot = json.decodeFromString(serializer(), text).also {
-            require(it.format == FORMAT) { "not a FitGymLog sync file" }
-            require(it.version <= VERSION) { "sync file version ${it.version} is newer than this app" }
-        }.sorted()
+        fun decode(text: String): SyncSnapshot {
+            val header = readable { json.decodeFromString(Header.serializer(), text) }
+            if (header.format != FORMAT) throw CorruptSyncFileException()
+            if (header.version > VERSION) throw NewerSyncFormatException(header.version)
+            return readable { json.decodeFromString(serializer(), text) }.sorted()
+        }
+
+        private inline fun <T> readable(read: () -> T): T = try {
+            read()
+        } catch (unreadable: IllegalArgumentException) {
+            throw CorruptSyncFileException(unreadable)
+        }
     }
+
+    /** Read on its own first, so a newer app's file whose layout changed is reported as newer rather than corrupt. */
+    @Serializable
+    private class Header(val format: String = "", val version: Int = 0)
 }
 
 @Serializable

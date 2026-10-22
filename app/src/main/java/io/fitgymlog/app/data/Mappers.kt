@@ -82,6 +82,8 @@ fun ActiveWorkout.toGraph(): WorkoutGraph {
     )
 }
 
+fun WorkoutSetEntity.toPreviousSet(): WorkoutSet = toSet().copy(completedAt = null)
+
 private fun WorkoutSetEntity.toSet() = WorkoutSet(
     type = enumValueOrDefault(type, SetType.NORMAL),
     weightKg = weightKg,

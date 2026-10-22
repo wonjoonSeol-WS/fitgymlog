@@ -3,21 +3,22 @@ package io.fitgymlog.app.sync
 import java.time.Duration
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.json.Json
 
-/** What one phone must change locally to match the merged snapshot. */
 data class SyncChanges(
     val upsertWorkouts: List<SyncWorkout> = emptyList(),
     val deleteWorkouts: List<String> = emptyList(),
     val upsertRoutines: List<SyncRoutine> = emptyList(),
     val deleteRoutines: List<String> = emptyList(),
     val upsertCustomExercises: List<SyncCustomExercise> = emptyList(),
-    val addLinks: List<SyncLink> = emptyList(),
+    val upsertLinks: List<SyncLink> = emptyList(),
     val removeLinks: List<SyncLink> = emptyList(),
     val tombstones: List<SyncTombstone> = emptyList(),
 ) {
     val touchesData: Boolean
         get() = upsertWorkouts.isNotEmpty() || deleteWorkouts.isNotEmpty() || upsertRoutines.isNotEmpty() ||
-            deleteRoutines.isNotEmpty() || upsertCustomExercises.isNotEmpty() || addLinks.isNotEmpty() || removeLinks.isNotEmpty()
+            deleteRoutines.isNotEmpty() || upsertCustomExercises.isNotEmpty() || upsertLinks.isNotEmpty() || removeLinks.isNotEmpty()
 }
 
 /**
@@ -28,28 +29,31 @@ data class SyncChanges(
 object SyncMerge {
     val TOMBSTONE_LIFETIME: Duration = Duration.ofDays(365)
 
-    fun merge(local: SyncSnapshot, remote: SyncSnapshot, now: Instant): SyncSnapshot {
-        val tombstones = (local.tombstones + remote.tombstones)
-            .groupBy { it.kind to it.key }
-            .values
-            .map { versions -> versions.maxBy { it.deletedAt } }
-            .filter { Duration.ofMillis(now.toEpochMilli() - it.deletedAt) < TOMBSTONE_LIFETIME }
-        val deletedAt = tombstones.associate { (it.kind to it.key) to it.deletedAt }
-        fun alive(kind: String, key: String, updatedAt: Long) = deletedAt[kind to key]?.let { updatedAt > it } ?: true
+    private val json = Json { encodeDefaults = true }
 
-        val workouts = newest(local.workouts, remote.workouts, { it.uuid }, { it.updatedAt })
+    fun isExpired(deletedAt: Long, now: Instant): Boolean = deletedAt < now.minus(TOMBSTONE_LIFETIME).toEpochMilli()
+
+    fun isNewest(changedAt: Long, storedAt: Long?, deletedAt: Long?): Boolean =
+        (storedAt == null || changedAt >= storedAt) && (deletedAt == null || changedAt > deletedAt)
+
+    fun merge(local: SyncSnapshot, remote: SyncSnapshot, now: Instant): SyncSnapshot {
+        val tombstones = latest(local.tombstones + remote.tombstones).filterNot { isExpired(it.deletedAt, now) }
+        val deletedAt = tombstones.associate { (it.kind to it.key) to it.deletedAt }
+        fun alive(kind: String, key: String, changedAt: Long) = isNewest(changedAt, storedAt = null, deletedAt[kind to key])
+
+        val workouts = newest(local.workouts, remote.workouts, SyncWorkout.serializer(), { it.uuid }, { it.updatedAt })
             .filter { alive(TombstoneKind.WORKOUT, it.uuid, it.updatedAt) }
         val (kept, duplicates) = withoutDuplicates(workouts)
         val duplicateTombstones = duplicates.map { SyncTombstone(TombstoneKind.WORKOUT, it.uuid, maxOf(now.toEpochMilli(), it.updatedAt)) }
 
         return SyncSnapshot(
             workouts = kept,
-            routines = newest(local.routines, remote.routines, { it.uuid }, { it.updatedAt })
+            routines = newest(local.routines, remote.routines, SyncRoutine.serializer(), { it.uuid }, { it.updatedAt })
                 .filter { alive(TombstoneKind.ROUTINE, it.uuid, it.updatedAt) },
-            customExercises = newest(local.customExercises, remote.customExercises, { it.id }, { it.updatedAt }),
-            links = newest(local.links, remote.links, { TombstoneKind.linkKey(it.exerciseId, it.url) }, { it.addedAt })
-                .filter { alive(TombstoneKind.LINK, TombstoneKind.linkKey(it.exerciseId, it.url), it.addedAt) },
-            tombstones = tombstones + duplicateTombstones,
+            customExercises = newest(local.customExercises, remote.customExercises, SyncCustomExercise.serializer(), { it.id }, { it.updatedAt }),
+            links = newest(local.links.filter { isWebUrl(it.url) }, remote.links.filter { isWebUrl(it.url) }, SyncLink.serializer(), ::linkKey, { it.addedAt })
+                .filter { alive(TombstoneKind.LINK, linkKey(it), it.addedAt) },
+            tombstones = latest(tombstones + duplicateTombstones),
         ).sorted()
     }
 
@@ -57,28 +61,29 @@ object SyncMerge {
         val localWorkouts = local.workouts.associateBy { it.uuid }
         val localRoutines = local.routines.associateBy { it.uuid }
         val localCustom = local.customExercises.associateBy { it.id }
-        val localLinks = local.links.map { TombstoneKind.linkKey(it.exerciseId, it.url) }.toSet()
-        val mergedLinks = merged.links.map { TombstoneKind.linkKey(it.exerciseId, it.url) }.toSet()
+        val localLinks = local.links.associateBy(::linkKey)
+        val mergedLinks = merged.links.map(::linkKey).toSet()
         return SyncChanges(
             upsertWorkouts = merged.workouts.filter { localWorkouts[it.uuid] != it },
             deleteWorkouts = (localWorkouts.keys - merged.workouts.map { it.uuid }.toSet()).sorted(),
             upsertRoutines = merged.routines.filter { localRoutines[it.uuid] != it },
             deleteRoutines = (localRoutines.keys - merged.routines.map { it.uuid }.toSet()).sorted(),
             upsertCustomExercises = merged.customExercises.filter { localCustom[it.id] != it },
-            addLinks = merged.links.filter { TombstoneKind.linkKey(it.exerciseId, it.url) !in localLinks },
-            removeLinks = local.links.filter { TombstoneKind.linkKey(it.exerciseId, it.url) !in mergedLinks },
+            upsertLinks = merged.links.filter { localLinks[linkKey(it)] != it },
+            removeLinks = local.links.filter { linkKey(it) !in mergedLinks },
             tombstones = merged.tombstones,
         )
     }
 
-    private fun <T> newest(local: List<T>, remote: List<T>, key: (T) -> String, updatedAt: (T) -> Long): List<T> {
-        val byKey = LinkedHashMap<String, T>()
-        remote.forEach { byKey[key(it)] = it }
-        local.forEach { item ->
-            val other = byKey[key(item)]
-            if (other == null || updatedAt(item) >= updatedAt(other)) byKey[key(item)] = item
-        }
-        return byKey.values.toList()
+    private fun linkKey(link: SyncLink) = TombstoneKind.linkKey(link.exerciseId, link.url)
+
+    private fun latest(tombstones: List<SyncTombstone>): List<SyncTombstone> =
+        tombstones.groupBy { it.kind to it.key }.values.map { versions -> versions.maxBy { it.deletedAt } }
+
+    /** Copies changed at the same moment are settled by their content, so every phone picks the same one. */
+    private fun <T> newest(local: List<T>, remote: List<T>, serializer: KSerializer<T>, key: (T) -> String, updatedAt: (T) -> Long): List<T> {
+        val order = compareBy(updatedAt).thenBy { json.encodeToString(serializer, it) }
+        return (local + remote).groupBy(key).values.map { versions -> versions.distinct().maxWith(order) }
     }
 
     /**

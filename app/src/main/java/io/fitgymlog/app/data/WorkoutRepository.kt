@@ -1,11 +1,9 @@
 package io.fitgymlog.app.data
 
 import io.fitgymlog.app.model.Routine
-import io.fitgymlog.app.model.SetType
 import io.fitgymlog.app.model.Workout
 import io.fitgymlog.app.model.WorkoutExercise
 import io.fitgymlog.app.model.WorkoutSet
-import io.fitgymlog.app.sync.TombstoneKind
 import io.fitgymlog.app.workout.ActiveWorkout
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -93,16 +91,9 @@ class WorkoutRepository(private val dao: WorkoutDao, private val tombstones: Tom
         }
     }
 
-    /** Leaves a deletion record so sync removes the workout on other phones too. */
-    suspend fun delete(id: Long) {
-        dao.uuidOf(id)?.takeIf { it.isNotEmpty() }?.let { uuid ->
-            tombstones.put(listOf(TombstoneEntity(TombstoneKind.WORKOUT, uuid, System.currentTimeMillis())))
-        }
-        dao.delete(id)
-    }
+    suspend fun delete(id: Long) = tombstones.deleteWorkout(id, System.currentTimeMillis())
 
-    suspend fun previousSets(exerciseId: String): List<WorkoutSet> =
-        dao.lastSetsOf(exerciseId).map { WorkoutSet(weightKg = it.weightKg, reps = it.reps, type = enumValueOrDefault(it.type, SetType.NORMAL)) }
+    suspend fun previousSets(exerciseId: String): List<WorkoutSet> = dao.lastSetsOf(exerciseId).map { it.toPreviousSet() }
 
     suspend fun allFinished(): List<Workout> = dao.allFinished().map { it.toWorkout() }
 
@@ -114,8 +105,6 @@ class WorkoutRepository(private val dao: WorkoutDao, private val tombstones: Tom
         dao.saveAll(fresh.map { it.copy(id = 0, uuid = UUID.randomUUID().toString(), updatedAt = now).toGraph() })
         return fresh.size
     }
-
-    suspend fun replaceExerciseId(from: String, to: String) = dao.replaceExerciseId(from, to)
 
     private fun minuteKey(startedAt: Instant, title: String) = "${startedAt.truncatedTo(ChronoUnit.MINUTES)}|$title"
 }

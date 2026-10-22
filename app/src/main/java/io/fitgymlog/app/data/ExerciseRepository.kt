@@ -6,7 +6,6 @@ import androidx.health.connect.client.records.ExerciseSegment
 import io.fitgymlog.app.catalog.ExerciseCatalog
 import io.fitgymlog.app.model.Exercise
 import io.fitgymlog.app.model.ExerciseKind
-import io.fitgymlog.app.sync.TombstoneKind
 import io.fitgymlog.app.transfer.ExerciseMatcher
 import java.util.Locale
 import java.util.UUID
@@ -51,21 +50,11 @@ class ExerciseRepository(
         return entity.toExercise().copy(userLinks = links)
     }
 
-    suspend fun restoreCustom(id: String, name: String, kind: ExerciseKind) {
-        dao.upsert(CustomExerciseEntity(id = id, name = name, kind = kind.name, updatedAt = System.currentTimeMillis()))
-    }
+    suspend fun restoreCustom(id: String, name: String, kind: ExerciseKind) = dao.save(id, name, kind.name, System.currentTimeMillis())
 
-    suspend fun addLink(exerciseId: String, url: String) {
-        linkDao.insert(ExerciseLinkEntity(exerciseId, url.trim(), System.currentTimeMillis()))
-    }
+    suspend fun addLink(exerciseId: String, url: String) = linkDao.add(exerciseId, url.trim(), System.currentTimeMillis())
 
-    /** Leaves a deletion record so sync removes the link on other phones too. */
-    suspend fun removeLink(exerciseId: String, url: String) {
-        tombstones.put(listOf(TombstoneEntity(TombstoneKind.LINK, TombstoneKind.linkKey(exerciseId, url), System.currentTimeMillis())))
-        linkDao.delete(exerciseId, url)
-    }
-
-    suspend fun allUserLinks(): List<ExerciseLinkEntity> = linkDao.allNow()
+    suspend fun removeLink(exerciseId: String, url: String) = tombstones.deleteLink(exerciseId, url, System.currentTimeMillis())
 
     /** Names in every language we ship plus custom names, so imports match regardless of the source app's language. */
     suspend fun matcher(): ExerciseMatcher {
