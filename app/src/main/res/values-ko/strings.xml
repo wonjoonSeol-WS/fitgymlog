@@ -119,7 +119,7 @@
     <string name="setting_band_remote_help">재생/일시정지는 세트 완료, 다음은 다음 운동, 이전은 횟수 하나 빼기입니다.</string>
     <string name="setting_default_rest">기본 휴식 시간</string>
     <string name="setting_health_connect">Health Connect에 운동 기록</string>
-    <string name="setting_health_connect_help">Samsung Health가 여기서 가져갑니다. 시간과 종류만 남고 세트는 남지 않습니다.</string>
+    <string name="setting_health_connect_help">Samsung Health가 여기서 가져가지만, 세트별 기록은 보여주지 않습니다.</string>
     <string name="setting_health_type">Samsung Health 운동 종류</string>
     <string name="setting_language">언어</string>
     <string name="setting_unit">무게 단위</string>

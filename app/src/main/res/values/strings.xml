@@ -119,7 +119,7 @@
     <string name="setting_band_remote_help">Play/pause completes the set, next goes to the next exercise, previous takes one rep off.</string>
     <string name="setting_default_rest">Default rest</string>
     <string name="setting_health_connect">Write workouts to Health Connect</string>
-    <string name="setting_health_connect_help">Samsung Health picks them up from there. It keeps time and type, not sets.</string>
+    <string name="setting_health_connect_help">Samsung Health picks them up from there, but it doesn\'t show the individual sets.</string>
     <string name="setting_health_type">Exercise type in Samsung Health</string>
     <string name="setting_language">Language</string>
     <string name="setting_unit">Weight unit</string>
