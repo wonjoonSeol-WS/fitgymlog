@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sync_failure_network">no connection to Google Drive</string>
+    <string name="sync_failure_sign_in">Google Drive rejected the sign-in</string>
+    <string name="sync_failure_newer_app">this phone needs the latest version of the app</string>
+    <string name="sync_failure_corrupt_file">the sync file in Google Drive is damaged</string>
+    <string name="sync_failure_other">something went wrong</string>
+</resources>

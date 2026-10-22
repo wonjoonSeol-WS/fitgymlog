@@ -1,14 +1,21 @@
 package io.fitgymlog.app.data
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
+import io.fitgymlog.app.sync.TombstoneKind
+import java.util.UUID
 import kotlinx.coroutines.flow.Flow
 
 data class WorkoutKey(val startedAt: Long, val title: String)
+
+data class RowVersion(val id: Long, val uuid: String, val updatedAt: Long)
+
+data class FinishedStamp(val count: Int, val updatedAtSum: Long)
 
 @Dao
 abstract class WorkoutDao {
@@ -31,6 +38,9 @@ abstract class WorkoutDao {
     @Query("SELECT startedAt, title FROM workout WHERE endedAt IS NOT NULL")
     abstract suspend fun finishedKeys(): List<WorkoutKey>
 
+    @Query("SELECT COUNT(*) AS count, COALESCE(SUM(updatedAt), 0) AS updatedAtSum FROM workout WHERE endedAt IS NOT NULL")
+    abstract fun finishedStamp(): Flow<FinishedStamp>
+
     @Query(
         """
         SELECT s.* FROM workout_set s
@@ -43,9 +53,6 @@ abstract class WorkoutDao {
         """,
     )
     abstract suspend fun lastSetsOf(exerciseId: String): List<WorkoutSetEntity>
-
-    @Query("SELECT DISTINCT exerciseId FROM workout_exercise")
-    abstract suspend fun usedExerciseIds(): List<String>
 
     @Insert
     protected abstract suspend fun insertWorkout(workout: WorkoutEntity): Long
@@ -65,17 +72,11 @@ abstract class WorkoutDao {
     @Query("DELETE FROM workout WHERE id = :id")
     abstract suspend fun delete(id: Long)
 
-    @Query("SELECT uuid FROM workout WHERE id = :id")
-    abstract suspend fun uuidOf(id: Long): String?
+    @Query("SELECT id, uuid, updatedAt FROM workout WHERE uuid = :uuid AND endedAt IS NOT NULL")
+    abstract suspend fun finishedVersionOf(uuid: String): RowVersion?
 
-    @Query("SELECT id FROM workout WHERE uuid = :uuid AND endedAt IS NOT NULL")
-    abstract suspend fun finishedIdOf(uuid: String): Long?
-
-    @Query("DELETE FROM workout WHERE uuid = :uuid AND endedAt IS NOT NULL")
-    abstract suspend fun deleteFinished(uuid: String)
-
-    @Query("UPDATE workout_exercise SET exerciseId = :to WHERE exerciseId = :from")
-    abstract suspend fun replaceExerciseId(from: String, to: String)
+    @Query("DELETE FROM workout WHERE uuid = :uuid AND endedAt IS NOT NULL AND updatedAt <= :deletedAt")
+    abstract suspend fun deleteFinishedIfNotNewer(uuid: String, deletedAt: Long)
 
     /** Writes the whole workout, replacing its exercises and sets. Returns the workout id. */
     @Transaction
@@ -134,20 +135,14 @@ abstract class RoutineDao {
     @Query("DELETE FROM routine_exercise WHERE routineId = :routineId")
     protected abstract suspend fun deleteExercisesOf(routineId: Long)
 
-    @Query("DELETE FROM routine WHERE id = :id")
-    abstract suspend fun delete(id: Long)
-
-    @Query("SELECT uuid FROM routine WHERE id = :id")
-    abstract suspend fun uuidOf(id: Long): String?
+    @Query("SELECT * FROM routine WHERE id = :id")
+    protected abstract suspend fun row(id: Long): RoutineEntity?
 
     @Query("SELECT * FROM routine WHERE uuid = :uuid")
     abstract suspend fun findByUuid(uuid: String): RoutineEntity?
 
-    @Query("DELETE FROM routine WHERE uuid = :uuid")
-    abstract suspend fun deleteByUuid(uuid: String)
-
-    @Query("UPDATE routine_exercise SET exerciseId = :to WHERE exerciseId = :from")
-    abstract suspend fun replaceExerciseId(from: String, to: String)
+    @Query("DELETE FROM routine WHERE uuid = :uuid AND updatedAt <= :deletedAt")
+    abstract suspend fun deleteIfNotNewer(uuid: String, deletedAt: Long)
 
     @Transaction
     open suspend fun save(routine: RoutineEntity, exercises: List<RoutineExerciseEntity>): Long {
@@ -161,49 +156,120 @@ abstract class RoutineDao {
         insertExercises(exercises.mapIndexed { index, exercise -> exercise.copy(id = 0, routineId = id, position = index) })
         return id
     }
+
+    /** A routine that sync deleted while it was open in the editor is saved as a new one. */
+    @Transaction
+    open suspend fun saveEdit(id: Long, name: String, exercises: List<RoutineExerciseEntity>, now: Long): Long {
+        val existing = if (id == 0L) null else row(id)
+        val routine = existing?.copy(name = name, updatedAt = stampAfter(existing.updatedAt, now))
+            ?: RoutineEntity(uuid = UUID.randomUUID().toString(), updatedAt = now, name = name, position = nextPosition())
+        return save(routine, exercises)
+    }
 }
 
 @Dao
-interface CustomExerciseDao {
+abstract class CustomExerciseDao {
     @Query("SELECT * FROM custom_exercise ORDER BY name")
-    fun all(): Flow<List<CustomExerciseEntity>>
+    abstract fun all(): Flow<List<CustomExerciseEntity>>
 
     @Query("SELECT * FROM custom_exercise ORDER BY name")
-    suspend fun allNow(): List<CustomExerciseEntity>
+    abstract suspend fun allNow(): List<CustomExerciseEntity>
+
+    @Query("SELECT updatedAt FROM custom_exercise WHERE id = :id")
+    abstract suspend fun updatedAtOf(id: String): Long?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(exercise: CustomExerciseEntity)
+    abstract suspend fun upsert(exercise: CustomExerciseEntity)
 
-    @Query("DELETE FROM custom_exercise WHERE id = :id")
-    suspend fun delete(id: String)
+    @Transaction
+    open suspend fun save(id: String, name: String, kind: String, now: Long) {
+        upsert(CustomExerciseEntity(id, name, kind, stampAfter(updatedAtOf(id), now)))
+    }
 }
 
 @Dao
-interface ExerciseLinkDao {
+abstract class ExerciseLinkDao {
     @Query("SELECT * FROM exercise_link ORDER BY addedAt")
-    fun all(): Flow<List<ExerciseLinkEntity>>
+    abstract fun all(): Flow<List<ExerciseLinkEntity>>
 
     @Query("SELECT * FROM exercise_link ORDER BY addedAt")
-    suspend fun allNow(): List<ExerciseLinkEntity>
+    abstract suspend fun allNow(): List<ExerciseLinkEntity>
+
+    @Query("SELECT addedAt FROM exercise_link WHERE exerciseId = :exerciseId AND url = :url")
+    abstract suspend fun addedAtOf(exerciseId: String, url: String): Long?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    abstract suspend fun upsert(link: ExerciseLinkEntity)
+
+    @Query("DELETE FROM exercise_link WHERE exerciseId = :exerciseId AND url = :url AND addedAt <= :deletedAt")
+    abstract suspend fun deleteIfNotNewer(exerciseId: String, url: String, deletedAt: Long)
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insert(link: ExerciseLinkEntity)
+    protected abstract suspend fun insert(link: ExerciseLinkEntity)
 
-    @Query("DELETE FROM exercise_link WHERE exerciseId = :exerciseId AND url = :url")
-    suspend fun delete(exerciseId: String, url: String)
+    @Query("SELECT deletedAt FROM tombstone WHERE kind = :kind AND `key` = :key")
+    protected abstract suspend fun deletedAtOf(kind: String, key: String): Long?
+
+    @Transaction
+    open suspend fun add(exerciseId: String, url: String, now: Long) {
+        val removedAt = deletedAtOf(TombstoneKind.LINK, TombstoneKind.linkKey(exerciseId, url))
+        insert(ExerciseLinkEntity(exerciseId, url, stampAfter(removedAt, now)))
+    }
 }
 
+/** Deletions that leave a tombstone, each written together with its delete so sync never sees one without the other. */
 @Dao
-interface TombstoneDao {
+abstract class TombstoneDao {
     @Query("SELECT * FROM tombstone")
-    fun all(): Flow<List<TombstoneEntity>>
+    abstract fun all(): Flow<List<TombstoneEntity>>
 
     @Query("SELECT * FROM tombstone")
-    suspend fun allNow(): List<TombstoneEntity>
+    abstract suspend fun allNow(): List<TombstoneEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun put(tombstones: List<TombstoneEntity>)
+    abstract suspend fun put(tombstones: List<TombstoneEntity>)
 
-    @Query("DELETE FROM tombstone WHERE deletedAt < :cutoff")
-    suspend fun deleteOlderThan(cutoff: Long)
+    @Delete
+    abstract suspend fun delete(tombstones: List<TombstoneEntity>)
+
+    @Query("SELECT id, uuid, updatedAt FROM workout WHERE id = :id")
+    protected abstract suspend fun workoutVersion(id: Long): RowVersion?
+
+    @Query("DELETE FROM workout WHERE id = :id")
+    protected abstract suspend fun deleteWorkoutRow(id: Long)
+
+    @Query("SELECT id, uuid, updatedAt FROM routine WHERE id = :id")
+    protected abstract suspend fun routineVersion(id: Long): RowVersion?
+
+    @Query("DELETE FROM routine WHERE id = :id")
+    protected abstract suspend fun deleteRoutineRow(id: Long)
+
+    @Query("SELECT addedAt FROM exercise_link WHERE exerciseId = :exerciseId AND url = :url")
+    protected abstract suspend fun linkAddedAt(exerciseId: String, url: String): Long?
+
+    @Query("DELETE FROM exercise_link WHERE exerciseId = :exerciseId AND url = :url")
+    protected abstract suspend fun deleteLinkRow(exerciseId: String, url: String)
+
+    @Transaction
+    open suspend fun deleteWorkout(id: Long, now: Long) {
+        workoutVersion(id)?.let { leaveTombstone(TombstoneKind.WORKOUT, it, now) }
+        deleteWorkoutRow(id)
+    }
+
+    @Transaction
+    open suspend fun deleteRoutine(id: Long, now: Long) {
+        routineVersion(id)?.let { leaveTombstone(TombstoneKind.ROUTINE, it, now) }
+        deleteRoutineRow(id)
+    }
+
+    @Transaction
+    open suspend fun deleteLink(exerciseId: String, url: String, now: Long) {
+        val deletedAt = stampAfter(linkAddedAt(exerciseId, url), now)
+        put(listOf(TombstoneEntity(TombstoneKind.LINK, TombstoneKind.linkKey(exerciseId, url), deletedAt)))
+        deleteLinkRow(exerciseId, url)
+    }
+
+    private suspend fun leaveTombstone(kind: String, row: RowVersion, now: Long) {
+        if (row.uuid.isNotEmpty()) put(listOf(TombstoneEntity(kind, row.uuid, stampAfter(row.updatedAt, now))))
+    }
 }
