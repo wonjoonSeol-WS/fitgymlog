@@ -9,6 +9,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -29,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.health.connect.client.PermissionController
 import androidx.health.connect.client.records.ExerciseSessionRecord
@@ -42,6 +44,7 @@ import io.fitgymlog.app.ui.ChoiceDialog
 import io.fitgymlog.app.ui.ReadableWidth
 import io.fitgymlog.app.ui.formatRest
 import java.time.LocalDate
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 private enum class Language(val tag: String) { SYSTEM(""), ENGLISH("en"), KOREAN("ko") }
@@ -56,6 +59,8 @@ private val SESSION_TYPES = listOf(
 )
 
 private enum class Picker { UNIT, LANGUAGE, REST, IDLE, SESSION_TYPE }
+
+private val IMPORT_TYPES = arrayOf("text/*", "text/csv", "text/comma-separated-values", "application/json", "application/octet-stream")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,7 +77,26 @@ fun SettingsScreen(onOpenBandGuide: () -> Unit) {
     val healthPermission = rememberLauncherForActivityResult(PermissionController.createRequestPermissionResultContract()) { granted ->
         val ok = granted.containsAll(app.health.permissions)
         app.settings.update { it.copy(healthConnectEnabled = ok) }
-        if (!ok) healthMessage = resources.getString(R.string.health_permission_denied)
+        healthMessage = if (ok) null else resources.getString(R.string.health_permission_denied)
+    }
+
+    fun enableHealthConnect() {
+        scope.launch {
+            try {
+                when {
+                    !app.health.isAvailable -> healthMessage = resources.getString(R.string.health_unavailable)
+                    app.health.hasPermissions() -> {
+                        app.settings.update { it.copy(healthConnectEnabled = true) }
+                        healthMessage = null
+                    }
+                    else -> healthPermission.launch(app.health.permissions)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                healthMessage = resources.getString(R.string.health_unavailable)
+            }
+        }
     }
     val today = LocalDate.now().toString()
     val exportBackup = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
@@ -106,35 +130,20 @@ fun SettingsScreen(onOpenBandGuide: () -> Unit) {
 
                 Section(stringResource(R.string.section_band))
                 Item(stringResource(R.string.band_guide_title), stringResource(R.string.band_guide_card_text), onOpenBandGuide)
-                ListItem(
-                    headlineContent = { Text(stringResource(R.string.setting_band_remote)) },
-                    supportingContent = { Text(stringResource(R.string.setting_band_remote_help)) },
-                    trailingContent = {
-                        Switch(checked = settings.bandRemoteEnabled, onCheckedChange = { enabled -> app.settings.update { it.copy(bandRemoteEnabled = enabled) } })
-                    },
+                SwitchItem(
+                    title = stringResource(R.string.setting_band_remote),
+                    help = stringResource(R.string.setting_band_remote_help),
+                    checked = settings.bandRemoteEnabled,
+                    onCheckedChange = { enabled -> app.settings.update { it.copy(bandRemoteEnabled = enabled) } },
                 )
 
                 Section(stringResource(R.string.section_samsung_health))
-                ListItem(
-                    headlineContent = { Text(stringResource(R.string.setting_health_connect)) },
-                    supportingContent = { Text(healthMessage ?: stringResource(R.string.setting_health_connect_help)) },
-                    trailingContent = {
-                        Switch(
-                            checked = settings.healthConnectEnabled,
-                            onCheckedChange = { enabled ->
-                                when {
-                                    !enabled -> app.settings.update { it.copy(healthConnectEnabled = false) }
-                                    !app.health.isAvailable -> healthMessage = resources.getString(R.string.health_unavailable)
-                                    else -> scope.launch {
-                                        if (app.health.hasPermissions()) {
-                                            app.settings.update { it.copy(healthConnectEnabled = true) }
-                                        } else {
-                                            healthPermission.launch(app.health.permissions)
-                                        }
-                                    }
-                                }
-                            },
-                        )
+                SwitchItem(
+                    title = stringResource(R.string.setting_health_connect),
+                    help = healthMessage ?: stringResource(R.string.setting_health_connect_help),
+                    checked = settings.healthConnectEnabled,
+                    onCheckedChange = { enabled ->
+                        if (enabled) enableHealthConnect() else app.settings.update { it.copy(healthConnectEnabled = false) }
                     },
                 )
                 Item(stringResource(R.string.setting_health_type), sessionTypeName(settings.healthSessionType)) { picker = Picker.SESSION_TYPE }
@@ -143,7 +152,7 @@ fun SettingsScreen(onOpenBandGuide: () -> Unit) {
                 SyncSection()
 
                 Section(stringResource(R.string.section_data))
-                Item(stringResource(R.string.import_data), stringResource(R.string.import_data_help)) { importFile.launch(arrayOf("*/*")) }
+                Item(stringResource(R.string.import_data), stringResource(R.string.import_data_help)) { importFile.launch(IMPORT_TYPES) }
                 Item(stringResource(R.string.export_backup), stringResource(R.string.export_backup_help)) { exportBackup.launch("fitgymlog-backup-$today.json") }
                 Item(stringResource(R.string.export_hevy), stringResource(R.string.export_hevy_help)) { exportHevy.launch("fitgymlog-hevy-$today.csv") }
                 Item(stringResource(R.string.export_strong), stringResource(R.string.export_strong_help)) { exportStrong.launch("fitgymlog-strong-$today.csv") }
@@ -158,24 +167,44 @@ fun SettingsScreen(onOpenBandGuide: () -> Unit) {
 
     when (picker) {
         Picker.UNIT -> ChoiceDialog(
-            stringResource(R.string.setting_unit), WeightUnit.entries, settings.unit, { unitName(it) },
-            { unit -> app.settings.update { it.copy(unit = unit) } }, { picker = null },
+            title = stringResource(R.string.setting_unit),
+            options = WeightUnit.entries,
+            selected = settings.unit,
+            label = { unitName(it) },
+            onSelect = { unit -> app.settings.update { it.copy(unit = unit) } },
+            onDismiss = { picker = null },
         )
         Picker.LANGUAGE -> ChoiceDialog(
-            stringResource(R.string.setting_language), Language.entries, currentLanguage(context), { languageName(it) },
-            { language -> setLanguage(context, language) }, { picker = null },
+            title = stringResource(R.string.setting_language),
+            options = Language.entries,
+            selected = currentLanguage(context),
+            label = { languageName(it) },
+            onSelect = { language -> setLanguage(context, language) },
+            onDismiss = { picker = null },
         )
         Picker.REST -> ChoiceDialog(
-            stringResource(R.string.setting_default_rest), listOf(60, 90, 120, 150, 180, 240, 300), settings.defaultRestSeconds, { formatRest(it) },
-            { seconds -> app.settings.update { it.copy(defaultRestSeconds = seconds) } }, { picker = null },
+            title = stringResource(R.string.setting_default_rest),
+            options = listOf(60, 90, 120, 150, 180, 240, 300),
+            selected = settings.defaultRestSeconds,
+            label = { formatRest(it) },
+            onSelect = { seconds -> app.settings.update { it.copy(defaultRestSeconds = seconds) } },
+            onDismiss = { picker = null },
         )
         Picker.IDLE -> ChoiceDialog(
-            stringResource(R.string.setting_auto_finish), IDLE_CHOICES, settings.idleFinishMinutes, { stringResource(R.string.minutes_value, it) },
-            { minutes -> app.settings.update { it.copy(idleFinishMinutes = minutes) } }, { picker = null },
+            title = stringResource(R.string.setting_auto_finish),
+            options = IDLE_CHOICES,
+            selected = settings.idleFinishMinutes,
+            label = { stringResource(R.string.minutes_value, it) },
+            onSelect = { minutes -> app.settings.update { it.copy(idleFinishMinutes = minutes) } },
+            onDismiss = { picker = null },
         )
         Picker.SESSION_TYPE -> ChoiceDialog(
-            stringResource(R.string.setting_health_type), SESSION_TYPES, settings.healthSessionType, { sessionTypeName(it) },
-            { type -> app.settings.update { it.copy(healthSessionType = type) } }, { picker = null },
+            title = stringResource(R.string.setting_health_type),
+            options = SESSION_TYPES,
+            selected = settings.healthSessionType,
+            label = { sessionTypeName(it) },
+            onSelect = { type -> app.settings.update { it.copy(healthSessionType = type) } },
+            onDismiss = { picker = null },
         )
         null -> Unit
     }
@@ -198,6 +227,16 @@ private fun Item(title: String, value: String, onClick: () -> Unit) {
         headlineContent = { Text(title) },
         supportingContent = { Text(value) },
         modifier = Modifier.clickable(onClick = onClick),
+    )
+}
+
+@Composable
+private fun SwitchItem(title: String, help: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    ListItem(
+        headlineContent = { Text(title) },
+        supportingContent = { Text(help) },
+        trailingContent = { Switch(checked = checked, onCheckedChange = null) },
+        modifier = Modifier.toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange),
     )
 }
 

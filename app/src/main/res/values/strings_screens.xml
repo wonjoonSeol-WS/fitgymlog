@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="routine_discard_title">Discard changes?</string>
+    <string name="routine_discard_text">Your changes to this routine will not be saved.</string>
+    <string name="routine_not_found">This routine no longer exists. It may have been deleted on another phone.</string>
+    <string name="routine_update_failed">Couldn\'t update the routine.</string>
+    <string name="delete_routine_text">%1$s will be deleted. This can\'t be undone.</string>
+    <string name="stronglifts_already_added">StrongLifts A and B are already in your routines.</string>
+    <string name="workout_not_found">This workout no longer exists. It may have been deleted on another phone.</string>
+    <string name="source_hevy">Hevy</string>
+    <string name="source_strong">Strong</string>
+    <string name="source_backup">a backup</string>
+    <string name="link_invalid">Not a web link.</string>
+    <string name="link_duplicate">This link is already in the guide.</string>
+    <string name="link_cannot_open">No app can open this link.</string>
+    <string name="exercise_kind_value">Type: %1$s</string>
+    <string name="open_exercise_details">Open exercise details</string>
+</resources>

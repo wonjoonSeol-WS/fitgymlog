@@ -2,6 +2,8 @@ package io.fitgymlog.app.ui.exercise
 
 import android.content.Context
 import android.content.Intent
+import android.widget.Toast
+import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -34,8 +37,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +49,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
@@ -55,8 +62,13 @@ import io.fitgymlog.app.ui.localizedName
 import kotlinx.coroutines.launch
 
 fun openLink(context: Context, url: String) {
-    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+    val uri = url.trim().toUri()
+    val opened = uri.scheme?.lowercase() in WEB_SCHEMES &&
+        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.isSuccess
+    if (!opened) Toast.makeText(context, R.string.link_cannot_open, Toast.LENGTH_SHORT).show()
 }
+
+private val WEB_SCHEMES = setOf("http", "https")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,21 +93,24 @@ fun FormGuideSheet(exercise: Exercise, onDismiss: () -> Unit) {
 fun FormGuide(exercise: Exercise) {
     val context = LocalContext.current
     val app = context.container
-    var adding by remember { mutableStateOf(false) }
-    val (videos, pages) = exercise.allLinks.partition { LinkPreviews.youtubeIdOf(it) != null }
+    var adding by rememberSaveable { mutableStateOf(false) }
+    val (videos, pages) = remember(exercise.links, exercise.userLinks) {
+        WebLinks.distinct(exercise.allLinks).partition { LinkPreviews.youtubeIdOf(it) != null }
+    }
+    val remove = { url: String -> app.scope.launch { app.exercises.removeLink(exercise.id, url) } }
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         if (exercise.allLinks.isEmpty()) {
             Text(stringResource(R.string.no_form_links), color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         videos.forEach { url ->
-            VideoCard(url, removable = url in exercise.userLinks, onRemove = { app.scope.launch { app.exercises.removeLink(exercise.id, url) } }) {
-                openLink(context, url)
+            key(url) {
+                VideoCard(url, removable = url in exercise.userLinks, onRemove = { remove(url) }) { openLink(context, url) }
             }
         }
         pages.forEach { url ->
-            PageCard(url, removable = url in exercise.userLinks, onRemove = { app.scope.launch { app.exercises.removeLink(exercise.id, url) } }) {
-                openLink(context, url)
+            key(url) {
+                PageCard(url, removable = url in exercise.userLinks, onRemove = { remove(url) }) { openLink(context, url) }
             }
         }
         TextButton(onClick = { adding = true }) {
@@ -106,6 +121,7 @@ fun FormGuide(exercise: Exercise) {
 
     if (adding) {
         AddLinkDialog(
+            existing = exercise.allLinks,
             onAdd = { url ->
                 app.scope.launch { app.exercises.addLink(exercise.id, url) }
                 adding = false
@@ -186,20 +202,47 @@ private fun RemoveButton(onRemove: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun AddLinkDialog(onAdd: (String) -> Unit, onDismiss: () -> Unit) {
-    var url by remember { mutableStateOf("") }
+private fun AddLinkDialog(existing: List<String>, onAdd: (String) -> Unit, onDismiss: () -> Unit) {
+    var text by rememberSaveable { mutableStateOf("") }
+    val link = WebLinks.normalize(text)
+    val error = when {
+        text.isBlank() -> null
+        link == null -> R.string.link_invalid
+        WebLinks.isDuplicate(link, existing) -> R.string.link_duplicate
+        else -> null
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.add_link)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(stringResource(R.string.add_link_help), style = MaterialTheme.typography.bodyMedium)
-                OutlinedTextField(url, { url = it.trim() }, placeholder = { Text("https://") }, singleLine = true)
+                LinkField(text, { text = it }, error, placeholder = { Text("https://") })
             }
         },
         confirmButton = {
-            TextButton(enabled = url.startsWith("http"), onClick = { onAdd(url) }) { Text(stringResource(R.string.save)) }
+            TextButton(enabled = link != null && error == null, onClick = { link?.let(onAdd) }) { Text(stringResource(R.string.save)) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
+}
+
+@Composable
+internal fun LinkField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    @StringRes error: Int?,
+    label: (@Composable () -> Unit)? = null,
+    placeholder: (@Composable () -> Unit)? = null,
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = label,
+        placeholder = placeholder,
+        isError = error != null,
+        supportingText = error?.let { { Text(stringResource(it)) } },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Done),
     )
 }

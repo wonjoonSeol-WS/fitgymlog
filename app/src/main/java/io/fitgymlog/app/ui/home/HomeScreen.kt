@@ -1,5 +1,6 @@
 package io.fitgymlog.app.ui.home
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,6 +37,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,6 +50,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.fitgymlog.app.R
 import io.fitgymlog.app.container
 import io.fitgymlog.app.model.Routine
+import io.fitgymlog.app.model.Workout
+import io.fitgymlog.app.ui.ConfirmDialog
 import io.fitgymlog.app.ui.NumberStyles
 import io.fitgymlog.app.ui.ReadableWidth
 import io.fitgymlog.app.ui.TwoPaneMinWidth
@@ -55,23 +60,46 @@ import io.fitgymlog.app.ui.lift
 import io.fitgymlog.app.ui.localizedName
 import io.fitgymlog.app.ui.rememberNow
 import java.time.Duration
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
 fun HomeScreen(onOpenWorkout: () -> Unit, onEditRoutine: (Long) -> Unit, onOpenBandGuide: () -> Unit) {
-    val app = LocalContext.current.container
+    val context = LocalContext.current
+    val app = context.container
     val active by app.workouts.active.collectAsStateWithLifecycle()
     val routines by app.routines.routines.collectAsStateWithLifecycle(emptyList())
     val exercises by app.exercises.exercises.collectAsStateWithLifecycle()
     val settings by app.settings.settings.collectAsStateWithLifecycle()
-    val now = rememberNow()
+    val scope = rememberCoroutineScope()
+    var addingStrongLifts by remember { mutableStateOf(false) }
+    var confirmDeleteId by rememberSaveable { mutableStateOf<Long?>(null) }
 
     fun start(block: suspend () -> Unit) {
         app.scope.launch {
             block()
             withContext(Dispatchers.Main) { onOpenWorkout() }
+        }
+    }
+
+    fun addStrongLifts() {
+        addingStrongLifts = true
+        scope.launch {
+            val added = try {
+                app.scope.async { StrongLiftsRoutines.addTo(app.routines, settings.defaultRestSeconds) }.await()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                null
+            }
+            addingStrongLifts = false
+            when (added) {
+                null -> Toast.makeText(context, R.string.routine_update_failed, Toast.LENGTH_SHORT).show()
+                0 -> Toast.makeText(context, R.string.stronglifts_already_added, Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -84,17 +112,7 @@ fun HomeScreen(onOpenWorkout: () -> Unit, onEditRoutine: (Long) -> Unit, onOpenB
     }
     val startItems: LazyListScope.() -> Unit = {
         active?.let { current ->
-            item {
-                Surface(onClick = onOpenWorkout, shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.primary) {
-                    Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Text(stringResource(R.string.workout_in_progress), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f))
-                            Text(current.workout.title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimary)
-                        }
-                        Text(formatClock(Duration.between(current.workout.startedAt, now)), style = NumberStyles.stat, color = MaterialTheme.colorScheme.onPrimary)
-                    }
-                }
-            }
+            item { ActiveWorkoutCard(current.workout, onOpenWorkout) }
         }
         if (!settings.bandGuideDismissed) {
             item {
@@ -118,9 +136,7 @@ fun HomeScreen(onOpenWorkout: () -> Unit, onEditRoutine: (Long) -> Unit, onOpenB
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 GreyButton(stringResource(R.string.new_routine), Modifier.weight(1f)) { onEditRoutine(0) }
-                GreyButton(stringResource(R.string.stronglifts_5x5), Modifier.weight(1f)) {
-                    app.scope.launch { StrongLiftsRoutines.addTo(app.routines, app.settings.settings.value.defaultRestSeconds) }
-                }
+                GreyButton(stringResource(R.string.stronglifts_5x5), Modifier.weight(1f), enabled = !addingStrongLifts, onClick = ::addStrongLifts)
             }
         }
         if (routines.isEmpty()) {
@@ -141,7 +157,7 @@ fun HomeScreen(onOpenWorkout: () -> Unit, onEditRoutine: (Long) -> Unit, onOpenB
                 canStart = active == null,
                 onStart = { start { app.actions.startRoutine(routine) } },
                 onEdit = { onEditRoutine(routine.id) },
-                onDelete = { app.scope.launch { app.routines.delete(routine.id) } },
+                onDelete = { confirmDeleteId = routine.id },
             )
         }
         item { Spacer(Modifier.height(24.dp)) }
@@ -158,6 +174,32 @@ fun HomeScreen(onOpenWorkout: () -> Unit, onEditRoutine: (Long) -> Unit, onOpenB
             }
         } else {
             ReadableWidth { HomeColumn(content = { item { title() }; startItems(); routineItems() }) }
+        }
+    }
+
+    confirmDeleteId?.let { id ->
+        routines.firstOrNull { it.id == id }?.let { routine ->
+            ConfirmDialog(
+                title = stringResource(R.string.delete_routine),
+                text = stringResource(R.string.delete_routine_text, routine.name),
+                confirm = stringResource(R.string.delete),
+                onConfirm = { app.scope.launch { app.routines.delete(id) } },
+                onDismiss = { confirmDeleteId = null },
+            )
+        }
+    }
+}
+
+@Composable
+private fun ActiveWorkoutCard(workout: Workout, onOpen: () -> Unit) {
+    val now = rememberNow()
+    Surface(onClick = onOpen, shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.primary) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.workout_in_progress), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f))
+                Text(workout.title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimary)
+            }
+            Text(formatClock(Duration.between(workout.startedAt, now)), style = NumberStyles.stat, color = MaterialTheme.colorScheme.onPrimary)
         }
     }
 }

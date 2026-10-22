@@ -1,5 +1,6 @@
 package io.fitgymlog.app.ui.routine
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -25,15 +27,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,70 +46,77 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.createSavedStateHandle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import io.fitgymlog.app.AppContainer
 import io.fitgymlog.app.R
 import io.fitgymlog.app.container
 import io.fitgymlog.app.model.Exercise
 import io.fitgymlog.app.model.Routine
-import io.fitgymlog.app.model.RoutineExercise
 import io.fitgymlog.app.model.WeightUnit
 import io.fitgymlog.app.ui.ChoiceDialog
 import io.fitgymlog.app.ui.ConfirmDialog
 import io.fitgymlog.app.ui.NumberField
 import io.fitgymlog.app.ui.ReadableWidth
 import io.fitgymlog.app.ui.exercise.ExercisePickerDialog
+import io.fitgymlog.app.ui.exercise.NewExercise
 import io.fitgymlog.app.ui.formatRest
 import io.fitgymlog.app.ui.formatWeightNumber
 import io.fitgymlog.app.ui.fromDisplayWeight
 import io.fitgymlog.app.ui.localizedName
 import io.fitgymlog.app.ui.workout.REST_CHOICES
 import io.fitgymlog.app.ui.workout.usesWeight
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RoutineEditorScreen(routineId: Long, onDone: () -> Unit) {
     val app = LocalContext.current.container
+    val editor = viewModel { RoutineEditorViewModel(routineId, AppRoutineStore(app), createSavedStateHandle()) }
     val settings by app.settings.settings.collectAsStateWithLifecycle()
     val exercises by app.exercises.exercises.collectAsStateWithLifecycle()
-    var name by remember { mutableStateOf("") }
-    val planned = remember { mutableStateListOf<RoutineExercise>() }
-    var loaded by remember { mutableStateOf(routineId == 0L) }
-    var picking by remember { mutableStateOf(false) }
-    var restEditor by remember { mutableStateOf<Int?>(null) }
-    var confirmDelete by remember { mutableStateOf(false) }
-    var menuOpen by remember { mutableStateOf(false) }
+    val draft = editor.draft
+    val phase = editor.phase
+    var picking by rememberSaveable { mutableStateOf(false) }
+    var restEditor by rememberSaveable { mutableStateOf<Long?>(null) }
+    var confirmDelete by rememberSaveable { mutableStateOf(false) }
+    var confirmDiscard by rememberSaveable { mutableStateOf(false) }
+    var menuOpen by rememberSaveable { mutableStateOf(false) }
+    val snackbar = remember { SnackbarHostState() }
+    val failedText = stringResource(R.string.routine_update_failed)
+    val currentOnDone by rememberUpdatedState(onDone)
 
-    LaunchedEffect(routineId) {
-        if (routineId != 0L) {
-            app.routines.find(routineId)?.let { routine ->
-                name = routine.name
-                planned.clear()
-                planned.addAll(routine.exercises)
-            }
-            loaded = true
+    LaunchedEffect(phase) {
+        if (phase == EditorPhase.DONE) currentOnDone()
+    }
+    LaunchedEffect(editor.failed) {
+        if (editor.failed) {
+            snackbar.showSnackbar(failedText)
+            editor.failureShown()
         }
     }
 
-    fun save() {
-        val routine = Routine(id = routineId, name = name.trim(), exercises = planned.toList())
-        app.scope.launch {
-            app.routines.save(routine)
-            withContext(Dispatchers.Main) { onDone() }
-        }
+    fun leave() {
+        if (phase == EditorPhase.EDITING && draft.hasChanges) confirmDiscard = true else editor.close()
     }
+    BackHandler(onBack = ::leave)
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(if (routineId == 0L) R.string.new_routine else R.string.edit_routine)) },
-                navigationIcon = { IconButton(onClick = onDone) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } },
+                navigationIcon = { IconButton(onClick = ::leave) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } },
                 actions = {
-                    TextButton(onClick = ::save, enabled = loaded && name.isNotBlank() && planned.isNotEmpty()) { Text(stringResource(R.string.save)) }
+                    TextButton(onClick = editor::save, enabled = phase == EditorPhase.EDITING && draft.canSave) { Text(stringResource(R.string.save)) }
                     if (routineId != 0L) {
                         Box {
-                            IconButton(onClick = { menuOpen = true }) { Icon(Icons.Default.MoreVert, stringResource(R.string.more)) }
+                            IconButton(onClick = { menuOpen = true }, enabled = phase == EditorPhase.EDITING) {
+                                Icon(Icons.Default.MoreVert, stringResource(R.string.more))
+                            }
                             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                                 DropdownMenuItem(text = { Text(stringResource(R.string.delete_routine)) }, onClick = { menuOpen = false; confirmDelete = true })
                             }
@@ -114,28 +126,29 @@ fun RoutineEditorScreen(routineId: Long, onDone: () -> Unit) {
             )
         },
     ) { padding ->
+        if (phase == EditorPhase.LOADING || phase == EditorPhase.MISSING) return@Scaffold
         ReadableWidth(Modifier.padding(padding)) {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(horizontal = 16.dp)) {
                 item {
                     OutlinedTextField(
-                        value = name,
-                        onValueChange = { name = it },
+                        value = draft.name,
+                        onValueChange = { name -> editor.edit { it.rename(name) } },
                         label = { Text(stringResource(R.string.routine_name)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
-                itemsIndexed(planned) { index, item ->
+                itemsIndexed(draft.planned, key = { _, item -> item.key }) { index, item ->
                     PlannedExerciseCard(
                         item = item,
                         exercise = exercises.firstOrNull { it.id == item.exerciseId } ?: app.exercises.find(item.exerciseId),
                         unit = settings.unit,
                         canMoveUp = index > 0,
-                        canMoveDown = index < planned.lastIndex,
-                        onChange = { planned[index] = it },
-                        onMove = { offset -> planned.add(index + offset, planned.removeAt(index)) },
-                        onRemove = { planned.removeAt(index) },
-                        onEditRest = { restEditor = index },
+                        canMoveDown = index < draft.planned.lastIndex,
+                        onChange = { transform -> editor.edit { it.update(item.key, transform) } },
+                        onMove = { offset -> editor.edit { it.move(item.key, offset) } },
+                        onRemove = { editor.edit { it.remove(item.key) } },
+                        onEditRest = { restEditor = item.key },
                     )
                 }
                 item {
@@ -153,29 +166,24 @@ fun RoutineEditorScreen(routineId: Long, onDone: () -> Unit) {
         ExercisePickerDialog(
             exercises = exercises,
             onPick = { id ->
-                planned += RoutineExercise(id, sets = 3, reps = null, weightKg = null, restSeconds = settings.defaultRestSeconds)
+                editor.add(id, settings.defaultRestSeconds)
                 picking = false
             },
             onCreate = { new ->
                 picking = false
-                app.scope.launch {
-                    val created = app.exercises.createCustom(new.name, new.kind, listOfNotNull(new.link))
-                    withContext(Dispatchers.Main) {
-                        planned += RoutineExercise(created.id, sets = 3, reps = null, weightKg = null, restSeconds = settings.defaultRestSeconds)
-                    }
-                }
+                editor.createAndAdd(new, settings.defaultRestSeconds)
             },
             onDismiss = { picking = false },
         )
     }
 
-    restEditor?.let { index ->
+    restEditor?.let { key ->
         ChoiceDialog(
             title = stringResource(R.string.rest_timer),
             options = REST_CHOICES,
-            selected = planned.getOrNull(index)?.restSeconds ?: 0,
+            selected = draft.planned.firstOrNull { it.key == key }?.restSeconds ?: 0,
             label = { if (it == 0) stringResource(R.string.rest_off) else formatRest(it) },
-            onSelect = { seconds -> planned.getOrNull(index)?.let { planned[index] = it.copy(restSeconds = seconds) } },
+            onSelect = { seconds -> editor.edit { it.update(key) { planned -> planned.copy(restSeconds = seconds) } } },
             onDismiss = { restEditor = null },
         )
     }
@@ -183,27 +191,56 @@ fun RoutineEditorScreen(routineId: Long, onDone: () -> Unit) {
     if (confirmDelete) {
         ConfirmDialog(
             title = stringResource(R.string.delete_routine),
-            text = null,
+            text = stringResource(R.string.delete_routine_text, draft.savedName),
             confirm = stringResource(R.string.delete),
-            onConfirm = {
-                app.scope.launch {
-                    app.routines.delete(routineId)
-                    withContext(Dispatchers.Main) { onDone() }
-                }
-            },
+            onConfirm = editor::delete,
             onDismiss = { confirmDelete = false },
+        )
+    }
+
+    if (confirmDiscard) {
+        ConfirmDialog(
+            title = stringResource(R.string.routine_discard_title),
+            text = stringResource(R.string.routine_discard_text),
+            confirm = stringResource(R.string.discard),
+            onConfirm = editor::close,
+            onDismiss = { confirmDiscard = false },
+        )
+    }
+
+    if (phase == EditorPhase.MISSING) {
+        AlertDialog(
+            onDismissRequest = editor::close,
+            text = { Text(stringResource(R.string.routine_not_found)) },
+            confirmButton = { TextButton(onClick = editor::close) { Text(stringResource(R.string.close)) } },
         )
     }
 }
 
+/** Writes run in the app scope so they finish even when the editor closes mid-write. */
+private class AppRoutineStore(private val app: AppContainer) : RoutineEditorStore {
+    override suspend fun find(id: Long): Routine? = app.routines.find(id)
+
+    override fun exists(id: Long): Flow<Boolean> = app.routines.routines.map { all -> all.any { it.id == id } }.distinctUntilChanged()
+
+    override suspend fun save(routine: Routine) {
+        app.scope.async { app.routines.save(routine) }.await()
+    }
+
+    override suspend fun delete(id: Long) = app.scope.async { app.routines.delete(id) }.await()
+
+    override suspend fun createExercise(exercise: NewExercise): String =
+        app.scope.async { app.exercises.createCustom(exercise.name, exercise.kind, listOfNotNull(exercise.link)).id }.await()
+}
+
 @Composable
 private fun PlannedExerciseCard(
-    item: RoutineExercise,
+    item: PlannedExercise,
     exercise: Exercise,
     unit: WeightUnit,
     canMoveUp: Boolean,
     canMoveDown: Boolean,
-    onChange: (RoutineExercise) -> Unit,
+    onChange: ((PlannedExercise) -> PlannedExercise) -> Unit,
     onMove: (Int) -> Unit,
     onRemove: () -> Unit,
     onEditRest: () -> Unit,
@@ -224,16 +261,16 @@ private fun PlannedExerciseCard(
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Labeled(stringResource(R.string.sets), Modifier.weight(1f)) {
-                    NumberField(item.sets.toString(), { text -> text.toIntOrNull()?.takeIf { it in 1..20 }?.let { onChange(item.copy(sets = it)) } }, decimal = false)
+                    NumberField(item.sets.toString(), { text -> plannedSets(text)?.let { sets -> onChange { it.copy(sets = sets) } } }, decimal = false)
                 }
                 Labeled(stringResource(R.string.col_reps), Modifier.weight(1f)) {
-                    NumberField(item.reps?.toString().orEmpty(), { onChange(item.copy(reps = it.toIntOrNull())) }, decimal = false, placeholder = "-")
+                    NumberField(item.reps?.toString().orEmpty(), { text -> onChange { it.copy(reps = text.toIntOrNull()) } }, decimal = false, placeholder = "-")
                 }
                 if (exercise.kind.usesWeight()) {
                     Labeled(stringResource(if (unit == WeightUnit.KG) R.string.unit_kg else R.string.unit_lb), Modifier.weight(1f)) {
                         NumberField(
                             item.weightKg?.let { formatWeightNumber(it, unit) }.orEmpty(),
-                            { text -> onChange(item.copy(weightKg = text.toDoubleOrNull()?.let { fromDisplayWeight(it, unit) })) },
+                            { text -> onChange { it.copy(weightKg = text.toDoubleOrNull()?.let { value -> fromDisplayWeight(value, unit) }) } },
                             placeholder = stringResource(R.string.previous_short),
                         )
                     }

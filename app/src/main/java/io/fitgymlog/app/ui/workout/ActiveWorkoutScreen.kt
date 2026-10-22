@@ -464,7 +464,7 @@ private fun ExerciseSection(
     var menuOpen by remember { mutableStateOf(false) }
     Column(Modifier.padding(top = 18.dp, bottom = 6.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 16.dp, end = 4.dp)) {
-            ExerciseAvatar(info, Modifier.clickable(onClick = onOpenExercise))
+            ExerciseAvatar(info, onClick = onOpenExercise, onClickLabel = stringResource(R.string.open_exercise_details))
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(

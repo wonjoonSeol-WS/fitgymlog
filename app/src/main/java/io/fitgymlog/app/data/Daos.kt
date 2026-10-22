@@ -25,6 +25,16 @@ abstract class WorkoutDao {
     abstract fun observe(id: Long): Flow<WorkoutWithExercises?>
 
     @Transaction
+    @Query(
+        """
+        SELECT * FROM workout
+        WHERE endedAt IS NOT NULL AND id IN (SELECT workoutId FROM workout_exercise WHERE exerciseId = :exerciseId)
+        ORDER BY startedAt DESC LIMIT :limit
+        """,
+    )
+    abstract fun finishedWith(exerciseId: String, limit: Int): Flow<List<WorkoutWithExercises>>
+
+    @Transaction
     @Query("SELECT * FROM workout WHERE endedAt IS NULL ORDER BY startedAt DESC LIMIT 1")
     abstract suspend fun inProgress(): WorkoutWithExercises?
 

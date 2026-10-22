@@ -44,6 +44,9 @@ class WorkoutRepository(private val dao: WorkoutDao, private val tombstones: Tom
 
     fun observe(id: Long): Flow<Workout?> = dao.observe(id).map { it?.toWorkout() }
 
+    fun recentWith(exerciseId: String, limit: Int): Flow<List<Workout>> =
+        dao.finishedWith(exerciseId, limit).map { workouts -> workouts.map { it.toWorkout() } }
+
     suspend fun start(title: String, routine: Routine?, exercises: List<WorkoutExercise>, now: Instant): ActiveWorkout {
         loaded.await()
         return mutex.withLock {

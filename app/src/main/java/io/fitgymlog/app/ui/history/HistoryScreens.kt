@@ -1,6 +1,7 @@
 package io.fitgymlog.app.ui.history
 
 import android.content.Context
+import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,7 +21,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,6 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -45,7 +46,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.fitgymlog.app.R
@@ -72,7 +72,10 @@ import java.time.Duration
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -147,17 +150,46 @@ private fun HistoryList(history: List<Workout>, selectedId: Long?, onSelect: (Lo
     }
 }
 
+private sealed interface StoredWorkout {
+    data object Loading : StoredWorkout
+    data object Missing : StoredWorkout
+    data class Found(val workout: Workout) : StoredWorkout
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (String) -> Unit, showBack: Boolean = true) {
     val context = LocalContext.current
     val app = context.container
-    val workout by remember(workoutId) { app.workouts.observe(workoutId) }.collectAsStateWithLifecycle(null)
+    val stored by remember(workoutId) {
+        app.workouts.observe(workoutId).map { it?.let(StoredWorkout::Found) ?: StoredWorkout.Missing }
+    }.collectAsStateWithLifecycle(StoredWorkout.Loading)
+    val workout = (stored as? StoredWorkout.Found)?.workout
     val exercises by app.exercises.exercises.collectAsStateWithLifecycle()
     val settings by app.settings.settings.collectAsStateWithLifecycle()
-    var menuOpen by remember { mutableStateOf(false) }
-    var confirmDelete by remember { mutableStateOf(false) }
-    var savedAsRoutine by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    var menuOpen by rememberSaveable(workoutId) { mutableStateOf(false) }
+    var confirmDelete by rememberSaveable(workoutId) { mutableStateOf(false) }
+    var deleting by remember(workoutId) { mutableStateOf(false) }
+    var savingRoutine by remember(workoutId) { mutableStateOf(false) }
+    var routineSaved by rememberSaveable(workoutId) { mutableStateOf<Boolean?>(null) }
+
+    fun saveAsRoutine(current: Workout) {
+        if (savingRoutine || routineSaved == true) return
+        savingRoutine = true
+        val routine = current.toRoutine(settings.defaultRestSeconds)
+        scope.launch {
+            routineSaved = try {
+                app.scope.async { app.routines.save(routine) }.await()
+                true
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                false
+            }
+            savingRoutine = false
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -168,36 +200,42 @@ fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (St
                     if (showBack) IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) }
                 },
                 actions = {
-                    Box {
-                        IconButton(onClick = { menuOpen = true }) { Icon(Icons.Default.MoreVert, stringResource(R.string.more)) }
-                        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.save_as_routine)) },
-                                onClick = {
-                                    menuOpen = false
-                                    workout?.let { current ->
-                                        app.scope.launch { app.routines.save(current.toRoutine(settings.defaultRestSeconds)) }
-                                        savedAsRoutine = true
-                                    }
-                                },
-                            )
-                            DropdownMenuItem(text = { Text(stringResource(R.string.delete_workout)) }, onClick = { menuOpen = false; confirmDelete = true })
+                    if (workout != null) {
+                        Box {
+                            IconButton(onClick = { menuOpen = true }) { Icon(Icons.Default.MoreVert, stringResource(R.string.more)) }
+                            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.save_as_routine)) },
+                                    enabled = !savingRoutine && routineSaved != true,
+                                    onClick = { menuOpen = false; saveAsRoutine(workout) },
+                                )
+                                DropdownMenuItem(text = { Text(stringResource(R.string.delete_workout)) }, onClick = { menuOpen = false; confirmDelete = true })
+                            }
                         }
                     }
                 },
             )
         },
     ) { padding ->
+        if (stored == StoredWorkout.Missing && !deleting) {
+            Box(Modifier.fillMaxSize().padding(padding).padding(24.dp), contentAlignment = Alignment.Center) {
+                Text(stringResource(R.string.workout_not_found), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
         val current = workout ?: return@Scaffold
         ReadableWidth(Modifier.padding(padding)) {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(horizontal = 16.dp)) {
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(dateText(current), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        if (current.source != WorkoutSource.APP) {
-                            Text(stringResource(R.string.imported_from, current.source.name.lowercase().replaceFirstChar { it.uppercase() }), style = MaterialTheme.typography.bodySmall)
+                        sourceName(current.source)?.let { source ->
+                            Text(stringResource(R.string.imported_from, stringResource(source)), style = MaterialTheme.typography.bodySmall)
                         }
-                        if (savedAsRoutine) Text(stringResource(R.string.saved_as_routine), color = MaterialTheme.colorScheme.primary)
+                        when (routineSaved) {
+                            true -> Text(stringResource(R.string.saved_as_routine), color = MaterialTheme.colorScheme.primary)
+                            false -> Text(stringResource(R.string.routine_update_failed), color = MaterialTheme.colorScheme.error)
+                            null -> Unit
+                        }
                         WorkoutStats(current, settings.unit)
                         if (current.notes.isNotBlank()) Text(current.notes)
                     }
@@ -239,6 +277,7 @@ fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (St
             text = stringResource(R.string.delete_workout_text),
             confirm = stringResource(R.string.delete),
             onConfirm = {
+                deleting = true
                 app.scope.launch {
                     app.actions.deleteWorkout(workoutId)
                     withContext(Dispatchers.Main) { onBack() }
@@ -258,6 +297,14 @@ private fun WorkoutStats(workout: Workout, unit: WeightUnit) {
         Stat(stringResource(R.string.volume), "${formatWeightNumber(volumeKg, unit)} ${stringResource(if (unit == WeightUnit.KG) R.string.unit_kg else R.string.unit_lb)}")
         Stat(stringResource(R.string.sets), sets.size.toString())
     }
+}
+
+@StringRes
+private fun sourceName(source: WorkoutSource): Int? = when (source) {
+    WorkoutSource.APP -> null
+    WorkoutSource.HEVY -> R.string.source_hevy
+    WorkoutSource.STRONG -> R.string.source_strong
+    WorkoutSource.BACKUP -> R.string.source_backup
 }
 
 private fun dateText(workout: Workout): String =
