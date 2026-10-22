@@ -16,12 +16,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -34,9 +38,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -44,6 +52,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -105,12 +114,13 @@ private fun BarbellView(side: List<Double>, unit: WeightUnit, onRemove: (Int) ->
     val sleeveColor = MaterialTheme.colorScheme.onSurfaceVariant
     val outline = MaterialTheme.colorScheme.onSurfaceVariant
     var hitAreas by remember { mutableStateOf(emptyList<Rect>()) }
+    val remove by rememberUpdatedState(onRemove)
     Canvas(
         modifier = modifier
             .fillMaxWidth()
             .height(132.dp)
-            .pointerInput(side) {
-                detectTapGestures { tap -> hitAreas.indexOfFirst { it.contains(tap) }.takeIf { it >= 0 }?.let(onRemove) }
+            .pointerInput(Unit) {
+                detectTapGestures { tap -> hitAreas.indexOfFirst { it.contains(tap) }.takeIf { it >= 0 }?.let(remove) }
             },
     ) {
         val centerY = size.height / 2
@@ -141,6 +151,8 @@ private fun BarbellView(side: List<Double>, unit: WeightUnit, onRemove: (Int) ->
     }
 }
 
+private val PlatesSaver = Saver<List<Double>, DoubleArray>(save = { it.toDoubleArray() }, restore = { it.toList() })
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun WeightSheet(
@@ -157,25 +169,36 @@ fun WeightSheet(
 ) {
     val haptics = LocalHapticFeedback.current
     val plates = if (unit == WeightUnit.KG) Plates.KG_PLATES else Plates.LB_PLATES
-    var value by remember { mutableStateOf(initialKg?.let { roundDisplay(toDisplayWeight(it, unit)) }) }
+    var value by rememberSaveable { mutableStateOf(initialKg?.let { roundDisplay(toDisplayWeight(it, unit)) }) }
     // The plates the user put on, kept as tapped rather than re-derived, so two 20s stay two 20s.
-    var side by remember { mutableStateOf(Plates.perSide(value ?: bar, bar, plates).side) }
-    var fromHere by remember { mutableStateOf(laterSetsMatch) }
-    var typing by remember { mutableStateOf(false) }
+    var side by rememberSaveable(stateSaver = PlatesSaver) { mutableStateOf(Plates.perSide(value ?: bar, bar, plates).side) }
+    var fromHere by rememberSaveable { mutableStateOf(laterSetsMatch) }
+    var typing by rememberSaveable { mutableStateOf(false) }
+    var text by rememberSaveable { mutableStateOf(editableWeight(value)) }
     val unitLabel = stringResource(if (unit == WeightUnit.KG) R.string.unit_kg else R.string.unit_lb)
     val barbell = equipment == Equipment.BARBELL
 
     fun tick() = haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
 
+    fun type(input: String) {
+        val typed = readTypedWeight(input)
+        if (typed == TypedWeight.Rejected) return
+        text = input
+        value = (typed as? TypedWeight.Amount)?.value
+        side = Plates.perSide(value ?: bar, bar, plates).side
+    }
+
     fun change(next: Double?) {
         value = next?.let { roundDisplay(max(0.0, it)) }
         side = Plates.perSide(value ?: bar, bar, plates).side
+        text = editableWeight(value)
         tick()
     }
 
     fun load(nextSide: List<Double>, onBar: Double = bar) {
         side = nextSide
         value = Plates.total(onBar, nextSide)
+        text = editableWeight(value)
         tick()
     }
 
@@ -184,7 +207,10 @@ fun WeightSheet(
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor = MaterialTheme.colorScheme.surface,
     ) {
-        Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(
+            Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
             Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(
                 verticalAlignment = Alignment.Bottom,
@@ -195,17 +221,13 @@ fun WeightSheet(
                 Text(unitLabel, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 10.dp))
             }
             if (typing) {
-                var text by remember { mutableStateOf(value?.toString().orEmpty()) }
                 OutlinedTextField(
                     value = text,
-                    onValueChange = { input -> if (input.matches(Regex("""\d{0,4}([.,]\d{0,3})?"""))) text = input },
+                    onValueChange = ::type,
                     singleLine = true,
                     label = { Text(stringResource(R.string.type_weight)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = {
-                        change(text.replace(',', '.').toDoubleOrNull())
-                        typing = false
-                    }),
+                    keyboardActions = KeyboardActions(onDone = { typing = false }),
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -281,7 +303,8 @@ private fun PlateButton(plate: Double, unit: WeightUnit, onClick: () -> Unit) {
         contentAlignment = Alignment.Center,
         modifier = Modifier
             .size(52.dp)
-            .background(look.color, CircleShape)
+            .clip(CircleShape)
+            .background(look.color)
             .then(if (look.outlined) Modifier.border(1.dp, MaterialTheme.colorScheme.outline, CircleShape) else Modifier)
             .clickable(onClick = onClick),
     ) {
@@ -290,18 +313,23 @@ private fun PlateButton(plate: Double, unit: WeightUnit, onClick: () -> Unit) {
 }
 
 @Composable
-fun Pill(text: String, selected: Boolean, onClick: () -> Unit) {
+fun Pill(text: String, selected: Boolean, leadingIcon: ImageVector? = null, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(50),
         color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.lift.field,
         contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
     ) {
-        Text(text, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp))
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp)) {
+            if (leadingIcon != null) {
+                Icon(leadingIcon, null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+            }
+            Text(text, style = MaterialTheme.typography.labelLarge)
+        }
     }
 }
 
-/** A pad of large numbers, one tap to set reps (or seconds) without the keyboard. */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun NumberPadSheet(
@@ -318,7 +346,10 @@ fun NumberPadSheet(
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor = MaterialTheme.colorScheme.surface,
     ) {
-        Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(
+            Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
             Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -328,22 +359,15 @@ fun NumberPadSheet(
             ) {
                 options.forEach { option ->
                     val isSelected = option == selected
+                    val shape = RoundedCornerShape(14.dp)
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
                             .weight(1f)
                             .height(56.dp)
-                            .background(
-                                if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.lift.field,
-                                RoundedCornerShape(14.dp),
-                            )
-                            .then(
-                                if (option == target && !isSelected) {
-                                    Modifier.border(1.5.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(14.dp))
-                                } else {
-                                    Modifier
-                                },
-                            )
+                            .clip(shape)
+                            .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.lift.field)
+                            .then(if (option == target && !isSelected) Modifier.border(1.5.dp, MaterialTheme.colorScheme.primary, shape) else Modifier)
                             .clickable {
                                 haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 onPick(option)

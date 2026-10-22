@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import io.fitgymlog.app.R
 import io.fitgymlog.app.model.Exercise
+import io.fitgymlog.app.model.SetType
 import io.fitgymlog.app.model.WeightUnit
 import java.time.Duration
 import java.util.Locale
@@ -15,6 +16,16 @@ fun Exercise.name(context: Context): String = nameRes?.let(context::getString) ?
 
 @Composable
 fun Exercise.localizedName(): String = nameRes?.let { stringResource(it) } ?: customName ?: englishName
+
+@Composable
+fun setTypeName(type: SetType): String = stringResource(
+    when (type) {
+        SetType.NORMAL -> R.string.set_type_normal
+        SetType.WARMUP -> R.string.set_type_warmup
+        SetType.DROP -> R.string.set_type_drop
+        SetType.FAILURE -> R.string.set_type_failure
+    },
+)
 
 fun toDisplayWeight(kg: Double, unit: WeightUnit): Double = if (unit == WeightUnit.LB) kg / KG_PER_LB else kg
 
@@ -38,7 +49,7 @@ fun formatClock(duration: Duration): String {
     val hours = seconds / 3600
     val minutes = (seconds % 3600) / 60
     val rest = seconds % 60
-    return if (hours > 0) "%d:%02d:%02d".format(hours, minutes, rest) else "%d:%02d".format(minutes, rest)
+    return if (hours > 0) "%d:%02d:%02d".format(Locale.ROOT, hours, minutes, rest) else "%d:%02d".format(Locale.ROOT, minutes, rest)
 }
 
-fun formatRest(seconds: Int): String = if (seconds % 60 == 0) "${seconds / 60}:00" else "%d:%02d".format(seconds / 60, seconds % 60)
+fun formatRest(seconds: Int): String = "%d:%02d".format(Locale.ROOT, seconds / 60, seconds % 60)

@@ -22,6 +22,7 @@ import io.fitgymlog.app.R
 data class LiftColors(
     val doneRow: Color,
     val doneCheck: Color,
+    val onDoneCheck: Color,
     val warmup: Color,
     val drop: Color,
     val failure: Color,
@@ -30,7 +31,7 @@ data class LiftColors(
     val field: Color,
 )
 
-private val Blue = Color(0xFF1F7AE0)
+private val Blue = Color(0xFF1A6FD1)
 private val BlueDark = Color(0xFF4A9BFF)
 
 private val LightColors = lightColorScheme(
@@ -46,7 +47,7 @@ private val LightColors = lightColorScheme(
     surface = Color.White,
     onSurface = Color(0xFF15171A),
     surfaceVariant = Color(0xFFF3F4F6),
-    onSurfaceVariant = Color(0xFF868B93),
+    onSurfaceVariant = Color(0xFF6B7079),
     surfaceContainerLowest = Color.White,
     surfaceContainerLow = Color(0xFFF8F9FA),
     surfaceContainer = Color(0xFFF3F4F6),
@@ -59,7 +60,7 @@ private val LightColors = lightColorScheme(
 
 private val DarkColors = darkColorScheme(
     primary = BlueDark,
-    onPrimary = Color.White,
+    onPrimary = Color(0xFF0A1A2E),
     primaryContainer = Color(0xFF12304F),
     onPrimaryContainer = Color(0xFFD3E6FF),
     secondary = Color(0xFFA3A9B3),
@@ -82,7 +83,8 @@ private val DarkColors = darkColorScheme(
 
 private val LightLift = LiftColors(
     doneRow = Color(0xFFDDF5D4),
-    doneCheck = Color(0xFF2DB24A),
+    doneCheck = Color(0xFF178037),
+    onDoneCheck = Color.White,
     warmup = Color(0xFFE8A317),
     drop = Color(0xFF8B5CF6),
     failure = Color(0xFFE5484D),
@@ -94,6 +96,7 @@ private val LightLift = LiftColors(
 private val DarkLift = LiftColors(
     doneRow = Color(0xFF13321B),
     doneCheck = Color(0xFF34C759),
+    onDoneCheck = Color(0xFF0A2A12),
     warmup = Color(0xFFF2B53A),
     drop = Color(0xFFA78BFA),
     failure = Color(0xFFFF6369),
