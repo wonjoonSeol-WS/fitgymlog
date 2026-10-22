@@ -7,10 +7,12 @@ import androidx.health.connect.client.records.ExerciseSegment
 import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.metadata.Device
 import androidx.health.connect.client.records.metadata.Metadata
+import io.fitgymlog.app.catching
 import io.fitgymlog.app.model.Exercise
 import io.fitgymlog.app.model.ExerciseKind
 import io.fitgymlog.app.model.Workout
 import io.fitgymlog.app.model.WorkoutSet
+import io.fitgymlog.app.model.isTimed
 import java.time.Instant
 import java.time.ZoneId
 import java.util.Locale
@@ -32,85 +34,99 @@ class HealthConnectWriter(private val context: Context) {
     }
 
     suspend fun delete(workout: Workout, exerciseOf: (String) -> Exercise) {
-        val base = clientRecordIdOf(workout) ?: return
         if (!hasPermissions()) return
-        val ids = listOf(base) + cardioBlocks(workout, exerciseOf).map { it.clientRecordId(base) }
-        client.deleteRecords(ExerciseSessionRecord::class, emptyList(), ids)
+        // A delete naming a record that doesn't exist fails as a whole, so each record goes on its own.
+        clientRecordIdsOf(workout, exerciseOf).forEach { id ->
+            catching { client.deleteRecords(ExerciseSessionRecord::class, emptyList(), listOf(id)) }
+        }
     }
 }
 
 /** Keyed by uuid because the local row id restarts after a reinstall while Health Connect keeps old records. */
 internal fun clientRecordIdOf(workout: Workout): String? = workout.uuid.takeIf { it.isNotEmpty() }?.let { "fitgymlog-workout-$it" }
 
+internal fun clientRecordIdsOf(workout: Workout, exerciseOf: (String) -> Exercise): List<String> =
+    sessionsOf(workout, ExerciseSessionRecord.EXERCISE_TYPE_OTHER_WORKOUT, exerciseOf) { "" }.mapNotNull { it.metadata.clientRecordId }
+
 /**
- * Lifting goes in one session of [sessionType]; each cardio set gets a session of its own type, which a
- * strength session could not hold as a segment, so Samsung Health lists the run or the stairs separately.
+ * Each cardio set is a session of its own type, since a strength session rejects cardio segments, and
+ * lifting fills the time around them, one session per stretch between cardio blocks.
  */
 internal fun sessionsOf(workout: Workout, sessionType: Int, exerciseOf: (String) -> Exercise, nameOf: (Exercise) -> String): List<ExerciseSessionRecord> {
     val endedAt = workout.endedAt ?: return emptyList()
     val base = clientRecordIdOf(workout)
-    val blocks = cardioBlocks(workout, exerciseOf)
-    val cardio = blocks.map { block ->
-        session(
-            start = block.start,
-            end = block.end,
-            type = CARDIO_SESSION_TYPES[block.exercise.segmentType] ?: ExerciseSessionRecord.EXERCISE_TYPE_OTHER_WORKOUT,
-            title = nameOf(block.exercise),
-            notes = null,
-            segments = emptyList(),
-            clientRecordId = base?.let(block::clientRecordId),
-        )
-    }
-    val lifts = workout.exercises.filter { exerciseOf(it.exerciseId).kind != ExerciseKind.CARDIO }
-    val ticks = lifts.flatMap { exercise -> exercise.sets.mapNotNull { set -> set.completedAt?.let { Tick(it, exercise.exerciseId, set) } } }
-        .sortedBy { it.completedAt }
-    if (ticks.isEmpty()) return cardio
-    val first = ticks.first().completedAt
-    val last = ticks.last().completedAt
-    val start = blocks.filter { !it.end.isAfter(first) }.maxOfOrNull { it.end } ?: workout.startedAt
-    val end = blocks.filter { !it.start.isBefore(last) }.minOfOrNull { it.start } ?: endedAt
-    val (from, to) = if (start.isBefore(end)) start to end else workout.startedAt to endedAt
-    val strength = session(
-        start = from,
-        end = to,
-        type = sessionType,
-        title = workout.title,
-        notes = summary(lifts.map { it.exerciseId to it.sets }, exerciseOf, nameOf),
-        segments = segmentsOf(ticks, from, to, exerciseOf),
-        clientRecordId = base,
-    )
-    return listOf(strength) + cardio
-}
-
-internal data class CardioBlock(val exerciseIndex: Int, val setIndex: Int, val exercise: Exercise, val start: Instant, val end: Instant) {
-    fun clientRecordId(base: String): String = "$base-$exerciseIndex-$setIndex"
-}
-
-/** A cardio set ends when it was ticked and started its duration earlier. */
-internal fun cardioBlocks(workout: Workout, exerciseOf: (String) -> Exercise): List<CardioBlock> {
-    val endedAt = workout.endedAt ?: return emptyList()
-    return workout.exercises.flatMapIndexed { exerciseIndex, exercise ->
-        val info = exerciseOf(exercise.exerciseId)
-        if (info.kind != ExerciseKind.CARDIO) return@flatMapIndexed emptyList()
-        exercise.sets.mapIndexedNotNull { setIndex, set ->
-            val end = minOf(set.completedAt ?: return@mapIndexedNotNull null, endedAt)
-            val seconds = set.durationSeconds?.takeIf { it > 0 } ?: return@mapIndexedNotNull null
-            val start = maxOf(end.minusSeconds(seconds.toLong()), workout.startedAt)
-            if (start.isBefore(end)) CardioBlock(exerciseIndex, setIndex, info, start, end) else null
+    return timelineOf(workout, endedAt, exerciseOf).map { part ->
+        when (part) {
+            is CardioPart -> session(
+                start = part.start,
+                end = part.end,
+                type = CARDIO_SESSION_TYPES[part.tick.exercise.segmentType] ?: ExerciseSessionRecord.EXERCISE_TYPE_OTHER_WORKOUT,
+                title = nameOf(part.tick.exercise),
+                clientRecordId = base?.let { "$it-${part.tick.exerciseIndex}-${part.tick.setIndex}" },
+            )
+            is LiftingPart -> session(
+                start = part.start,
+                end = part.end,
+                type = sessionType,
+                title = workout.title,
+                notes = summary(part.ticks, nameOf),
+                segments = segmentsOf(part),
+                clientRecordId = base?.let { if (part.index == 0) it else "$it-lifting-${part.index}" },
+            )
         }
     }
 }
 
-private data class Tick(val completedAt: Instant, val exerciseId: String, val set: WorkoutSet)
+private data class Tick(val completedAt: Instant, val exercise: Exercise, val exerciseIndex: Int, val setIndex: Int, val set: WorkoutSet)
 
-/** One segment per completed set, ending when it was ticked and starting its duration, or at most a minute, earlier. */
-private fun segmentsOf(ticks: List<Tick>, from: Instant, to: Instant, exerciseOf: (String) -> Exercise): List<ExerciseSegment> {
-    var previousEnd = from
-    return ticks.mapNotNull { (completedAt, exerciseId, set) ->
-        val start = maxOf(previousEnd, completedAt.minusSeconds((set.durationSeconds ?: SET_SECONDS).toLong()))
-        if (!start.isBefore(completedAt) || completedAt.isAfter(to)) return@mapNotNull null
-        previousEnd = completedAt
-        ExerciseSegment(start, completedAt, exerciseOf(exerciseId).segmentType, set.reps ?: 0)
+private sealed interface Part {
+    val start: Instant
+    val end: Instant
+}
+
+private data class CardioPart(override val start: Instant, override val end: Instant, val tick: Tick) : Part
+
+private data class LiftingPart(override val start: Instant, override val end: Instant, val index: Int, val ticks: List<Tick>) : Part
+
+private fun timelineOf(workout: Workout, endedAt: Instant, exerciseOf: (String) -> Exercise): List<Part> {
+    val ticks = workout.exercises.flatMapIndexed { exerciseIndex, exercise ->
+        val info = exerciseOf(exercise.exerciseId)
+        exercise.sets.mapIndexedNotNull { setIndex, set -> set.completedAt?.let { Tick(it, info, exerciseIndex, setIndex, set) } }
+    }.sortedBy { it.completedAt }
+    val parts = mutableListOf<Part>()
+    var lifts = mutableListOf<Tick>()
+    var liftingFrom = workout.startedAt
+    var previousEnd: Instant? = null
+    fun closeLifting(until: Instant) {
+        if (lifts.isNotEmpty() && liftingFrom.isBefore(until)) parts += LiftingPart(liftingFrom, until, parts.count { it is LiftingPart }, lifts)
+        lifts = mutableListOf()
+    }
+    for (tick in ticks) {
+        if (tick.exercise.kind != ExerciseKind.CARDIO) {
+            lifts += tick
+            previousEnd = tick.completedAt
+            continue
+        }
+        val seconds = tick.set.durationSeconds?.takeIf { it > 0 } ?: continue
+        val start = tick.completedAt.minusSeconds(seconds.toLong()).let { from -> previousEnd?.let { maxOf(it, from) } ?: from }
+        if (!start.isBefore(tick.completedAt)) continue
+        closeLifting(start)
+        parts += CardioPart(start, tick.completedAt, tick)
+        previousEnd = tick.completedAt
+        liftingFrom = tick.completedAt
+    }
+    closeLifting(endedAt)
+    return parts
+}
+
+private fun segmentsOf(part: LiftingPart): List<ExerciseSegment> {
+    var previousEnd = part.start
+    return part.ticks.mapNotNull { tick ->
+        val seconds = tick.set.durationSeconds?.takeIf { it > 0 && tick.exercise.kind.isTimed } ?: SET_SECONDS
+        val start = maxOf(previousEnd, tick.completedAt.minusSeconds(seconds.toLong()))
+        if (!start.isBefore(tick.completedAt) || tick.completedAt.isAfter(part.end)) return@mapNotNull null
+        previousEnd = tick.completedAt
+        ExerciseSegment(start, tick.completedAt, tick.exercise.segmentType, tick.set.reps ?: 0)
     }
 }
 
@@ -119,9 +135,9 @@ private fun session(
     end: Instant,
     type: Int,
     title: String,
-    notes: String?,
-    segments: List<ExerciseSegment>,
     clientRecordId: String?,
+    notes: String? = null,
+    segments: List<ExerciseSegment> = emptyList(),
 ): ExerciseSessionRecord {
     val zone = ZoneId.systemDefault()
     val device = Device(type = Device.TYPE_PHONE)
@@ -142,19 +158,20 @@ private fun session(
     }
 }
 
-private fun summary(exercises: List<Pair<String, List<WorkoutSet>>>, exerciseOf: (String) -> Exercise, nameOf: (Exercise) -> String): String =
-    exercises.joinToString("\n") { (exerciseId, sets) ->
-        val text = sets.joinToString(", ") { set ->
+private fun summary(ticks: List<Tick>, nameOf: (Exercise) -> String): String =
+    ticks.groupBy { it.exerciseIndex }.toSortedMap().values.joinToString("\n") { sets ->
+        val text = sets.sortedBy { it.setIndex }.joinToString(", ") { tick ->
+            val set = tick.set
             listOfNotNull(set.weightKg?.let { "${formatKg(it)}kg" }, set.reps?.toString(), set.durationSeconds?.let { "${it}s" }).joinToString(" x ")
         }
-        "${nameOf(exerciseOf(exerciseId))}: $text"
+        "${nameOf(sets.first().exercise)}: $text"
     }
 
 private fun formatKg(kg: Double): String = if (kg % 1.0 == 0.0) kg.toLong().toString() else "%.2f".format(Locale.ROOT, kg).trimEnd('0').trimEnd('.')
 
 private const val SET_SECONDS = 60
 
-private val CARDIO_SESSION_TYPES = mapOf(
+internal val CARDIO_SESSION_TYPES = mapOf(
     ExerciseSegment.EXERCISE_SEGMENT_TYPE_RUNNING_TREADMILL to ExerciseSessionRecord.EXERCISE_TYPE_RUNNING_TREADMILL,
     ExerciseSegment.EXERCISE_SEGMENT_TYPE_STAIR_CLIMBING_MACHINE to ExerciseSessionRecord.EXERCISE_TYPE_STAIR_CLIMBING_MACHINE,
     ExerciseSegment.EXERCISE_SEGMENT_TYPE_BIKING_STATIONARY to ExerciseSessionRecord.EXERCISE_TYPE_BIKING_STATIONARY,

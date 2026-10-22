@@ -1,6 +1,7 @@
 package io.fitgymlog.app.ui.routine
 
 import androidx.lifecycle.SavedStateHandle
+import io.fitgymlog.app.model.ExerciseKind
 import io.fitgymlog.app.model.NewExercise
 import io.fitgymlog.app.model.Routine
 import io.fitgymlog.app.model.RoutineExercise
@@ -158,5 +159,15 @@ class RoutineEditorViewModelTest {
 
         assertEquals(listOf(EditorPhase.BUSY), phasesWhileDeleting)
         assertEquals(EditorPhase.DONE, editor.phase)
+    }
+
+    @Test
+    fun `cardio is added as one set with no rest, other exercises as three sets with the default rest`() = runTest(dispatcher) {
+        val editor = editor(0, FakeStore(null))
+
+        editor.add("treadmill", ExerciseKind.CARDIO, restSeconds = 90)
+        editor.add("bench_press_barbell", ExerciseKind.WEIGHT_REPS, restSeconds = 90)
+
+        assertEquals(listOf(Triple("treadmill", 1, 0), Triple("bench_press_barbell", 3, 90)), editor.draft.planned.map { Triple(it.exerciseId, it.sets, it.restSeconds) })
     }
 }

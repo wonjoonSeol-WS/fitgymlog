@@ -192,7 +192,12 @@ data class ActiveWorkout(
     fun addSet(exerciseIndex: Int): ActiveWorkout {
         val exercise = exercises.getOrNull(exerciseIndex) ?: return this
         val template = exercise.sets.lastOrNull()
-        val newSet = WorkoutSet(weightKg = template?.weightKg, reps = template?.targetReps ?: template?.reps)
+        val newSet = WorkoutSet(
+            weightKg = template?.weightKg,
+            reps = template?.targetReps ?: template?.reps,
+            durationSeconds = template?.durationSeconds,
+            level = template?.level,
+        )
         return updateExercise(exerciseIndex) { it.copy(sets = it.sets + newSet) }
     }
 
@@ -210,10 +215,10 @@ data class ActiveWorkout(
     }
 
     /** Completed sets stay with the original exercise, so history shows what was actually lifted. */
-    fun replaceExercise(index: Int, exerciseId: String, sets: List<WorkoutSet>): ActiveWorkout {
+    fun replaceExercise(index: Int, exerciseId: String, sets: List<WorkoutSet>, restSeconds: Int): ActiveWorkout {
         val current = exercises.getOrNull(index) ?: return this
         val done = current.sets.filter { it.isCompleted }
-        val replacement = current.copy(key = nextKey(), exerciseId = exerciseId, sets = sets, notes = "")
+        val replacement = current.copy(key = nextKey(), exerciseId = exerciseId, sets = sets, notes = "", restSeconds = restSeconds)
         val updated = if (done.isEmpty()) {
             exercises.toMutableList().apply { set(index, replacement) }
         } else {
@@ -251,7 +256,11 @@ data class ActiveWorkout(
 
     fun rename(title: String): ActiveWorkout = copy(workout = workout.copy(title = title))
 
-    fun isIdle(now: Instant, limit: Duration): Boolean = Duration.between(lastActivityAt, now) >= limit
+    /** A set that takes time, such as 45 minutes on the bike, isn't idleness, so the next one's duration adds to the limit. */
+    fun isIdle(now: Instant, limit: Duration): Boolean {
+        val running = focusedNextSet()?.let(::setAt)?.durationSeconds?.toLong() ?: 0
+        return Duration.between(lastActivityAt, now) >= limit.plusSeconds(running)
+    }
 
     /** Keeps only completed sets. Returns null when nothing was lifted, so an empty workout is discarded. */
     fun finish(endedAt: Instant): Workout? {

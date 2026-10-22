@@ -81,7 +81,7 @@ class ActiveWorkoutTest {
     @Test
     fun `swapping an exercise with completed sets keeps them and inserts the new exercise after it`() {
         val swapped = workout().completeFocusedSet(start).restOver()
-            .replaceExercise(0, "bench_press_barbell", sets(3, 40.0, 8))
+            .replaceExercise(0, "bench_press_barbell", sets(3, 40.0, 8), restSeconds = 90)
 
         assertEquals(listOf("squat_barbell", "bench_press_barbell", "overhead_press_barbell"), swapped.exercises.map { it.exerciseId })
         assertEquals(1, swapped.exercises[0].sets.size)
@@ -90,9 +90,36 @@ class ActiveWorkoutTest {
 
     @Test
     fun `swapping an untouched exercise replaces it in place`() {
-        val swapped = workout().replaceExercise(1, "bench_press_barbell", sets(3, 40.0, 8))
+        val swapped = workout().replaceExercise(1, "bench_press_barbell", sets(3, 40.0, 8), restSeconds = 90)
 
         assertEquals(listOf("squat_barbell", "bench_press_barbell"), swapped.exercises.map { it.exerciseId })
+    }
+
+    @Test
+    fun `a replacement takes the rest it was given, not the rest of the exercise it replaces`() {
+        val swapped = workout().replaceExercise(0, "treadmill", listOf(WorkoutSet(durationSeconds = 300)), restSeconds = 0)
+
+        assertEquals(listOf(0, 90), swapped.exercises.map { it.restSeconds })
+    }
+
+    @Test
+    fun `an added set copies the last set's minutes and level as well as its weight and reps`() {
+        val cardio = ActiveWorkout(Workout(title = "Day A", startedAt = start, exercises = emptyList()))
+            .addExercise("treadmill", listOf(WorkoutSet(durationSeconds = 300, level = 8)), restSeconds = 0, now = start)
+            .addSet(0)
+
+        assertEquals(WorkoutSet(durationSeconds = 300, level = 8), cardio.exercises[0].sets[1])
+    }
+
+    @Test
+    fun `a long cardio set waiting to be ticked stretches the idle limit by its minutes`() {
+        val riding = ActiveWorkout(Workout(title = "Day A", startedAt = start, exercises = emptyList()))
+            .addExercise("stationary_bike", listOf(WorkoutSet(durationSeconds = 45 * 60)), restSeconds = 0, now = start)
+        val limit = Duration.ofMinutes(30)
+
+        assertFalse(riding.isIdle(start.plusSeconds(60 * 60), limit))
+        assertTrue(riding.isIdle(start.plusSeconds(75 * 60), limit))
+        assertTrue(workout().isIdle(start.plusSeconds(30 * 60), limit))
     }
 
     @Test
@@ -283,7 +310,7 @@ class ActiveWorkoutTest {
     fun `swapping keeps only the completed sets on the old exercise and gives the new one the new sets`() {
         val replacementSets = sets(3, 40.0, 8)
 
-        val swapped = workout().completeFocusedSet(start).restOver().replaceExercise(0, "bench_press_barbell", replacementSets)
+        val swapped = workout().completeFocusedSet(start).restOver().replaceExercise(0, "bench_press_barbell", replacementSets, restSeconds = 90)
 
         assertEquals(listOf(true), swapped.exercises[0].sets.map { it.isCompleted })
         assertEquals(start, swapped.exercises[0].sets[0].completedAt)

@@ -12,7 +12,7 @@ Download: [latest release](https://github.com/wonjoonSeol-WS/fitgymlog/releases/
 - Plate-by-plate weight entry and a reps number pad
 - Cardio in minutes (treadmill, stair machine, bike), each saved to Health Connect as its own session
 - Ready-made programs (StrongLifts 5x5, full body, upper/lower, push/pull/legs), plus your own routines
-- Form guide videos and articles for the built-in exercises; add any YouTube or web link
+- Form guide videos and articles for the built-in lifts; add any YouTube or web link
 - Two-pane layouts on an unfolded Galaxy Fold
 - Health Connect (Samsung Health), optional Google Drive sync, Hevy and Strong CSV import and export
 - English and Korean

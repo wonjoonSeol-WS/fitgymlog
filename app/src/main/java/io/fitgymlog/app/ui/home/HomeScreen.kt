@@ -50,18 +50,22 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.fitgymlog.app.R
+import io.fitgymlog.app.SHIPPED_LANGUAGES
 import io.fitgymlog.app.catching
 import io.fitgymlog.app.container
 import io.fitgymlog.app.data.byId
 import io.fitgymlog.app.model.Routine
 import io.fitgymlog.app.model.Workout
+import io.fitgymlog.app.resourcesIn
 import io.fitgymlog.app.ui.ConfirmDialog
 import io.fitgymlog.app.ui.NumberStyles
 import io.fitgymlog.app.ui.ReadableWidth
@@ -79,6 +83,8 @@ import kotlinx.coroutines.withContext
 fun HomeScreen(onOpenWorkout: () -> Unit, onEditRoutine: (Long) -> Unit, onOpenBandGuide: () -> Unit) {
     val context = LocalContext.current
     val resources = LocalResources.current
+    val configuration = LocalConfiguration.current
+    val otherLanguages = remember(context, configuration) { SHIPPED_LANGUAGES.map(context::resourcesIn) }
     val app = context.container
     val active by app.workouts.active.collectAsStateWithLifecycle()
     val routines by app.routines.routines.collectAsStateWithLifecycle(emptyList())
@@ -101,7 +107,8 @@ fun HomeScreen(onOpenWorkout: () -> Unit, onEditRoutine: (Long) -> Unit, onOpenB
         addingProgram = true
         scope.launch {
             val added = catching {
-                app.inAppScope { Programs.add(program, app.routines, { resources.getString(it) }, settings.defaultRestSeconds) }
+                val namesOf = { id: Int -> (listOf(resources) + otherLanguages).map { it.getString(id) }.distinct() }
+                app.inAppScope { Programs.add(program, app.routines, namesOf, settings.defaultRestSeconds) }
             }.getOrNull()
             addingProgram = false
             when (added) {
@@ -212,7 +219,7 @@ private fun ProgramDialog(onPick: (Program) -> Unit, onDismiss: () -> Unit) {
                         headlineContent = { Text(stringResource(program.title)) },
                         supportingContent = { Text(stringResource(program.summary)) },
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        modifier = Modifier.clickable { onPick(program) },
+                        modifier = Modifier.clickable(role = Role.Button) { onPick(program) },
                     )
                 }
             }

@@ -10,15 +10,19 @@ class ExerciseCatalogTest {
     private val korean = stringsIn("values-ko")
 
     @Test
-    fun `English names match Hevy's library, so exports import cleanly there`() {
+    fun `the English name shown in the app is the Hevy name exports write`() {
         val mismatched = ExerciseCatalog.all.filter { english[resourceName(it.nameRes)] != it.hevyName }
 
         assertEquals(emptyList<String>(), mismatched.map { "${it.id}: ${english[resourceName(it.nameRes)]} vs ${it.hevyName}" })
     }
 
     @Test
-    fun `every built-in exercise has a Korean name and a unique id`() {
+    fun `every built-in exercise has a Korean name`() {
         assertEquals(emptyList<String>(), ExerciseCatalog.all.filter { resourceName(it.nameRes) !in korean }.map { it.id })
+    }
+
+    @Test
+    fun `built-in ids are unique`() {
         assertEquals(ExerciseCatalog.all.map { it.id }.distinct(), ExerciseCatalog.all.map { it.id })
     }
 }

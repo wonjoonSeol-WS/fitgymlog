@@ -34,8 +34,7 @@ fun bandText(context: Context, active: ActiveWorkout, exerciseOf: (String) -> Ex
 fun BandText.resting(context: Context, rest: RestClock): BandText =
     copy(title = context.getString(R.string.band_resting, formatClock(bandRestLeft(rest.left))))
 
-/** The band's title changes once per step, so it shows whole steps: 2:00, 1:55, 1:50. */
-internal val BAND_REST_STEP: Duration = Duration.ofSeconds(5)
+private val BAND_REST_STEP: Duration = Duration.ofSeconds(5)
 
 internal fun bandRestLeft(left: Duration): Duration {
     val step = BAND_REST_STEP.toMillis()

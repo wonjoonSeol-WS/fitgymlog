@@ -53,6 +53,7 @@ import io.fitgymlog.app.catching
 import io.fitgymlog.app.container
 import io.fitgymlog.app.data.byId
 import io.fitgymlog.app.model.Exercise
+import io.fitgymlog.app.model.ExerciseKind
 import io.fitgymlog.app.model.Routine
 import io.fitgymlog.app.model.RoutineExercise
 import io.fitgymlog.app.model.SetType
@@ -60,6 +61,7 @@ import io.fitgymlog.app.model.WeightUnit
 import io.fitgymlog.app.model.Workout
 import io.fitgymlog.app.model.WorkoutSet
 import io.fitgymlog.app.model.WorkoutSource
+import io.fitgymlog.app.model.defaultRestSeconds
 import io.fitgymlog.app.ui.ConfirmDialog
 import io.fitgymlog.app.ui.NumberStyles
 import io.fitgymlog.app.ui.ReadableWidth
@@ -177,7 +179,7 @@ fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (St
     fun saveAsRoutine(current: Workout) {
         if (routineSave == RoutineSave.SAVING || routineSave == RoutineSave.SAVED) return
         routineSave = RoutineSave.SAVING
-        val routine = current.toRoutine(settings.defaultRestSeconds)
+        val routine = current.toRoutine(settings.defaultRestSeconds) { exercises.byId(it).kind }
         scope.launch {
             val saved = catching { app.inAppScope { app.routines.save(routine) } }.isSuccess
             routineSave = if (saved) RoutineSave.SAVED else RoutineSave.FAILED
@@ -303,7 +305,7 @@ private fun sourceName(source: WorkoutSource): Int? = when (source) {
 private fun dateText(workout: Workout): String =
     workout.startedAt.atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT))
 
-private fun Workout.toRoutine(restSeconds: Int) = Routine(
+private fun Workout.toRoutine(restSeconds: Int, kindOf: (String) -> ExerciseKind) = Routine(
     name = title,
     exercises = exercises.map { exercise ->
         val working = exercise.sets.filter { it.type == SetType.NORMAL }.ifEmpty { exercise.sets }
@@ -312,7 +314,7 @@ private fun Workout.toRoutine(restSeconds: Int) = Routine(
             sets = working.size,
             reps = working.mapNotNull { it.reps }.maxOrNull(),
             weightKg = working.mapNotNull { it.weightKg }.maxOrNull(),
-            restSeconds = if (exercise.restSeconds > 0) exercise.restSeconds else restSeconds,
+            restSeconds = if (exercise.restSeconds > 0) exercise.restSeconds else kindOf(exercise.exerciseId).defaultRestSeconds(restSeconds),
         )
     },
 )

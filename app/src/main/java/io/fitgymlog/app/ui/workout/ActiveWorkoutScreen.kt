@@ -281,8 +281,8 @@ fun ActiveWorkoutScreen(onBack: () -> Unit, onFinished: (Long?) -> Unit, onOpenE
                 app.scope.launch {
                     val created = app.exercises.createCustom(new)
                     when (target) {
-                        PickerTarget.Add -> app.actions.addExercise(created.id)
-                        is PickerTarget.Replace -> app.actions.replaceExercise(target.index, created.id)
+                        PickerTarget.Add -> app.actions.addExercise(created.id, created.kind)
+                        is PickerTarget.Replace -> app.actions.replaceExercise(target.index, created.id, created.kind)
                     }
                 }
             },
