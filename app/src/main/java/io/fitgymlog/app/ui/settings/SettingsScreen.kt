@@ -64,11 +64,12 @@ private val IMPORT_TYPES = arrayOf("text/*", "text/csv", "text/comma-separated-v
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onOpenBandGuide: () -> Unit) {
+fun SettingsScreen(onOpenBandGuide: () -> Unit, onOpenCoach: () -> Unit) {
     val context = LocalContext.current
     val resources = LocalResources.current
     val app = context.container
     val settings by app.settings.settings.collectAsStateWithLifecycle()
+    val coach by app.coach.settings.settings.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     var picker by remember { mutableStateOf<Picker?>(null) }
     var healthMessage by remember { mutableStateOf<String?>(null) }
@@ -143,6 +144,13 @@ fun SettingsScreen(onOpenBandGuide: () -> Unit) {
                     },
                 )
                 SettingsItem(stringResource(R.string.setting_health_type), sessionTypeName(settings.healthSessionType)) { picker = Picker.SESSION_TYPE }
+
+                SettingsSection(stringResource(R.string.section_coach))
+                SettingsItem(
+                    stringResource(R.string.coach_enable),
+                    if (coach.enabled && coach.isConnected) coach.model else stringResource(R.string.coach_setting_help),
+                    onOpenCoach,
+                )
 
                 SettingsSection(stringResource(R.string.section_sync))
                 SyncSection()

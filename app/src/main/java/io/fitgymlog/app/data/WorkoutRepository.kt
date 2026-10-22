@@ -104,6 +104,13 @@ class WorkoutRepository(private val dao: WorkoutDao, private val tombstones: Tom
 
     suspend fun recentFinished(limit: Int): List<Workout> = dao.recentFinished(limit).map { it.toWorkout() }
 
+    /** Saves changes to a finished workout, stamped newer than before so sync carries them to other phones. */
+    suspend fun saveEdited(workout: Workout): Workout {
+        val edited = workout.copy(updatedAt = Instant.ofEpochMilli(stampAfter(workout.updatedAt.toEpochMilli(), System.currentTimeMillis())))
+        dao.save(edited.toGraph())
+        return edited
+    }
+
     suspend fun importFinished(workouts: List<Workout>): Int = saveImported(notYetImported(workouts, { it.startedAt }, { it.title }))
 
     suspend fun saveImported(workouts: List<Workout>): Int {

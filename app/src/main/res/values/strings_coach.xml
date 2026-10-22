@@ -11,10 +11,8 @@
     <string name="coach_key_saved">Saved, encrypted on this phone</string>
     <string name="coach_key_change">Change</string>
     <string name="coach_key_remove">Remove</string>
-    <string name="coach_key_save">Save key</string>
     <string name="coach_connect">Connect</string>
     <string name="coach_connecting">Connecting…</string>
-    <string name="coach_connected">Connected, %1$d models available</string>
     <string name="coach_model">Model</string>
     <string name="coach_model_hint">Connect to pick from the list, or type the model name.</string>
     <string name="coach_task_models">Model for each task</string>
@@ -36,7 +34,6 @@
     <string name="coach_share_notes">Share what it remembers</string>
     <string name="coach_share_notes_help">Injuries, food limits, schedule and goals you saved.</string>
     <string name="coach_memory">What the coach remembers</string>
-    <string name="coach_memory_count">%1$d notes</string>
     <string name="coach_preview">Preview what is sent</string>
     <string name="coach_preview_help">The exact request for today\'s targets, without your key.</string>
     <string name="coach_footer">Suggestions are never applied without you. The key is encrypted on this phone and sent only to the address above. General guidance, not medical or dietary advice.</string>
@@ -47,6 +44,7 @@
     <string name="coach_targets_loading">The coach is looking at your last sessions…</string>
     <string name="coach_targets_rules">The coach could not be reached, so these come from the progression rules. %1$s</string>
     <string name="coach_apply_all">Apply all</string>
+    <string name="coach_apply">Apply</string>
     <string name="coach_not_now">Not now</string>
     <string name="coach_applied">Applied</string>
     <string name="coach_reason_all_reps">All reps done last time</string>
@@ -69,6 +67,8 @@
     <string name="coach_send">Send</string>
     <string name="coach_thinking">Thinking…</string>
     <string name="coach_retry">Retry</string>
+    <string name="coach_clear_chat">Clear chat</string>
+    <string name="coach_edit">Edit</string>
     <string name="coach_change_title">%1$s, today</string>
     <string name="coach_change_needs_workout">Start the workout to apply this.</string>
     <string name="coach_remember_offer">Remember: %1$s</string>
@@ -91,4 +91,12 @@
     <string name="coach_error_server">The provider had a problem. Try again later.</string>
     <string name="coach_error_offline">Could not reach the provider. Check your connection.</string>
     <string name="coach_error_reply">The model\'s reply could not be read. Try again or pick another model.</string>
+    <plurals name="coach_connected">
+        <item quantity="one">Connected, %1$d model available</item>
+        <item quantity="other">Connected, %1$d models available</item>
+    </plurals>
+    <plurals name="coach_memory_count">
+        <item quantity="one">%1$d note</item>
+        <item quantity="other">%1$d notes</item>
+    </plurals>
 </resources>

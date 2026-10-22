@@ -126,11 +126,12 @@ internal fun SetEditorSheet(
 }
 
 @Composable
-internal fun WorkoutMenu(onRename: () -> Unit, onDiscard: () -> Unit) {
+internal fun WorkoutMenu(onRename: () -> Unit, onDiscard: () -> Unit, onCoach: (() -> Unit)?) {
     var open by remember { mutableStateOf(false) }
     Box {
         IconButton(onClick = { open = true }) { Icon(Icons.Default.MoreVert, stringResource(R.string.more)) }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            onCoach?.let { DropdownMenuItem(text = { Text(stringResource(R.string.coach_ask)) }, onClick = { open = false; it() }) }
             DropdownMenuItem(text = { Text(stringResource(R.string.rename_workout)) }, onClick = { open = false; onRename() })
             DropdownMenuItem(text = { Text(stringResource(R.string.discard_workout)) }, onClick = { open = false; onDiscard() })
         }

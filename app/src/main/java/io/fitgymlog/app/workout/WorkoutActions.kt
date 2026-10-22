@@ -75,6 +75,20 @@ class WorkoutActions(
         return finished
     }
 
+    /** Moves a finished workout's start and end, for a workout left open after the last set. False if a ticked set wouldn't fit. */
+    suspend fun retime(workout: Workout, start: Instant, end: Instant): Boolean {
+        val edited = workouts.saveEdited(workout.retimed(start, end) ?: return false)
+        if (settings.settings.value.healthConnectEnabled) {
+            safely {
+                if (health.hasPermissions()) {
+                    health.delete(workout, exercises::find)
+                    health.write(edited, settings.settings.value.healthSessionType, exercises::find) { it.name(context) }
+                }
+            }
+        }
+        return true
+    }
+
     suspend fun discard() {
         workouts.discard()
         WorkoutService.stop(context)

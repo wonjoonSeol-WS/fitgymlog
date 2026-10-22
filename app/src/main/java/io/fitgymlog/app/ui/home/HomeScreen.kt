@@ -80,7 +80,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-fun HomeScreen(onOpenWorkout: () -> Unit, onEditRoutine: (Long) -> Unit, onOpenBandGuide: () -> Unit) {
+fun HomeScreen(onOpenWorkout: () -> Unit, onEditRoutine: (Long) -> Unit, onOpenBandGuide: () -> Unit, onOpenCoach: () -> Unit) {
     val context = LocalContext.current
     val resources = LocalResources.current
     val configuration = LocalConfiguration.current
@@ -90,6 +90,7 @@ fun HomeScreen(onOpenWorkout: () -> Unit, onEditRoutine: (Long) -> Unit, onOpenB
     val routines by app.routines.routines.collectAsStateWithLifecycle(emptyList())
     val exercises by app.exercises.exercises.collectAsStateWithLifecycle()
     val settings by app.settings.settings.collectAsStateWithLifecycle()
+    val coach by app.coach.settings.settings.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     var addingProgram by remember { mutableStateOf(false) }
     var choosingProgram by rememberSaveable { mutableStateOf(false) }
@@ -145,6 +146,7 @@ fun HomeScreen(onOpenWorkout: () -> Unit, onEditRoutine: (Long) -> Unit, onOpenB
                 onClick = { start { app.actions.startEmpty() } },
             )
         }
+        if (coach.enabled) item { GreyButton(text = stringResource(R.string.coach_ask), onClick = onOpenCoach) }
     }
     val routineItems: LazyListScope.() -> Unit = {
         item { SectionTitle(stringResource(R.string.routines)) }

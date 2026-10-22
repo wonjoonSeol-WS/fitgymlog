@@ -36,6 +36,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
@@ -208,7 +209,7 @@ fun CoachSettingsScreen(onBack: () -> Unit, onOpenMemory: () -> Unit) {
                     when (val state = probe) {
                         Probe.Idle -> Unit
                         Probe.Running -> Text(stringResource(R.string.coach_connecting), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        is Probe.Found -> Text(stringResource(R.string.coach_connected, state.models.size), color = MaterialTheme.colorScheme.primary)
+                        is Probe.Found -> Text(pluralStringResource(R.plurals.coach_connected, state.models.size, state.models.size), color = MaterialTheme.colorScheme.primary)
                         is Probe.Failed -> Text(stringResource(state.message), color = MaterialTheme.colorScheme.error)
                     }
                     ModelField(
@@ -268,7 +269,7 @@ fun CoachSettingsScreen(onBack: () -> Unit, onOpenMemory: () -> Unit) {
                     checked = settings.shareNotes,
                     onCheckedChange = { on -> coach.settings.update { it.copy(shareNotes = on) } },
                 )
-                SettingsItem(stringResource(R.string.coach_memory), stringResource(R.string.coach_memory_count, data.memories.size), onOpenMemory)
+                SettingsItem(stringResource(R.string.coach_memory), pluralStringResource(R.plurals.coach_memory_count, data.memories.size, data.memories.size), onOpenMemory)
                 SettingsItem(stringResource(R.string.coach_preview), stringResource(R.string.coach_preview_help)) {
                     scope.launch { preview = coach.preview(app.workouts.active.value) }
                 }

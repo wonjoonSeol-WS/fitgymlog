@@ -78,7 +78,7 @@ class CoachTest {
         assertEquals("targets", schema)
         assertTrue(messages.first().content.contains("write in Korean"))
         val payload = Json.parseToJsonElement(messages.last().content).jsonObject
-        assertEquals(listOf("health: Left knee sore"), payload.getValue("notes").jsonArray.map { it.jsonPrimitive.content })
+        assertEquals(listOf("health, saved 2026-10-22: Left knee sore"), payload.getValue("notes").jsonArray.map { it.jsonPrimitive.content })
         val exercises = payload.getValue("exercises").jsonArray.map { it.jsonObject }
         assertEquals(listOf("squat_barbell", "bench_press_barbell"), exercises.map { it.getValue("id").jsonPrimitive.content })
         assertEquals("47.5", exercises.first().getValue("rule").jsonObject.getValue("minKg").jsonPrimitive.content)

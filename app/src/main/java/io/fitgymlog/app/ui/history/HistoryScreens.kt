@@ -176,6 +176,7 @@ fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (St
     var confirmDelete by rememberSaveable(workoutId) { mutableStateOf(false) }
     var deleting by remember(workoutId) { mutableStateOf(false) }
     var routineSave by rememberSaveable(workoutId) { mutableStateOf(RoutineSave.IDLE) }
+    var editingTimes by rememberSaveable(workoutId) { mutableStateOf(false) }
 
     fun saveAsRoutine(current: Workout) {
         if (routineSave == RoutineSave.SAVING || routineSave == RoutineSave.SAVED) return
@@ -205,6 +206,7 @@ fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (St
                                     enabled = routineSave == RoutineSave.IDLE || routineSave == RoutineSave.FAILED,
                                     onClick = { menuOpen = false; saveAsRoutine(workout) },
                                 )
+                                DropdownMenuItem(text = { Text(stringResource(R.string.edit_times)) }, onClick = { menuOpen = false; editingTimes = true })
                                 DropdownMenuItem(text = { Text(stringResource(R.string.delete_workout)) }, onClick = { menuOpen = false; confirmDelete = true })
                             }
                         }
@@ -268,6 +270,13 @@ fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (St
         }
     }
 
+    if (editingTimes && workout != null) {
+        EditTimesDialog(
+            workout = workout,
+            onSave = { start, end -> app.scope.launch { app.actions.retime(workout, start, end) } },
+            onDismiss = { editingTimes = false },
+        )
+    }
     if (confirmDelete) {
         ConfirmDialog(
             title = stringResource(R.string.delete_workout),

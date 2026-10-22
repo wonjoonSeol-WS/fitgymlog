@@ -6,6 +6,12 @@
     <string name="routine_save_as_new">Save as new routine</string>
     <string name="routine_save_failed">Couldn\'t save the routine.</string>
     <string name="delete_routine_text">%1$s will be deleted. This can\'t be undone.</string>
+    <string name="edit_times">Edit times</string>
+    <string name="workout_start">Start</string>
+    <string name="workout_end">End</string>
+    <string name="end_at_last_set">End at the last set, %1$s</string>
+    <string name="times_order">The end has to be after the start.</string>
+    <string name="times_outside">Every ticked set has to fit: start by %1$s and end at %2$s or later.</string>
     <string name="programs">Programs</string>
     <string name="add_program">Add a program</string>
     <string name="program_already_added">These routines are already in your list.</string>

@@ -86,11 +86,12 @@ import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ActiveWorkoutScreen(onBack: () -> Unit, onFinished: (Long?) -> Unit, onOpenExercise: (String) -> Unit) {
+fun ActiveWorkoutScreen(onBack: () -> Unit, onFinished: (Long?) -> Unit, onOpenExercise: (String) -> Unit, onOpenCoach: () -> Unit) {
     val app = LocalContext.current.container
     val active by app.workouts.active.collectAsStateWithLifecycle()
     val settings by app.settings.settings.collectAsStateWithLifecycle()
     val exercises by app.exercises.exercises.collectAsStateWithLifecycle()
+    val coach by app.coach.settings.settings.collectAsStateWithLifecycle()
     var leaving by remember { mutableStateOf(false) }
     val lastShown = remember { mutableStateOf(active) }
     SideEffect { active?.let { lastShown.value = it } }
@@ -205,7 +206,7 @@ fun ActiveWorkoutScreen(onBack: () -> Unit, onFinished: (Long?) -> Unit, onOpenE
                         contentPadding = PaddingValues(horizontal = 18.dp),
                         modifier = Modifier.height(38.dp),
                     ) { Text(stringResource(R.string.finish), fontWeight = FontWeight.SemiBold) }
-                    WorkoutMenu(onRename = { renaming = true }, onDiscard = { confirmDiscard = true })
+                    WorkoutMenu(onRename = { renaming = true }, onDiscard = { confirmDiscard = true }, onCoach = onOpenCoach.takeIf { coach.enabled })
                 },
             )
         },

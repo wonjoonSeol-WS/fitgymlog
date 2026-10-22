@@ -6,6 +6,12 @@
     <string name="routine_save_as_new">새 루틴으로 저장</string>
     <string name="routine_save_failed">루틴을 저장하지 못했습니다.</string>
     <string name="delete_routine_text">%1$s 루틴을 삭제합니다. 되돌릴 수 없습니다.</string>
+    <string name="edit_times">시간 고치기</string>
+    <string name="workout_start">시작</string>
+    <string name="workout_end">종료</string>
+    <string name="end_at_last_set">마지막 세트에 끝내기, %1$s</string>
+    <string name="times_order">종료는 시작보다 뒤여야 합니다.</string>
+    <string name="times_outside">체크한 세트가 모두 들어가야 합니다. %1$s까지 시작하고 %2$s 이후에 끝내세요.</string>
     <string name="programs">프로그램</string>
     <string name="add_program">프로그램 추가</string>
     <string name="program_already_added">이 루틴들은 이미 목록에 있습니다.</string>

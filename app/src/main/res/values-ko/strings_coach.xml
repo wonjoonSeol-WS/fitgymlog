@@ -11,10 +11,8 @@
     <string name="coach_key_saved">이 휴대폰에 암호화해 저장됨</string>
     <string name="coach_key_change">변경</string>
     <string name="coach_key_remove">삭제</string>
-    <string name="coach_key_save">키 저장</string>
     <string name="coach_connect">연결</string>
     <string name="coach_connecting">연결 중…</string>
-    <string name="coach_connected">연결됨, 모델 %1$d개 사용 가능</string>
     <string name="coach_model">모델</string>
     <string name="coach_model_hint">연결한 뒤 목록에서 고르거나 모델 이름을 입력하세요.</string>
     <string name="coach_task_models">작업별 모델</string>
@@ -36,7 +34,6 @@
     <string name="coach_share_notes">기억한 내용 공유</string>
     <string name="coach_share_notes_help">저장한 부상, 식단 제한, 일정, 목표.</string>
     <string name="coach_memory">코치가 기억하는 것</string>
-    <string name="coach_memory_count">메모 %1$d개</string>
     <string name="coach_preview">보내는 내용 미리 보기</string>
     <string name="coach_preview_help">오늘 목표를 요청할 때 보내는 내용 그대로입니다. 키는 빠져 있습니다.</string>
     <string name="coach_footer">제안은 내가 적용하기 전에는 바뀌지 않습니다. 키는 이 휴대폰에 암호화해 저장하고 위 주소로만 보냅니다. 일반적인 안내일 뿐 의학적, 영양학적 조언이 아닙니다.</string>
@@ -47,6 +44,7 @@
     <string name="coach_targets_loading">코치가 최근 기록을 보고 있습니다…</string>
     <string name="coach_targets_rules">코치에 연결하지 못해 증량 규칙으로 계산했습니다. %1$s</string>
     <string name="coach_apply_all">모두 적용</string>
+    <string name="coach_apply">적용</string>
     <string name="coach_not_now">나중에</string>
     <string name="coach_applied">적용됨</string>
     <string name="coach_reason_all_reps">지난번 모든 횟수 성공</string>
@@ -69,6 +67,8 @@
     <string name="coach_send">보내기</string>
     <string name="coach_thinking">생각 중…</string>
     <string name="coach_retry">다시 시도</string>
+    <string name="coach_clear_chat">대화 지우기</string>
+    <string name="coach_edit">고치기</string>
     <string name="coach_change_title">%1$s, 오늘</string>
     <string name="coach_change_needs_workout">운동을 시작하면 적용할 수 있습니다.</string>
     <string name="coach_remember_offer">기억하기: %1$s</string>
@@ -91,4 +91,10 @@
     <string name="coach_error_server">제공자 쪽에 문제가 있습니다. 잠시 뒤 다시 시도하세요.</string>
     <string name="coach_error_offline">제공자에 연결하지 못했습니다. 인터넷 연결을 확인하세요.</string>
     <string name="coach_error_reply">모델의 답을 읽지 못했습니다. 다시 시도하거나 다른 모델을 고르세요.</string>
+    <plurals name="coach_connected">
+        <item quantity="other">연결됨, 모델 %1$d개 사용 가능</item>
+    </plurals>
+    <plurals name="coach_memory_count">
+        <item quantity="other">메모 %1$d개</item>
+    </plurals>
 </resources>

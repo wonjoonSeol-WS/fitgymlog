@@ -81,14 +81,33 @@ class CoachRepository(
         return review
     }
 
-    /** The user's message is kept even if the reply fails, so it can be sent again. */
+    /** The user's message is kept even if the reply fails, so [reply] can be tried again. */
     suspend fun send(message: String, active: ActiveWorkout?) {
-        val history = store.data.value.chat
-        store.update { it.copy(chat = it.chat + ChatTurn(fromUser = true, text = message)) }
+        store.update { it.copy(chat = it.chat + ChatTurn(fromUser = true, text = message.trim())) }
+        reply(active)
+    }
+
+    suspend fun reply(active: ActiveWorkout?) {
+        val chat = store.data.value.chat
+        val last = chat.lastOrNull()?.takeIf { it.fromUser } ?: return
         val today = active?.let { plan(it) }.orEmpty().let { plan -> plan.zip(Coach.ruleTargets(plan, unit())) }
-        val reply = Coach.chat(completer(CoachTask.CHAT), profile(), history, message, today, recent(except = null), unit(), LocalDate.now())
+        val reply = Coach.chat(completer(CoachTask.CHAT), profile(), chat.dropLast(1), last.text, today, recent(except = null), unit(), LocalDate.now())
         store.update { it.copy(chat = it.chat + reply) }
     }
+
+    suspend fun applyChange(turn: Int, change: Int) {
+        val proposed = store.data.value.chat.getOrNull(turn)?.changes?.getOrNull(change) ?: return
+        workouts.update { it.applyTarget(proposed.exerciseId, proposed.weightKg, proposed.reps) }
+        store.update { data -> data.copy(chat = data.chat.updated(turn) { it.copy(changes = it.changes.updated(change) { c -> c.copy(applied = true) }) }) }
+    }
+
+    suspend fun saveMemory(turn: Int, offer: Int) {
+        val offered = store.data.value.chat.getOrNull(turn)?.remember?.getOrNull(offer)?.takeIf { !it.saved } ?: return
+        store.remember(offered.topic, offered.text)
+        store.update { data -> data.copy(chat = data.chat.updated(turn) { it.copy(remember = it.remember.updated(offer) { r -> r.copy(saved = true) }) }) }
+    }
+
+    suspend fun clearChat() = store.update { it.copy(chat = emptyList()) }
 
     suspend fun preview(active: ActiveWorkout?): String = Coach.preview(profile(), active?.let { plan(it) }.orEmpty(), unit(), LocalDate.now())
 
@@ -129,3 +148,5 @@ class CoachRepository(
         const val RECENT_WORKOUTS = 5
     }
 }
+
+private fun <T> List<T>.updated(index: Int, change: (T) -> T): List<T> = mapIndexed { i, item -> if (i == index) change(item) else item }

@@ -168,7 +168,8 @@ object Coach {
         ChatMessage("user", payload.toString()),
     )
 
-    private fun notesOf(profile: Profile): JsonArray = JsonArray(profile.memories.map { JsonPrimitive("${it.topic.name.lowercase()}: ${it.text}") })
+    private fun notesOf(profile: Profile): JsonArray =
+        JsonArray(profile.memories.map { JsonPrimitive("${it.topic.name.lowercase()}, saved ${it.savedAt}: ${it.text}") })
 
     private fun exerciseJson(planned: Planned, rule: RuleTarget) = buildJsonObject {
         put("id", planned.exercise.id)
@@ -248,7 +249,7 @@ object Coach {
     private const val MEAL_PROTEIN_MAX = 50.0
     private const val MEAL_IDEAS = 3
 
-    private const val SYSTEM = """You are the coach inside FitGymLog, a workout log. The lifter shares their own logged training and notes they asked you to remember. Be brief, specific and kind, and write in {language}. You are not a doctor: for pain beyond ordinary muscle soreness, suggest stopping that exercise and seeing a professional. Never suggest eating under 1,500 kcal a day, skipping meals to lose weight, or supplements beyond protein powder, creatine and caffeine. Weights are in kilograms in the data. Reply with JSON only, in exactly the requested shape."""
+    private const val SYSTEM = """You are the coach inside FitGymLog, a workout log. The lifter shares their own logged training and notes they asked you to remember, each with the date it was saved; weigh old notes, such as an injury from months ago, less than recent ones. Be brief, specific and kind, and write in {language}. You are not a doctor: for pain beyond ordinary muscle soreness, suggest stopping that exercise and seeing a professional. Never suggest eating under 1,500 kcal a day, skipping meals to lose weight, or supplements beyond protein powder, creatine and caffeine. Weights are in kilograms in the data. Reply with JSON only, in exactly the requested shape."""
 
     private const val TARGETS_TASK = """Set today's target for each exercise in the data. Each has the app's rule target and an allowed range. Keep the rule target unless the history or the notes give a reason, such as pain, repeated misses or reps far above the plan. Weights must stay between minKg and maxKg and be a multiple of stepKg; reps may move by at most 2 from the rule. For each exercise write a note of at most 12 words saying why."""
 

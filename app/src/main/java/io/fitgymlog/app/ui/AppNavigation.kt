@@ -45,6 +45,9 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import io.fitgymlog.app.R
+import io.fitgymlog.app.ui.coach.CoachChatScreen
+import io.fitgymlog.app.ui.coach.CoachMemoryScreen
+import io.fitgymlog.app.ui.coach.CoachSettingsScreen
 import io.fitgymlog.app.ui.exercise.ExerciseDetailScreen
 import io.fitgymlog.app.ui.guide.BandGuideScreen
 import io.fitgymlog.app.ui.history.HistoryScreen
@@ -63,6 +66,9 @@ private object Routes {
     const val WORKOUT = "workout/{id}"
     const val EXERCISE = "exercise/{id}"
     const val BAND_GUIDE = "band-guide"
+    const val COACH = "coach"
+    const val COACH_SETTINGS = "coach-settings"
+    const val COACH_MEMORY = "coach-memory"
 
     fun routine(id: Long) = "routine/$id"
     fun workout(id: Long) = "workout/$id"
@@ -170,6 +176,7 @@ private fun AppNavHost(navController: NavHostController, openActiveWorkout: Bool
                 onOpenWorkout = { navController.navigate(Routes.ACTIVE) { launchSingleTop = true } },
                 onEditRoutine = { navController.navigate(Routes.routine(it)) },
                 onOpenBandGuide = { navController.navigate(Routes.BAND_GUIDE) },
+                onOpenCoach = { navController.navigate(Routes.COACH) },
             )
         }
         composable(Routes.HISTORY) {
@@ -178,13 +185,30 @@ private fun AppNavHost(navController: NavHostController, openActiveWorkout: Bool
                 onOpenExercise = { navController.navigate(Routes.exercise(it)) },
             )
         }
-        composable(Routes.SETTINGS) { SettingsScreen(onOpenBandGuide = { navController.navigate(Routes.BAND_GUIDE) }) }
+        composable(Routes.SETTINGS) {
+            SettingsScreen(
+                onOpenBandGuide = { navController.navigate(Routes.BAND_GUIDE) },
+                onOpenCoach = { navController.navigate(Routes.COACH_SETTINGS) },
+            )
+        }
+        composable(Routes.COACH) { entry ->
+            CoachChatScreen(
+                onBack = { navController.popFrom(entry) },
+                onOpenMemory = { navController.navigate(Routes.COACH_MEMORY) },
+                onOpenSettings = { navController.navigate(Routes.COACH_SETTINGS) },
+            )
+        }
+        composable(Routes.COACH_SETTINGS) { entry ->
+            CoachSettingsScreen(onBack = { navController.popFrom(entry) }, onOpenMemory = { navController.navigate(Routes.COACH_MEMORY) })
+        }
+        composable(Routes.COACH_MEMORY) { entry -> CoachMemoryScreen(onBack = { navController.popFrom(entry) }) }
         composable(Routes.BAND_GUIDE) { entry -> BandGuideScreen(onBack = { navController.popFrom(entry) }) }
         composable(Routes.ACTIVE) { entry ->
             ActiveWorkoutScreen(
                 onBack = { navController.popFrom(entry) },
                 onFinished = navController::leaveWorkout,
                 onOpenExercise = { navController.navigate(Routes.exercise(it)) },
+                onOpenCoach = { navController.navigate(Routes.COACH) },
             )
         }
         composable(Routes.ROUTINE, listOf(navArgument("id") { type = NavType.LongType })) { entry ->
