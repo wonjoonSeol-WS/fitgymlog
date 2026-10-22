@@ -191,6 +191,13 @@ section.soft { background: var(--bg-soft); }
 .facts dt { font: 700 21px/1.25 var(--display); }
 .facts dd { margin: 4px 0 0; color: var(--muted); }
 
+.faq { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 8px 56px; align-items: start; }
+.faq dl { margin: 0; }
+.faq dl div { padding: 22px 0; border-top: 1px solid var(--line); }
+.faq dl div:last-child { border-bottom: 1px solid var(--line); }
+.faq dt { font: 700 21px/1.25 var(--display); }
+.faq dd { margin: 6px 0 0; color: var(--muted); max-width: 62ch; }
+
 .doc { max-width: 720px; padding-top: 40px; }
 .doc h1 { font-size: 46px; font-weight: 800; line-height: 1; margin: 0 0 10px; }
 .doc h2 { font-size: 26px; margin: 36px 0 6px; }
@@ -203,6 +210,7 @@ code { background: var(--bg-soft); padding: 1px 6px; border-radius: 5px; font-si
 
 @media (max-width: 860px) {
   .hero-grid, .split { grid-template-columns: 1fr; gap: 40px; }
+  .faq { grid-template-columns: 1fr; }
   .split.flip > :first-child { order: 0; }
   section.block { padding: 64px 0; }
   .barbell { height: 92px; }
@@ -223,7 +231,7 @@ code { background: var(--bg-soft); padding: 1px 6px; border-radius: 5px; font-si
 
 :lang(ko) { word-break: keep-all; overflow-wrap: anywhere; }
 body:lang(ko) { font-family: "Pretendard Variable", Pretendard, system-ui, sans-serif; font-size: 16.5px; }
-:lang(ko) h1, :lang(ko) h2, :lang(ko) h3, :lang(ko) .brand, :lang(ko) .buttons-map strong, :lang(ko) .sets strong, :lang(ko) .facts dt {
+:lang(ko) h1, :lang(ko) h2, :lang(ko) h3, :lang(ko) .brand, :lang(ko) .buttons-map strong, :lang(ko) .sets strong, :lang(ko) .facts dt, :lang(ko) .faq dt {
   font-family: "Pretendard Variable", Pretendard, system-ui, sans-serif; letter-spacing: -.03em; }
 :lang(ko) .hero h1 { font-size: clamp(40px, 6vw, 72px); line-height: 1.12; }
 :lang(ko) .block h2 { line-height: 1.18; }
