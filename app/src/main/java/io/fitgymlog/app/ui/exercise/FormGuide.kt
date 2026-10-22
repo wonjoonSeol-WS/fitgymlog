@@ -118,7 +118,7 @@ fun FormGuide(exercise: Exercise) {
 @Composable
 private fun VideoCard(url: String, removable: Boolean, onRemove: () -> Unit, onOpen: () -> Unit) {
     val id = LinkPreviews.youtubeIdOf(url) ?: return
-    val thumbnail by rememberRemoteImage(LinkPreviews.youtubeThumbnail(id))
+    val thumbnail by rememberYoutubeStill(id)
     val preview by rememberLinkPreview(url)
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Box(
