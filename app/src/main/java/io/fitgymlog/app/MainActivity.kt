@@ -72,7 +72,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private companion object {
-        const val PRIVACY_POLICY_URL = "https://wonjoonseol-ws.github.io/fitgymlog/privacy.html"
+        const val PRIVACY_POLICY_URL = "https://wonjoonseol.github.io/fitgymlog/privacy.html"
 
         // Health Connect opens these to show the privacy policy: the first up to Android 13, the second from Android 14.
         val PRIVACY_POLICY_ACTIONS = setOf("androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE", Intent.ACTION_VIEW_PERMISSION_USAGE)

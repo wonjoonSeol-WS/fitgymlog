@@ -5,8 +5,8 @@
 A workout log for Android that you can run from a Galaxy Fit band. Press play on the band to complete a set, feel a buzz
 when rest is over, and load the bar by tapping plates.
 
-Guide and screenshots: https://wonjoonseol-ws.github.io/fitgymlog/ (한국어: https://wonjoonseol-ws.github.io/fitgymlog/ko/)
-Download: [latest release](https://github.com/wonjoonSeol-WS/fitgymlog/releases/latest)
+Guide and screenshots: https://wonjoonseol.github.io/fitgymlog/ (한국어: https://wonjoonseol.github.io/fitgymlog/ko/)
+Download: [latest release](https://github.com/wonjoonSeol/fitgymlog/releases/latest)
 
 - Band remote through the music controls, and a rest-over buzz on the wrist
 - Plate-by-plate weight entry and a reps number pad
@@ -68,7 +68,7 @@ reach a session that plays no audio.
 
 Workouts are stored on the phone. There is no account, no ads and no analytics. Health Connect writes and Google Drive
 sync are optional; sync keeps one file in the app's hidden folder of your own Drive. Hevy and Strong CSV import and
-export mean you can leave at any time. See the [privacy policy](https://wonjoonseol-ws.github.io/fitgymlog/privacy.html).
+export mean you can leave at any time. See the [privacy policy](https://wonjoonseol.github.io/fitgymlog/privacy.html).
 
 ## Building
 
@@ -97,4 +97,4 @@ Galaxy Wearable이 이 알림을 밴드로 보내 진동합니다. 그래서 휴
 
 ## Try my other projects
 
-Like this? I make other small open source tools too: Android apps, a Claude chat game, Claude add-ons and more. See them all at [wonjoonseol-ws.github.io](https://wonjoonseol-ws.github.io/?from=fitgymlog).
+Like this? I make other small open source tools too: Android apps, a Claude chat game, Claude add-ons and more. See them all at [wonjoonseol.github.io](https://wonjoonseol.github.io/?from=fitgymlog).
