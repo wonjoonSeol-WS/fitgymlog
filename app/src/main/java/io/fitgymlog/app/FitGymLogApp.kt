@@ -3,6 +3,10 @@ package io.fitgymlog.app
 import android.app.Application
 import android.content.Context
 import android.util.Log
+import io.fitgymlog.app.coach.CoachRepository
+import io.fitgymlog.app.coach.CoachSettingsRepository
+import io.fitgymlog.app.coach.CoachStore
+import io.fitgymlog.app.coach.KeyVault
 import io.fitgymlog.app.data.ExerciseRepository
 import io.fitgymlog.app.data.GymDatabase
 import io.fitgymlog.app.data.RoutineRepository
@@ -42,6 +46,7 @@ class AppContainer(context: Context) {
     val actions = WorkoutActions(context, workouts, exercises, settings, health)
     val transfer = TransferService(context, exercises, workouts, routines, settings)
     val sync = SyncEngine(context, SyncStore(database), settings, scope)
+    val coach = CoachRepository(context, CoachSettingsRepository(context), CoachStore(context), KeyVault(context), workouts, exercises, settings)
 
     /** Runs [block] in the app scope, so a write finishes even if the screen that asked for it has gone. */
     suspend fun <T> inAppScope(block: suspend () -> T): T = scope.async { block() }.await()

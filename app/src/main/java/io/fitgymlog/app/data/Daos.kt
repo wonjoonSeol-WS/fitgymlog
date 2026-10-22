@@ -28,6 +28,10 @@ abstract class WorkoutDao {
     abstract suspend fun allFinished(): List<WorkoutWithExercises>
 
     @Transaction
+    @Query("SELECT * FROM workout WHERE endedAt IS NOT NULL ORDER BY startedAt DESC LIMIT :limit")
+    abstract suspend fun recentFinished(limit: Int): List<WorkoutWithExercises>
+
+    @Transaction
     @Query("SELECT * FROM workout WHERE id = :id")
     abstract fun observe(id: Long): Flow<WorkoutWithExercises?>
 

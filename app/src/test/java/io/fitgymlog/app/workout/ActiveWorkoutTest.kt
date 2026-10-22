@@ -123,6 +123,20 @@ class ActiveWorkoutTest {
     }
 
     @Test
+    fun `a coach target changes only the working sets not done yet`() {
+        val warmup = WorkoutSet(type = io.fitgymlog.app.model.SetType.WARMUP, weightKg = 20.0, reps = 5)
+        val started = ActiveWorkout(Workout(title = "Day A", startedAt = start, exercises = emptyList()))
+            .addExercise("squat_barbell", listOf(warmup) + sets(3, 60.0, 5), restSeconds = 120, now = start)
+            .toggleSet(SetRef(0, 1), start)
+
+        val sets = started.applyTarget("squat_barbell", weightKg = 62.5, reps = 3).exercises[0].sets
+
+        assertEquals(listOf(20.0, 60.0, 62.5, 62.5), sets.map { it.weightKg })
+        assertEquals(listOf(5, 5, 3, 3), sets.map { it.targetReps })
+        assertEquals(started, started.applyTarget("deadlift_barbell", 100.0, 5))
+    }
+
+    @Test
     fun `moving exercises keeps focus on the same exercise`() {
         val moved = workout().focusExercise(1).moveExercise(from = 1, to = 0)
 

@@ -183,6 +183,19 @@ data class ActiveWorkout(
 
     fun setLevel(ref: SetRef, level: Int?): ActiveWorkout = updateSet(ref) { it.copy(level = level) }
 
+    /** Done sets keep what was lifted; the rest of the exercise's working sets take the weight and reps. */
+    fun applyTarget(exerciseId: String, weightKg: Double?, reps: Int?): ActiveWorkout {
+        val index = exercises.indexOfFirst { it.exerciseId == exerciseId }.takeIf { it >= 0 } ?: return this
+        return updateExercise(index) { exercise ->
+            exercise.copy(
+                sets = exercise.sets.map { set ->
+                    if (set.isCompleted || set.type != SetType.NORMAL) set
+                    else set.copy(weightKg = weightKg ?: set.weightKg, reps = reps ?: set.reps, targetReps = reps ?: set.targetReps)
+                },
+            )
+        }
+    }
+
     fun setType(ref: SetRef, type: SetType): ActiveWorkout = updateSet(ref) { it.copy(type = type) }
 
     fun cycleSetType(ref: SetRef): ActiveWorkout = updateSet(ref) { set ->

@@ -102,6 +102,8 @@ class WorkoutRepository(private val dao: WorkoutDao, private val tombstones: Tom
 
     suspend fun allFinished(): List<Workout> = dao.allFinished().map { it.toWorkout() }
 
+    suspend fun recentFinished(limit: Int): List<Workout> = dao.recentFinished(limit).map { it.toWorkout() }
+
     suspend fun importFinished(workouts: List<Workout>): Int = saveImported(notYetImported(workouts, { it.startedAt }, { it.title }))
 
     suspend fun saveImported(workouts: List<Workout>): Int {
