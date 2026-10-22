@@ -1,10 +1,14 @@
 package io.fitgymlog.app.ui.exercise
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -25,6 +29,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.fitgymlog.app.R
 import io.fitgymlog.app.container
 import io.fitgymlog.app.ui.ReadableWidth
+import io.fitgymlog.app.ui.TwoPaneMinWidth
 import io.fitgymlog.app.ui.history.SessionLines
 import io.fitgymlog.app.ui.history.recentSessions
 import io.fitgymlog.app.ui.localizedName
@@ -49,29 +54,44 @@ fun ExerciseDetailScreen(exerciseId: String, onBack: () -> Unit) {
             )
         },
     ) { padding ->
-        ReadableWidth(Modifier.padding(padding)) {
-            LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                if (name != exercise.englishName) {
-                    item { Text(exercise.englishName, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        val guideItems: LazyListScope.() -> Unit = {
+            if (name != exercise.englishName) {
+                item { Text(exercise.englishName, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            }
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(stringResource(R.string.form_guide), style = MaterialTheme.typography.titleLarge)
+                    FormGuide(exercise)
                 }
-                item {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text(stringResource(R.string.form_guide), style = MaterialTheme.typography.titleLarge)
-                        FormGuide(exercise)
-                    }
-                }
-                item {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(stringResource(R.string.recent_sessions), style = MaterialTheme.typography.titleLarge)
-                        val sessions = recentSessions(history, exerciseId)
-                        if (sessions.isEmpty()) {
-                            Text(stringResource(R.string.no_sessions_yet), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        } else {
-                            SessionLines(context, exercise, sessions, settings.unit)
-                        }
+            }
+        }
+        val sessionItems: LazyListScope.() -> Unit = {
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(stringResource(R.string.recent_sessions), style = MaterialTheme.typography.titleLarge)
+                    val sessions = recentSessions(history, exerciseId)
+                    if (sessions.isEmpty()) {
+                        Text(stringResource(R.string.no_sessions_yet), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    } else {
+                        SessionLines(context, exercise, sessions, settings.unit)
                     }
                 }
             }
         }
+        BoxWithConstraints(Modifier.fillMaxSize().padding(padding)) {
+            if (maxWidth >= TwoPaneMinWidth) {
+                Row(Modifier.fillMaxSize()) {
+                    DetailColumn(Modifier.weight(1f), guideItems)
+                    DetailColumn(Modifier.weight(1f), sessionItems)
+                }
+            } else {
+                ReadableWidth { DetailColumn(content = { guideItems(); sessionItems() }) }
+            }
+        }
     }
+}
+
+@Composable
+private fun DetailColumn(modifier: Modifier = Modifier, content: LazyListScope.() -> Unit) {
+    LazyColumn(modifier = modifier, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(20.dp), content = content)
 }

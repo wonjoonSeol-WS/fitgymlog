@@ -11,10 +11,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -24,8 +26,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -50,6 +54,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -62,6 +67,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.pluralStringResource
@@ -69,6 +75,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -86,7 +93,10 @@ import io.fitgymlog.app.ui.ChoiceDialog
 import io.fitgymlog.app.ui.ConfirmDialog
 import io.fitgymlog.app.ui.NumberStyles
 import io.fitgymlog.app.ui.ReadableWidth
+import io.fitgymlog.app.ui.TwoPaneMinWidth
+import io.fitgymlog.app.ui.exercise.ExerciseAvatar
 import io.fitgymlog.app.ui.exercise.ExercisePickerDialog
+import io.fitgymlog.app.ui.exercise.FormGuide
 import io.fitgymlog.app.ui.exercise.FormGuideSheet
 import io.fitgymlog.app.ui.formatClock
 import io.fitgymlog.app.ui.formatRest
@@ -96,6 +106,7 @@ import io.fitgymlog.app.ui.localizedName
 import io.fitgymlog.app.ui.rememberNow
 import io.fitgymlog.app.workout.ActiveWorkout
 import io.fitgymlog.app.workout.SetRef
+import io.fitgymlog.app.workout.bandText
 import java.time.Duration
 import java.time.Instant
 import kotlinx.coroutines.Dispatchers
@@ -152,6 +163,49 @@ fun ActiveWorkoutScreen(onBack: () -> Unit, onFinished: (Long?) -> Unit, onOpenE
         value = exerciseIds.associateWith { app.workouts.previousSets(it) }
     }
 
+    val workoutList: @Composable () -> Unit = {
+        LazyColumn(contentPadding = PaddingValues(bottom = 140.dp)) {
+            item { WorkoutStats(workout, settings.unit, now) }
+            item { HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant) }
+            itemsIndexed(workout.exercises, key = { _, exercise -> exercise.key }) { index, exercise ->
+                ExerciseSection(
+                    index = index,
+                    exercise = exercise,
+                    info = infoOf(exercise),
+                    previous = previous[exercise.exerciseId].orEmpty(),
+                    focused = index == workout.focus,
+                    isLast = index == workout.exercises.lastIndex,
+                    unit = settings.unit,
+                    onChange = ::change,
+                    onEditSet = { setEditor = it },
+                    onReplace = { picker = PickerTarget.Replace(index) },
+                    onEditRest = { restEditor = index },
+                    onGuide = { guideFor = infoOf(exercise) },
+                    onOpenExercise = { onOpenExercise(exercise.exerciseId) },
+                )
+            }
+            item {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Button(
+                        onClick = { picker = PickerTarget.Add },
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth().height(50.dp),
+                    ) {
+                        Icon(Icons.Default.Add, null)
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.add_exercise), style = MaterialTheme.typography.titleSmall)
+                    }
+                    Button(
+                        onClick = { confirmDiscard = true },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.lift.field, contentColor = MaterialTheme.colorScheme.error),
+                        modifier = Modifier.fillMaxWidth().height(50.dp),
+                    ) { Text(stringResource(R.string.discard_workout), style = MaterialTheme.typography.titleSmall) }
+                }
+            }
+        }
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -175,63 +229,41 @@ fun ActiveWorkoutScreen(onBack: () -> Unit, onFinished: (Long?) -> Unit, onOpenE
             )
         },
     ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding)) {
-            ReadableWidth {
-                LazyColumn(contentPadding = PaddingValues(bottom = 140.dp)) {
-                    item { WorkoutStats(workout, settings.unit, now) }
-                    item { HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant) }
-                    itemsIndexed(workout.exercises, key = { _, exercise -> exercise.key }) { index, exercise ->
-                        ExerciseSection(
-                            index = index,
-                            exercise = exercise,
-                            info = infoOf(exercise),
-                            previous = previous[exercise.exerciseId].orEmpty(),
-                            focused = index == workout.focus,
-                            isLast = index == workout.exercises.lastIndex,
-                            unit = settings.unit,
-                            onChange = ::change,
-                            onEditSet = { setEditor = it },
-                            onReplace = { picker = PickerTarget.Replace(index) },
-                            onEditRest = { restEditor = index },
-                            onGuide = { guideFor = infoOf(exercise) },
-                            onOpenExercise = { onOpenExercise(exercise.exerciseId) },
-                        )
-                    }
-                    item {
-                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Button(
-                                onClick = { picker = PickerTarget.Add },
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier.fillMaxWidth().height(50.dp),
-                            ) {
-                                Icon(Icons.Default.Add, null)
-                                Spacer(Modifier.width(8.dp))
-                                Text(stringResource(R.string.add_exercise), style = MaterialTheme.typography.titleSmall)
-                            }
-                            Button(
-                                onClick = { confirmDiscard = true },
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.lift.field, contentColor = MaterialTheme.colorScheme.error),
-                                modifier = Modifier.fillMaxWidth().height(50.dp),
-                            ) { Text(stringResource(R.string.discard_workout), style = MaterialTheme.typography.titleSmall) }
-                        }
-                    }
+        BoxWithConstraints(Modifier.fillMaxSize().padding(padding)) {
+            if (maxWidth >= TwoPaneMinWidth) {
+                // Sets on the right keep their done boxes at the screen edge, under the thumb.
+                Row(Modifier.fillMaxSize()) {
+                    FocusPanel(
+                        workout = workout,
+                        exerciseOf = { id -> exercises.firstOrNull { it.id == id } ?: app.exercises.find(id) },
+                        now = now,
+                        unit = settings.unit,
+                        onComplete = { change { it.completeFocusedSet(Instant.now()) } },
+                        onAdjustRest = { seconds -> change { it.adjustRest(Duration.ofSeconds(seconds), Instant.now()) } },
+                        onSkipRest = { change { it.restOver() } },
+                        modifier = Modifier.weight(1f),
+                    )
+                    VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    Box(Modifier.weight(1.1f).fillMaxHeight()) { workoutList() }
                 }
-            }
-            AnimatedVisibility(
-                visible = workout.restEndsAt != null,
-                enter = slideInVertically { it * 2 },
-                exit = slideOutVertically { it * 2 },
-                modifier = Modifier.align(Alignment.BottomCenter),
-            ) {
-                val endsAt = workout.restEndsAt ?: now
-                val total = workout.exercises.getOrNull(workout.focus)?.restSeconds ?: 0
-                RestBar(
-                    remaining = Duration.between(now, endsAt),
-                    totalSeconds = total,
-                    onAdjust = { seconds -> change { it.adjustRest(Duration.ofSeconds(seconds), Instant.now()) } },
-                    onSkip = { change { it.restOver() } },
-                )
+            } else {
+                ReadableWidth { workoutList() }
+                AnimatedVisibility(
+                    visible = workout.restEndsAt != null,
+                    enter = slideInVertically { it * 2 },
+                    exit = slideOutVertically { it * 2 },
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                ) {
+                    val endsAt = workout.restEndsAt ?: now
+                    val total = workout.exercises.getOrNull(workout.focus)?.restSeconds ?: 0
+                    RestBar(
+                        remaining = Duration.between(now, endsAt),
+                        totalSeconds = total,
+                        onAdjust = { seconds -> change { it.adjustRest(Duration.ofSeconds(seconds), Instant.now()) } },
+                        onSkip = { change { it.restOver() } },
+                        modifier = Modifier.navigationBarsPadding().padding(12.dp),
+                    )
+                }
             }
         }
     }
@@ -318,6 +350,67 @@ fun ActiveWorkoutScreen(onBack: () -> Unit, onFinished: (Long?) -> Unit, onOpenE
             },
             onDismiss = { confirmDiscard = false },
         )
+    }
+}
+
+/**
+ * The second pane on wide screens: the set the band shows, the rest timer or a large complete
+ * button, and the form guide for the exercise in focus, so a glance across the room is enough.
+ */
+@Composable
+private fun FocusPanel(
+    workout: ActiveWorkout,
+    exerciseOf: (String) -> Exercise,
+    now: Instant,
+    unit: WeightUnit,
+    onComplete: () -> Unit,
+    onAdjustRest: (Long) -> Unit,
+    onSkipRest: () -> Unit,
+    modifier: Modifier,
+) {
+    val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
+    Column(
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+        modifier = modifier.fillMaxHeight().verticalScroll(rememberScrollState()).padding(24.dp),
+    ) {
+        val view = workout.bandView()
+        if (view == null) {
+            Text(stringResource(R.string.band_add_exercise), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            return@Column
+        }
+        val exercise = exerciseOf(view.exerciseId)
+        val text = bandText(context, workout, exerciseOf, unit)
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(text.title, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
+            Text(text.subtitle, style = NumberStyles.timer)
+        }
+        val endsAt = workout.restEndsAt
+        if (endsAt != null) {
+            RestBar(
+                remaining = Duration.between(now, endsAt),
+                totalSeconds = workout.exercises.getOrNull(workout.focus)?.restSeconds ?: 0,
+                onAdjust = onAdjustRest,
+                onSkip = onSkipRest,
+            )
+        } else if (!view.isExerciseDone) {
+            Button(
+                onClick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onComplete()
+                },
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.lift.doneCheck, contentColor = Color.White),
+                modifier = Modifier.fillMaxWidth().height(64.dp),
+            ) {
+                Icon(Icons.Default.Check, null)
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.complete_set), style = MaterialTheme.typography.titleMedium)
+            }
+        }
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        Text(stringResource(R.string.form_guide), style = MaterialTheme.typography.titleMedium)
+        FormGuide(exercise)
     }
 }
 
@@ -438,20 +531,6 @@ private fun ExerciseSection(
                 Text(stringResource(R.string.add_set), style = MaterialTheme.typography.labelLarge)
             }
         }
-    }
-}
-
-@Composable
-private fun ExerciseAvatar(info: Exercise, modifier: Modifier = Modifier) {
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = modifier.size(42.dp).background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-    ) {
-        Text(
-            info.localizedName().take(1).uppercase(),
-            style = NumberStyles.stat.copy(fontSize = MaterialTheme.typography.titleMedium.fontSize),
-            color = MaterialTheme.colorScheme.onPrimaryContainer,
-        )
     }
 }
 
@@ -684,14 +763,14 @@ fun ExerciseKind.usesWeight(): Boolean = this != ExerciseKind.BODYWEIGHT_REPS &&
 
 /** The StrongLifts-style floating timer: big countdown, a progress line, nudge and skip. */
 @Composable
-private fun RestBar(remaining: Duration, totalSeconds: Int, onAdjust: (Long) -> Unit, onSkip: () -> Unit) {
+private fun RestBar(remaining: Duration, totalSeconds: Int, onAdjust: (Long) -> Unit, onSkip: () -> Unit, modifier: Modifier = Modifier) {
     val colors = MaterialTheme.lift
     Surface(
         color = colors.restBar,
         contentColor = colors.onRestBar,
         shape = RoundedCornerShape(18.dp),
         shadowElevation = 8.dp,
-        modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 12.dp, vertical = 12.dp),
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 20.dp, end = 8.dp, top = 10.dp, bottom = 8.dp)) {
@@ -700,7 +779,8 @@ private fun RestBar(remaining: Duration, totalSeconds: Int, onAdjust: (Long) -> 
                     stringResource(R.string.rest_label, formatRest(totalSeconds)),
                     style = MaterialTheme.typography.bodyMedium,
                     color = colors.onRestBar.copy(alpha = 0.7f),
-                    modifier = Modifier.weight(1f),
+                    maxLines = 1,
+                    modifier = Modifier.weight(1f).hideWhenClipped(),
                 )
                 RestButton("−15") { onAdjust(-15) }
                 RestButton("+15") { onAdjust(15) }
@@ -716,6 +796,13 @@ private fun RestBar(remaining: Duration, totalSeconds: Int, onAdjust: (Long) -> 
             )
         }
     }
+}
+
+/** Drops the text entirely when the row is too narrow for it, rather than wrapping it a letter per line. */
+private fun Modifier.hideWhenClipped(): Modifier = layout { measurable, constraints ->
+    val placeable = measurable.measure(constraints.copy(maxWidth = Constraints.Infinity))
+    val width = constraints.maxWidth
+    layout(width, placeable.height) { if (placeable.width <= width) placeable.place(0, 0) }
 }
 
 @Composable

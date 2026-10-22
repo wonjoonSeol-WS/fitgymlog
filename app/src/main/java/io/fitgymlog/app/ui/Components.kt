@@ -37,6 +37,12 @@ import io.fitgymlog.app.R
 import java.time.Instant
 import kotlinx.coroutines.delay
 
+/** Above this width (an unfolded Fold, a tablet) the tabs move to a side rail. */
+val NavigationRailMinWidth = 600.dp
+
+/** Above this content width, screens split into a list and a detail pane. */
+val TwoPaneMinWidth = 720.dp
+
 /** Keeps wide screens such as an unfolded Fold readable by centring content at phone width. */
 @Composable
 fun ReadableWidth(modifier: Modifier = Modifier, content: @Composable () -> Unit) {

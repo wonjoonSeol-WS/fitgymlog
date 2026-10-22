@@ -1,5 +1,15 @@
 package io.fitgymlog.app.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
@@ -65,76 +75,122 @@ private val tabs = listOf(
 fun AppNavigation(openActiveWorkout: Boolean, navController: NavHostController = rememberNavController()) {
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
-    Scaffold(
-        bottomBar = {
-            if (tabs.any { it.route == currentRoute }) {
-                NavigationBar(containerColor = MaterialTheme.colorScheme.background, tonalElevation = 0.dp) {
-                    tabs.forEach { tab ->
-                        NavigationBarItem(
-                            selected = currentRoute == tab.route,
-                            onClick = {
-                                navController.navigate(tab.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            icon = { Icon(tab.icon, null) },
-                            label = { Text(stringResource(tab.label)) },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = MaterialTheme.colorScheme.primary,
-                                selectedTextColor = MaterialTheme.colorScheme.primary,
-                                indicatorColor = MaterialTheme.colorScheme.background,
-                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            ),
-                        )
+    val showTabs = tabs.any { it.route == currentRoute }
+
+    fun open(tab: Tab) {
+        navController.navigate(tab.route) {
+            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+
+    BoxWithConstraints(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        if (maxWidth >= NavigationRailMinWidth) {
+            Row(Modifier.fillMaxSize()) {
+                if (showTabs) {
+                    NavigationRail(containerColor = MaterialTheme.colorScheme.background, modifier = Modifier.statusBarsPadding()) {
+                        Spacer(Modifier.height(12.dp))
+                        tabs.forEach { tab ->
+                            NavigationRailItem(
+                                selected = currentRoute == tab.route,
+                                onClick = { open(tab) },
+                                icon = { Icon(tab.icon, null) },
+                                label = { Text(stringResource(tab.label)) },
+                                colors = NavigationRailItemDefaults.colors(
+                                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                                    indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                ),
+                            )
+                        }
                     }
                 }
+                AppNavHost(navController, openActiveWorkout, Modifier.weight(1f))
             }
-        },
-    ) { padding ->
-        NavHost(
-            navController = navController,
-            startDestination = if (openActiveWorkout) Routes.ACTIVE else Routes.HOME,
-            modifier = Modifier
-                .padding(bottom = padding.calculateBottomPadding())
-                .consumeWindowInsets(PaddingValues(bottom = padding.calculateBottomPadding())),
-        ) {
-            composable(Routes.HOME) {
-                HomeScreen(
-                    onOpenWorkout = { navController.navigate(Routes.ACTIVE) { launchSingleTop = true } },
-                    onEditRoutine = { navController.navigate(Routes.routine(it)) },
-                    onOpenBandGuide = { navController.navigate(Routes.BAND_GUIDE) },
-                )
-            }
-            composable(Routes.HISTORY) { HistoryScreen(onOpenWorkout = { navController.navigate(Routes.workout(it)) }) }
-            composable(Routes.SETTINGS) { SettingsScreen(onOpenBandGuide = { navController.navigate(Routes.BAND_GUIDE) }) }
-            composable(Routes.BAND_GUIDE) { BandGuideScreen(onBack = { navController.popBackStack() }) }
-            composable(Routes.ACTIVE) {
-                ActiveWorkoutScreen(
-                    onBack = { if (!navController.popBackStack()) navController.navigate(Routes.HOME) },
-                    onFinished = { savedId ->
-                        navController.navigate(savedId?.let(Routes::workout) ?: Routes.HOME) {
-                            popUpTo(Routes.ACTIVE) { inclusive = true }
+        } else {
+            Scaffold(
+                bottomBar = {
+                    if (showTabs) {
+                        NavigationBar(containerColor = MaterialTheme.colorScheme.background, tonalElevation = 0.dp) {
+                            tabs.forEach { tab ->
+                                NavigationBarItem(
+                                    selected = currentRoute == tab.route,
+                                    onClick = { open(tab) },
+                                    icon = { Icon(tab.icon, null) },
+                                    label = { Text(stringResource(tab.label)) },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                                        indicatorColor = MaterialTheme.colorScheme.background,
+                                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    ),
+                                )
+                            }
                         }
-                    },
-                    onOpenExercise = { navController.navigate(Routes.exercise(it)) },
+                    }
+                },
+            ) { padding ->
+                AppNavHost(
+                    navController,
+                    openActiveWorkout,
+                    Modifier
+                        .padding(bottom = padding.calculateBottomPadding())
+                        .consumeWindowInsets(PaddingValues(bottom = padding.calculateBottomPadding())),
                 )
             }
-            composable(Routes.ROUTINE, listOf(navArgument("id") { type = NavType.LongType })) { entry ->
-                RoutineEditorScreen(routineId = entry.arguments?.getLong("id") ?: 0L, onDone = { navController.popBackStack() })
-            }
-            composable(Routes.WORKOUT, listOf(navArgument("id") { type = NavType.LongType })) { entry ->
-                WorkoutDetailScreen(
-                    workoutId = entry.arguments?.getLong("id") ?: 0L,
-                    onBack = { if (!navController.popBackStack()) navController.navigate(Routes.HOME) },
-                    onOpenExercise = { navController.navigate(Routes.exercise(it)) },
-                )
-            }
-            composable(Routes.EXERCISE, listOf(navArgument("id") { type = NavType.StringType })) { entry ->
-                ExerciseDetailScreen(exerciseId = entry.arguments?.getString("id").orEmpty(), onBack = { navController.popBackStack() })
-            }
+        }
+    }
+}
+
+@Composable
+private fun AppNavHost(navController: NavHostController, openActiveWorkout: Boolean, modifier: Modifier) {
+    NavHost(
+        navController = navController,
+        startDestination = if (openActiveWorkout) Routes.ACTIVE else Routes.HOME,
+        modifier = modifier,
+    ) {
+        composable(Routes.HOME) {
+            HomeScreen(
+                onOpenWorkout = { navController.navigate(Routes.ACTIVE) { launchSingleTop = true } },
+                onEditRoutine = { navController.navigate(Routes.routine(it)) },
+                onOpenBandGuide = { navController.navigate(Routes.BAND_GUIDE) },
+            )
+        }
+        composable(Routes.HISTORY) {
+            HistoryScreen(
+                onOpenWorkout = { navController.navigate(Routes.workout(it)) },
+                onOpenExercise = { navController.navigate(Routes.exercise(it)) },
+            )
+        }
+        composable(Routes.SETTINGS) { SettingsScreen(onOpenBandGuide = { navController.navigate(Routes.BAND_GUIDE) }) }
+        composable(Routes.BAND_GUIDE) { BandGuideScreen(onBack = { navController.popBackStack() }) }
+        composable(Routes.ACTIVE) {
+            ActiveWorkoutScreen(
+                onBack = { if (!navController.popBackStack()) navController.navigate(Routes.HOME) },
+                onFinished = { savedId ->
+                    navController.navigate(savedId?.let(Routes::workout) ?: Routes.HOME) {
+                        popUpTo(Routes.ACTIVE) { inclusive = true }
+                    }
+                },
+                onOpenExercise = { navController.navigate(Routes.exercise(it)) },
+            )
+        }
+        composable(Routes.ROUTINE, listOf(navArgument("id") { type = NavType.LongType })) { entry ->
+            RoutineEditorScreen(routineId = entry.arguments?.getLong("id") ?: 0L, onDone = { navController.popBackStack() })
+        }
+        composable(Routes.WORKOUT, listOf(navArgument("id") { type = NavType.LongType })) { entry ->
+            WorkoutDetailScreen(
+                workoutId = entry.arguments?.getLong("id") ?: 0L,
+                onBack = { if (!navController.popBackStack()) navController.navigate(Routes.HOME) },
+                onOpenExercise = { navController.navigate(Routes.exercise(it)) },
+            )
+        }
+        composable(Routes.EXERCISE, listOf(navArgument("id") { type = NavType.StringType })) { entry ->
+            ExerciseDetailScreen(exerciseId = entry.arguments?.getString("id").orEmpty(), onBack = { navController.popBackStack() })
         }
     }
 }

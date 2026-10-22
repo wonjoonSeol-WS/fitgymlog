@@ -93,6 +93,7 @@ fun ExercisePickerDialog(
                         }
                         items(filtered, key = { it.first.id }) { (exercise, name) ->
                             ListItem(
+                                leadingContent = { ExerciseAvatar(exercise, size = 40.dp) },
                                 headlineContent = { Text(name) },
                                 supportingContent = if (name != exercise.englishName) {
                                     { Text(exercise.englishName) }

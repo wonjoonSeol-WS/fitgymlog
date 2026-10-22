@@ -2,22 +2,21 @@ package io.fitgymlog.app.ui.history
 
 import android.content.Context
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Surface
-import androidx.compose.material3.TopAppBarDefaults
-import io.fitgymlog.app.ui.NumberStyles
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
@@ -30,12 +29,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,7 +59,9 @@ import io.fitgymlog.app.model.Workout
 import io.fitgymlog.app.model.WorkoutSet
 import io.fitgymlog.app.model.WorkoutSource
 import io.fitgymlog.app.ui.ConfirmDialog
+import io.fitgymlog.app.ui.NumberStyles
 import io.fitgymlog.app.ui.ReadableWidth
+import io.fitgymlog.app.ui.TwoPaneMinWidth
 import io.fitgymlog.app.ui.formatClock
 import io.fitgymlog.app.ui.formatWeightNumber
 import io.fitgymlog.app.ui.localizedName
@@ -71,10 +76,33 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+/** On wide screens the list stays on the left and the chosen workout opens beside it. */
 @Composable
-fun HistoryScreen(onOpenWorkout: (Long) -> Unit) {
+fun HistoryScreen(onOpenWorkout: (Long) -> Unit, onOpenExercise: (String) -> Unit) {
     val app = LocalContext.current.container
     val history by app.workouts.history.collectAsStateWithLifecycle(emptyList())
+    var selected by rememberSaveable { mutableStateOf<Long?>(null) }
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        if (maxWidth >= TwoPaneMinWidth) {
+            val shown = selected?.takeIf { id -> history.any { it.id == id } } ?: history.firstOrNull()?.id
+            Row(Modifier.fillMaxSize()) {
+                Box(Modifier.weight(1f)) { HistoryList(history, shown) { selected = it } }
+                VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                Box(Modifier.weight(1.2f)) {
+                    if (shown != null) {
+                        WorkoutDetailScreen(shown, onBack = { selected = null }, onOpenExercise = onOpenExercise, showBack = false)
+                    }
+                }
+            }
+        } else {
+            HistoryList(history, selectedId = null, onSelect = onOpenWorkout)
+        }
+    }
+}
+
+@Composable
+private fun HistoryList(history: List<Workout>, selectedId: Long?, onSelect: (Long) -> Unit) {
+    val app = LocalContext.current.container
     val exercises by app.exercises.exercises.collectAsStateWithLifecycle()
     val settings by app.settings.settings.collectAsStateWithLifecycle()
     ReadableWidth(Modifier.statusBarsPadding()) {
@@ -90,10 +118,11 @@ fun HistoryScreen(onOpenWorkout: (Long) -> Unit) {
                 item { Text(stringResource(R.string.no_history), color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
             items(history, key = { it.id }) { workout ->
+                val isSelected = workout.id == selectedId
                 Surface(
-                    onClick = { onOpenWorkout(workout.id) },
+                    onClick = { onSelect(workout.id) },
                     shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    border = BorderStroke(if (isSelected) 2.dp else 1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -120,7 +149,7 @@ fun HistoryScreen(onOpenWorkout: (Long) -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (String) -> Unit) {
+fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (String) -> Unit, showBack: Boolean = true) {
     val context = LocalContext.current
     val app = context.container
     val workout by remember(workoutId) { app.workouts.observe(workoutId) }.collectAsStateWithLifecycle(null)
@@ -135,7 +164,9 @@ fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (St
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 title = { Text(workout?.title.orEmpty(), style = MaterialTheme.typography.titleMedium) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } },
+                navigationIcon = {
+                    if (showBack) IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) }
+                },
                 actions = {
                     Box {
                         IconButton(onClick = { menuOpen = true }) { Icon(Icons.Default.MoreVert, stringResource(R.string.more)) }
