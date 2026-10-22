@@ -31,12 +31,14 @@ class HealthConnectWriter(private val context: Context) {
         val endedAt = workout.endedAt ?: return
         val zone = ZoneId.systemDefault()
         val segments = segmentsOf(workout, exerciseOf)
+        val device = Device(type = Device.TYPE_PHONE)
+        val metadata = clientRecordIdOf(workout)?.let { Metadata.activelyRecorded(device, clientRecordId = it) } ?: Metadata.activelyRecorded(device)
         fun record(withSegments: List<ExerciseSegment>) = ExerciseSessionRecord(
             startTime = workout.startedAt,
             startZoneOffset = zone.rules.getOffset(workout.startedAt),
             endTime = endedAt,
             endZoneOffset = zone.rules.getOffset(endedAt),
-            metadata = Metadata.activelyRecorded(Device(type = Device.TYPE_PHONE), clientRecordId = clientId(workout.id)),
+            metadata = metadata,
             exerciseType = sessionType,
             title = workout.title,
             notes = summary(workout, exerciseOf, nameOf),
@@ -48,9 +50,10 @@ class HealthConnectWriter(private val context: Context) {
         client.insertRecords(listOf(session))
     }
 
-    suspend fun delete(workoutId: Long) {
+    suspend fun delete(workout: Workout) {
+        val clientRecordId = clientRecordIdOf(workout) ?: return
         if (!hasPermissions()) return
-        client.deleteRecords(ExerciseSessionRecord::class, emptyList(), listOf(clientId(workoutId)))
+        client.deleteRecords(ExerciseSessionRecord::class, emptyList(), listOf(clientRecordId))
     }
 
     /** One segment per completed set, ending when it was ticked and starting at most a minute earlier. */
@@ -77,9 +80,10 @@ class HealthConnectWriter(private val context: Context) {
 
     private fun formatKg(kg: Double): String = if (kg % 1.0 == 0.0) kg.toLong().toString() else "%.2f".format(java.util.Locale.ROOT, kg).trimEnd('0').trimEnd('.')
 
-    private fun clientId(workoutId: Long) = "fitgymlog-workout-$workoutId"
-
     private companion object {
         const val SET_SECONDS = 60L
     }
 }
+
+/** Keyed by uuid because the local row id restarts after a reinstall while Health Connect keeps old records. */
+internal fun clientRecordIdOf(workout: Workout): String? = workout.uuid.takeIf { it.isNotEmpty() }?.let { "fitgymlog-workout-$it" }

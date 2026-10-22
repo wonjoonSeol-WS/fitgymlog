@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import io.fitgymlog.app.container
+import java.time.Duration
 import java.time.Instant
 import kotlinx.coroutines.launch
 
@@ -34,17 +35,18 @@ class RestOverReceiver : BroadcastReceiver() {
         val container = context.container
         container.scope.launch {
             try {
-                container.workouts.awaitLoaded()
-                val active = container.workouts.active.value
-                val endsAt = active?.restEndsAt
-                if (active != null && endsAt != null && !endsAt.isAfter(Instant.now().plusSeconds(1))) {
-                    val rested = active.restOver()
-                    Notifications.postRestOver(context, bandText(context, rested, container.exercises::find, container.settings.settings.value.unit))
-                    container.workouts.update { it.restOver() }
+                var rested: ActiveWorkout? = null
+                container.workouts.update { current ->
+                    if (current.isRestDue(Instant.now().plus(ALARM_SLACK))) current.restOver().also { rested = it } else current
                 }
+                rested?.let { Notifications.postRestOver(context, bandText(context, it, container.exercises::find, container.settings.settings.value.unit)) }
             } finally {
                 pending.finish()
             }
         }
+    }
+
+    private companion object {
+        val ALARM_SLACK: Duration = Duration.ofSeconds(1)
     }
 }

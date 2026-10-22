@@ -37,7 +37,7 @@ object Notifications {
         val notification = Notification.Builder(context, CHANNEL_REST_OVER)
             .setSmallIcon(R.drawable.ic_fitgymlog)
             .setContentTitle(context.getString(R.string.rest_over_title))
-            .setContentText("${nextSet.title}, ${nextSet.subtitle}")
+            .setContentText(context.getString(R.string.rest_over_text, nextSet.title, nextSet.subtitle))
             .setCategory(Notification.CATEGORY_REMINDER)
             .setContentIntent(openApp(context))
             .setAutoCancel(true)

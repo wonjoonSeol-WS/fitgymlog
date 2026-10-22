@@ -16,6 +16,7 @@ data class BandView(
     val setCount: Int,
     val weightKg: Double?,
     val reps: Int?,
+    val durationSeconds: Int?,
     val isCompleted: Boolean,
     val isExerciseDone: Boolean,
 )
@@ -37,7 +38,16 @@ data class ActiveWorkout(
         val exercise = exercises.getOrNull(focus) ?: return null
         val ref = shownCompletedSet ?: nextSetOf(focus)
         if (ref == null) {
-            return BandView(exercise.exerciseId, exercise.sets.size, exercise.sets.size, null, null, isCompleted = true, isExerciseDone = true)
+            return BandView(
+                exerciseId = exercise.exerciseId,
+                setNumber = exercise.sets.size,
+                setCount = exercise.sets.size,
+                weightKg = null,
+                reps = null,
+                durationSeconds = null,
+                isCompleted = true,
+                isExerciseDone = true,
+            )
         }
         val set = exercises[ref.exerciseIndex].sets[ref.setIndex]
         return BandView(
@@ -46,13 +56,21 @@ data class ActiveWorkout(
             setCount = exercises[ref.exerciseIndex].sets.size,
             weightKg = set.weightKg,
             reps = set.reps ?: set.targetReps,
+            durationSeconds = set.durationSeconds,
             isCompleted = set.isCompleted,
             isExerciseDone = false,
         )
     }
 
-    fun completeFocusedSet(now: Instant): ActiveWorkout {
-        val ref = nextSetOf(focus) ?: return this
+    fun focusedNextSet(): SetRef? = nextSetOf(focus)
+
+    /**
+     * With [expected], completes that set only if it is still open, so the screen and the band
+     * completing the same set at once do not also tick the one after it.
+     */
+    fun completeFocusedSet(now: Instant, expected: SetRef? = null): ActiveWorkout {
+        val ref = expected ?: nextSetOf(focus) ?: return this
+        if (setAt(ref)?.isCompleted != false) return this
         return complete(ref, now)
     }
 
@@ -63,13 +81,16 @@ data class ActiveWorkout(
         return if (shownCompletedSet == ref) reopened.copy(shownCompletedSet = null, restEndsAt = null) else reopened
     }
 
-    /** Lowers the reps of the set the band shows; below zero it wraps back to the planned reps, so a stray tap is recoverable. */
+    /**
+     * Lowers the reps of the set the band shows; below zero it wraps back to the planned reps, or to
+     * the reps before the first lowering when nothing was planned, so a stray tap is recoverable.
+     */
     fun lowerShownReps(): ActiveWorkout {
         val ref = shownCompletedSet ?: nextSetOf(focus) ?: return this
         val set = setAt(ref) ?: return this
         val target = set.targetReps ?: set.reps ?: return this
         val current = set.reps ?: target
-        return updateSet(ref) { it.copy(reps = if (current <= 0) target else current - 1) }
+        return updateSet(ref) { it.copy(reps = if (current <= 0) target else current - 1, targetReps = target) }
     }
 
     fun focusNextExercise(): ActiveWorkout {
@@ -88,6 +109,14 @@ data class ActiveWorkout(
             .firstOrNull { rested.nextSetOf(it) != null }
             ?: return rested
         return rested.copy(focus = nextWithWork)
+    }
+
+    fun isRestDue(now: Instant): Boolean = restEndsAt?.isAfter(now) == false
+
+    /** Rest starts when a set is ticked, so the latest tick marks the start of the current rest. */
+    fun restStartedAt(): Instant? {
+        if (restEndsAt == null) return null
+        return exercises.flatMap { it.sets }.mapNotNull { it.completedAt }.maxOrNull() ?: lastActivityAt
     }
 
     fun adjustRest(delta: Duration, now: Instant): ActiveWorkout {
