@@ -315,7 +315,7 @@ private fun DoneToggle(done: Boolean, onToggle: () -> Unit) {
 @Composable
 private fun previousText(previous: WorkoutSet?, kind: ExerciseKind, unit: WeightUnit): String {
     val weight = previous?.weightKg?.let { formatWeightNumber(it, unit) }
-    val amount = previous?.amount(kind)?.let { if (kind == ExerciseKind.DURATION) stringResource(R.string.seconds_short, it) else it.toString() }
+    val amount = previous?.amount(kind)?.let { if (kind == ExerciseKind.DURATION) stringResource(R.string.duration_seconds, it) else it.toString() }
     return when {
         weight != null && amount != null -> stringResource(R.string.previous_weight_amount, weight, amount)
         else -> weight ?: amount ?: "–"

@@ -118,6 +118,21 @@ class RoutineEditorViewModelTest {
     }
 
     @Test
+    fun `saves the edits of a routine deleted elsewhere as a new routine`() = runTest(dispatcher) {
+        val store = FakeStore(Routine(id = 7, name = "Legs", exercises = listOf(squat)))
+        val editor = editor(7, store)
+        editor.edit { it.copy(name = "Legs B") }
+
+        store.routine = null
+        advanceUntilIdle()
+        editor.saveAsNew()
+        advanceUntilIdle()
+
+        assertEquals(EditorPhase.DONE, editor.phase)
+        assertEquals(listOf(0L to "Legs B"), store.saved.map { it.id to it.name })
+    }
+
+    @Test
     fun `its own delete closes without reporting the routine missing`() = runTest(dispatcher) {
         val store = FakeStore(Routine(id = 7, name = "Legs", exercises = listOf(squat)))
         val editor = editor(7, store)

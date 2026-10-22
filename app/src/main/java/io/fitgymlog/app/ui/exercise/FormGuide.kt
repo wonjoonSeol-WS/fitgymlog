@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import io.fitgymlog.app.R
 import io.fitgymlog.app.container
+import io.fitgymlog.app.links.WebLinks
 import io.fitgymlog.app.model.Exercise
 import io.fitgymlog.app.ui.lift
 import io.fitgymlog.app.ui.localizedName

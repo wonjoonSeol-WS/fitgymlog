@@ -64,6 +64,13 @@ data class ActiveWorkout(
 
     fun focusedNextSet(): SetRef? = nextSetOf(focus)
 
+    /** What play on the band completes: during rest the rest ends first, so it reaches the next exercise too. */
+    fun nextSetToComplete(): SetRef? = afterRest().focusedNextSet()
+
+    fun completeNextSet(now: Instant, expected: SetRef?): ActiveWorkout = afterRest().completeFocusedSet(now, expected)
+
+    private fun afterRest(): ActiveWorkout = if (restEndsAt != null) restOver() else this
+
     /**
      * With [expected], completes that set only if it is still open, so the screen and the band
      * completing the same set at once do not also tick the one after it.

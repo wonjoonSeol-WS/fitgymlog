@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import io.fitgymlog.app.R
+import io.fitgymlog.app.links.WebLinks
 import io.fitgymlog.app.model.Exercise
 import io.fitgymlog.app.model.ExerciseKind
 import io.fitgymlog.app.ui.ChoiceDialog

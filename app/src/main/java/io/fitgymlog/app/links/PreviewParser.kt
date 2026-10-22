@@ -1,8 +1,10 @@
-package io.fitgymlog.app.ui.exercise
+package io.fitgymlog.app.links
 
 import java.net.URI
 import java.net.URLEncoder
 import java.nio.charset.Charset
+
+data class LinkPreview(val title: String?, val imageUrl: String?)
 
 /** Pure parsing for link cards, kept free of Android so it can be tested on the JVM. */
 object PreviewParser {

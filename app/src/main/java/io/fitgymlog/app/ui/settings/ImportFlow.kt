@@ -2,6 +2,8 @@ package io.fitgymlog.app.ui.settings
 
 import android.net.Uri
 import android.util.Log
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivity
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -45,11 +47,6 @@ import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-/**
- * Import is two steps: read and match the file, then let the user decide what each unrecognized
- * exercise name is (one of ours, or a new custom exercise) before anything is written. Tasks run in
- * the app scope so an import that has started finishes even if the user leaves the screen.
- */
 @Stable
 class ImportFlow(private val app: AppContainer) : ViewModel() {
     private class Notice(@param:StringRes val text: Int, vararg val args: Any)
@@ -218,5 +215,6 @@ class ImportFlow(private val app: AppContainer) : ViewModel() {
 @Composable
 fun rememberImportFlow(): ImportFlow {
     val container = LocalContext.current.container
-    return viewModel { ImportFlow(container) }
+    val activity = checkNotNull(LocalActivity.current as? ComponentActivity)
+    return viewModel(viewModelStoreOwner = activity) { ImportFlow(container) }
 }

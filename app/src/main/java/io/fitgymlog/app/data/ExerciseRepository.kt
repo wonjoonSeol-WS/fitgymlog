@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.res.Configuration
 import androidx.health.connect.client.records.ExerciseSegment
 import io.fitgymlog.app.catalog.ExerciseCatalog
+import io.fitgymlog.app.links.WebLinks
 import io.fitgymlog.app.model.Exercise
 import io.fitgymlog.app.model.ExerciseKind
 import io.fitgymlog.app.transfer.ExerciseMatcher
@@ -52,7 +53,10 @@ class ExerciseRepository(
 
     suspend fun restoreCustom(id: String, name: String, kind: ExerciseKind) = dao.save(id, name, kind.name, System.currentTimeMillis())
 
-    suspend fun addLink(exerciseId: String, url: String) = linkDao.add(exerciseId, url.trim(), System.currentTimeMillis())
+    suspend fun addLink(exerciseId: String, url: String) {
+        val link = WebLinks.normalize(url) ?: return
+        linkDao.add(exerciseId, link, System.currentTimeMillis())
+    }
 
     suspend fun removeLink(exerciseId: String, url: String) = tombstones.deleteLink(exerciseId, url, System.currentTimeMillis())
 

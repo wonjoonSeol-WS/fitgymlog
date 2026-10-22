@@ -75,7 +75,7 @@ class WorkoutService : Service() {
             stopSelf()
             return
         }
-        bandNextSet = active.focusedNextSet()
+        bandNextSet = active.nextSetToComplete()
         session.isActive = settings.bandRemoteEnabled
         if (settings.bandRemoteEnabled) publishToBand(active, settings.unit, Instant.now())
         val notification = workoutNotification(active, bandText(this, active, container.exercises::find, settings.unit), settings.bandRemoteEnabled)
@@ -144,17 +144,17 @@ class WorkoutService : Service() {
     }
 
     private inner class BandCallback : MediaSession.Callback() {
-        override fun onPlay() = completeShownSet()
+        override fun onPlay() = completeNextSet()
 
-        override fun onPause() = completeShownSet()
+        override fun onPause() = completeNextSet()
 
         override fun onSkipToNext() = change { it.focusNextExercise() }
 
         override fun onSkipToPrevious() = change { it.lowerShownReps() }
 
-        private fun completeShownSet() {
+        private fun completeNextSet() {
             val expected = bandNextSet
-            change { it.completeFocusedSet(Instant.now(), expected) }
+            change { it.completeNextSet(Instant.now(), expected) }
         }
 
         private fun change(transform: (ActiveWorkout) -> ActiveWorkout) {

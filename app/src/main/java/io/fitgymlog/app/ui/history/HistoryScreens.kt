@@ -233,7 +233,7 @@ fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (St
                         }
                         when (routineSaved) {
                             true -> Text(stringResource(R.string.saved_as_routine), color = MaterialTheme.colorScheme.primary)
-                            false -> Text(stringResource(R.string.routine_update_failed), color = MaterialTheme.colorScheme.error)
+                            false -> Text(stringResource(R.string.routine_save_failed), color = MaterialTheme.colorScheme.error)
                             null -> Unit
                         }
                         WorkoutStats(current, settings.unit)

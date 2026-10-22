@@ -9,6 +9,8 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import io.fitgymlog.app.links.LinkPreview
+import io.fitgymlog.app.links.PreviewParser
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlinx.coroutines.Dispatchers
@@ -18,8 +20,6 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.withTimeoutOrNull
-
-data class LinkPreview(val title: String?, val imageUrl: String?)
 
 /** Small in-memory caches for link cards; the guide screen is opened often mid-workout. */
 object LinkPreviews {

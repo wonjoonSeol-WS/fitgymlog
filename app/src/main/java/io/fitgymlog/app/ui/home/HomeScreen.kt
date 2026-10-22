@@ -97,7 +97,7 @@ fun HomeScreen(onOpenWorkout: () -> Unit, onEditRoutine: (Long) -> Unit, onOpenB
             }
             addingStrongLifts = false
             when (added) {
-                null -> Toast.makeText(context, R.string.routine_update_failed, Toast.LENGTH_SHORT).show()
+                null -> Toast.makeText(context, R.string.routine_save_failed, Toast.LENGTH_SHORT).show()
                 0 -> Toast.makeText(context, R.string.stronglifts_already_added, Toast.LENGTH_SHORT).show()
             }
         }

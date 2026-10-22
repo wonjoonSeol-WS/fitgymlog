@@ -34,9 +34,10 @@ import java.time.Duration
 import java.time.Instant
 
 @Composable
-internal fun RestBar(endsAt: Instant?, totalSeconds: Int, onAdjust: (Long) -> Unit, onSkip: () -> Unit, modifier: Modifier = Modifier) {
+internal fun RestBar(startedAt: Instant?, endsAt: Instant?, onAdjust: (Long) -> Unit, onSkip: () -> Unit, modifier: Modifier = Modifier) {
     val now = rememberNow()
     val remaining = if (endsAt == null) Duration.ZERO else Duration.between(now, endsAt)
+    val totalSeconds = if (startedAt == null || endsAt == null) 0 else Duration.between(startedAt, endsAt).seconds.toInt().coerceAtLeast(0)
     val colors = MaterialTheme.lift
     Surface(
         color = colors.restBar,

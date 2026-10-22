@@ -61,8 +61,9 @@ class WorkoutRepository(private val dao: WorkoutDao, private val tombstones: Tom
         loaded.await()
         mutex.withLock {
             val current = _active.value ?: return
-            val next = transform(current)
-            if (next == current) return
+            val changed = transform(current)
+            if (changed == current) return
+            val next = changed.copy(lastActivityAt = maxOf(changed.lastActivityAt, Instant.now()))
             _active.value = next
             dao.save(next.toGraph())
         }

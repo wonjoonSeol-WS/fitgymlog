@@ -1,4 +1,4 @@
-package io.fitgymlog.app.ui.exercise
+package io.fitgymlog.app.links
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull

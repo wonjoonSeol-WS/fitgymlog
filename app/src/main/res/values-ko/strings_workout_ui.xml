@@ -2,6 +2,5 @@
 <resources>
     <string name="set_editor_title_typed">%1$s, %2$s</string>
     <string name="next_exercise">다음 운동</string>
-    <string name="seconds_short">%1$d초</string>
-    <string name="previous_weight_amount">%1$s × %2$s</string>
+    <string name="previous_weight_amount">%1$s x %2$s</string>
 </resources>

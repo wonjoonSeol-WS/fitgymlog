@@ -18,7 +18,7 @@ data class RestClock(val left: Duration, val length: Duration) {
     val elapsed: Duration get() = (length - left).coerceAtLeast(Duration.ZERO)
 }
 
-/** During rest the band counts down and shows the set that comes after the rest. */
+/** During rest the band counts down over the set just done, so "previous" corrects what it shows. */
 data class BandScreen(val view: BandView?, val rest: RestClock?)
 
 fun bandScreen(active: ActiveWorkout, now: Instant): BandScreen {
@@ -28,7 +28,7 @@ fun bandScreen(active: ActiveWorkout, now: Instant): BandScreen {
         left = Duration.between(now, endsAt).coerceAtLeast(Duration.ZERO),
         length = Duration.between(startedAt, endsAt).coerceAtLeast(Duration.ZERO),
     )
-    return BandScreen(active.restOver().bandView(), rest)
+    return BandScreen(active.bandView(), rest)
 }
 
 fun bandText(context: Context, active: ActiveWorkout, exerciseOf: (String) -> Exercise, unit: WeightUnit): BandText =
@@ -37,8 +37,7 @@ fun bandText(context: Context, active: ActiveWorkout, exerciseOf: (String) -> Ex
 fun bandScreenText(context: Context, screen: BandScreen, workoutTitle: String, exerciseOf: (String) -> Exercise, unit: WeightUnit): BandText {
     val text = viewText(context, workoutTitle, screen.view, exerciseOf, unit)
     val rest = screen.rest ?: return text
-    val upcoming = if (screen.view?.isExerciseDone == true) text.title else text.subtitle
-    return BandText(context.getString(R.string.band_resting, formatClock(rest.left)), upcoming)
+    return BandText(context.getString(R.string.band_resting, formatClock(rest.left)), text.subtitle)
 }
 
 private fun viewText(context: Context, workoutTitle: String, view: BandView?, exerciseOf: (String) -> Exercise, unit: WeightUnit): BandText {

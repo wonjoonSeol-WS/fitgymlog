@@ -66,15 +66,15 @@ internal fun FocusPanel(
             Text(text.title, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
             when {
                 view.isExerciseDone -> if (bandRemote) BodySubtitle(text.subtitle)
-                view.weightKg == null && view.reps == null -> BodySubtitle(text.subtitle)
+                view.weightKg == null && view.reps == null && view.durationSeconds == null -> BodySubtitle(text.subtitle)
                 else -> Text(text.subtitle, style = NumberStyles.timer)
             }
         }
         val endsAt = workout.restEndsAt
         when {
             endsAt != null -> RestBar(
+                startedAt = workout.restStartedAt(),
                 endsAt = endsAt,
-                totalSeconds = workout.exercises.getOrNull(workout.focus)?.restSeconds ?: 0,
                 onAdjust = onAdjustRest,
                 onSkip = onSkipRest,
             )

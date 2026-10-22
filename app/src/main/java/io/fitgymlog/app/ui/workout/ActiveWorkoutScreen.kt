@@ -119,7 +119,12 @@ fun ActiveWorkoutScreen(onBack: () -> Unit, onFinished: (Long?) -> Unit, onOpenE
         if (leaving) return
         leaving = true
         app.scope.launch {
-            val savedId = end()
+            val savedId = try {
+                end()
+            } catch (error: Exception) {
+                withContext(Dispatchers.Main) { leaving = false }
+                throw error
+            }
             withContext(Dispatchers.Main) { onFinished(savedId) }
         }
     }
@@ -224,8 +229,8 @@ fun ActiveWorkoutScreen(onBack: () -> Unit, onFinished: (Long?) -> Unit, onOpenE
                     modifier = Modifier.align(Alignment.BottomCenter),
                 ) {
                     RestBar(
+                        startedAt = workout.restStartedAt(),
                         endsAt = workout.restEndsAt,
-                        totalSeconds = workout.exercises.getOrNull(workout.focus)?.restSeconds ?: 0,
                         onAdjust = { seconds -> change { it.adjustRest(Duration.ofSeconds(seconds), Instant.now()) } },
                         onSkip = { change { it.restOver() } },
                         modifier = Modifier.navigationBarsPadding().padding(12.dp),

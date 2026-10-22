@@ -6,8 +6,8 @@ import io.fitgymlog.app.ui.formatClock
 import java.time.Duration
 import java.time.Instant
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BandTextTest {
@@ -20,8 +20,8 @@ class BandTextTest {
         .addExercise("overhead_press_barbell", sets(2, 30.0, 5), restSeconds = 90, now = start)
 
     @Test
-    fun `resting counts down and shows the set that follows the rest`() {
-        val resting = workout().lowerShownReps().completeFocusedSet(start)
+    fun `resting counts down over the set just done, as corrected by previous`() {
+        val resting = workout().completeFocusedSet(start).lowerShownReps()
 
         val screen = bandScreen(resting, start.plusSeconds(37))
 
@@ -29,10 +29,10 @@ class BandTextTest {
         assertEquals("1:23", formatClock(rest.left))
         assertEquals(Duration.ofSeconds(120), rest.length)
         assertEquals(Duration.ofSeconds(37), rest.elapsed)
-        val next = screen.view!!
-        assertEquals(2, next.setNumber)
-        assertEquals(8, next.reps)
-        assertFalse(next.isCompleted)
+        val done = screen.view!!
+        assertEquals(1, done.setNumber)
+        assertEquals(7, done.reps)
+        assertTrue(done.isCompleted)
     }
 
     @Test
@@ -47,15 +47,16 @@ class BandTextTest {
     }
 
     @Test
-    fun `rest after an exercise's last set shows the next exercise's first set`() {
+    fun `rest after an exercise's last set still shows that set`() {
         var current = workout()
         repeat(2) { current = current.completeFocusedSet(start).restOver() }
         val resting = current.completeFocusedSet(start)
 
         val view = bandScreen(resting, start).view!!
 
-        assertEquals("overhead_press_barbell", view.exerciseId)
-        assertEquals(1, view.setNumber)
+        assertEquals("squat_barbell", view.exerciseId)
+        assertEquals(3, view.setNumber)
+        assertTrue(view.isCompleted)
     }
 
     @Test

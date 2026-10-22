@@ -329,4 +329,30 @@ class ActiveWorkoutTest {
         assertEquals(45, view.durationSeconds)
         assertEquals(3, view.reps)
     }
+    @Test
+    fun `play during rest after an exercise's last set starts the next exercise`() {
+        var current = workout()
+        repeat(2) { current = current.completeFocusedSet(start).restOver() }
+        val resting = current.completeFocusedSet(start)
+
+        val expected = resting.nextSetToComplete()
+        val after = resting.completeNextSet(start.plusSeconds(30), expected)
+
+        assertEquals(SetRef(1, 0), expected)
+        assertEquals(1, after.focus)
+        assertTrue(after.exercises[1].sets[0].isCompleted)
+    }
+
+    @Test
+    fun `play during rest within an exercise completes its next set only once`() {
+        val resting = workout().completeFocusedSet(start)
+        val expected = resting.nextSetToComplete()
+
+        val once = resting.completeNextSet(start.plusSeconds(30), expected)
+        val twice = once.completeNextSet(start.plusSeconds(31), expected)
+
+        assertEquals(SetRef(0, 1), expected)
+        assertEquals(2, once.exercises[0].sets.count { it.isCompleted })
+        assertEquals(once.exercises, twice.exercises)
+    }
 }

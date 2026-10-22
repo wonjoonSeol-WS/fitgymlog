@@ -1,4 +1,4 @@
-package io.fitgymlog.app.ui.exercise
+package io.fitgymlog.app.links
 
 import java.net.URI
 

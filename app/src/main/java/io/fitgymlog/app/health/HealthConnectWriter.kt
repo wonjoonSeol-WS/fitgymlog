@@ -12,10 +12,6 @@ import io.fitgymlog.app.model.Workout
 import java.time.Instant
 import java.time.ZoneId
 
-/**
- * Writes finished workouts to Health Connect, where Samsung Health picks them up. Samsung Health
- * keeps only type, time and calories, so the set details stay in this app.
- */
 class HealthConnectWriter(private val context: Context) {
     val permissions: Set<String> = setOf(HealthPermission.getWritePermission(ExerciseSessionRecord::class))
 

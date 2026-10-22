@@ -3,7 +3,8 @@
     <string name="routine_discard_title">Discard changes?</string>
     <string name="routine_discard_text">Your changes to this routine will not be saved.</string>
     <string name="routine_not_found">This routine no longer exists. It may have been deleted on another phone.</string>
-    <string name="routine_update_failed">Couldn\'t update the routine.</string>
+    <string name="routine_save_as_new">Save as new routine</string>
+    <string name="routine_save_failed">Couldn\'t save the routine.</string>
     <string name="delete_routine_text">%1$s will be deleted. This can\'t be undone.</string>
     <string name="stronglifts_already_added">StrongLifts A and B are already in your routines.</string>
     <string name="workout_not_found">This workout no longer exists. It may have been deleted on another phone.</string>

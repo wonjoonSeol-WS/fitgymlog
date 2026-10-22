@@ -86,6 +86,15 @@ class RoutineEditorViewModel(
         }
     }
 
+    fun saveAsNew() {
+        if (phase != EditorPhase.MISSING || !draft.canSave) return
+        val routine = draft.toRoutine(NEW_ROUTINE)
+        phase = EditorPhase.BUSY
+        viewModelScope.launch {
+            phase = if (attempt { store.save(routine) } != null) EditorPhase.DONE else EditorPhase.MISSING.also { failed = true }
+        }
+    }
+
     fun delete() {
         if (phase != EditorPhase.EDITING || routineId == NEW_ROUTINE) return
         phase = EditorPhase.BUSY

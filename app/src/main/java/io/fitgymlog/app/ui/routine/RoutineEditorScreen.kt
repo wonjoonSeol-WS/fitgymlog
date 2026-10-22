@@ -86,7 +86,7 @@ fun RoutineEditorScreen(routineId: Long, onDone: () -> Unit) {
     var confirmDiscard by rememberSaveable { mutableStateOf(false) }
     var menuOpen by rememberSaveable { mutableStateOf(false) }
     val snackbar = remember { SnackbarHostState() }
-    val failedText = stringResource(R.string.routine_update_failed)
+    val failedText = stringResource(R.string.routine_save_failed)
     val currentOnDone by rememberUpdatedState(onDone)
 
     LaunchedEffect(phase) {
@@ -212,7 +212,16 @@ fun RoutineEditorScreen(routineId: Long, onDone: () -> Unit) {
         AlertDialog(
             onDismissRequest = editor::close,
             text = { Text(stringResource(R.string.routine_not_found)) },
-            confirmButton = { TextButton(onClick = editor::close) { Text(stringResource(R.string.close)) } },
+            confirmButton = {
+                if (editor.draft.canSave) {
+                    TextButton(onClick = editor::saveAsNew) { Text(stringResource(R.string.routine_save_as_new)) }
+                } else {
+                    TextButton(onClick = editor::close) { Text(stringResource(R.string.close)) }
+                }
+            },
+            dismissButton = {
+                if (editor.draft.canSave) TextButton(onClick = editor::close) { Text(stringResource(R.string.discard)) }
+            },
         )
     }
 }
