@@ -8,11 +8,11 @@
   <meta name="description" content="A workout log for Android. Complete sets with your Galaxy Fit's music buttons, feel a buzz when rest is over, and load the bar by tapping plates.">
   <meta property="og:title" content="FitGymLog">
   <meta property="og:description" content="A workout log for Android that you can run from a Galaxy Fit band.">
-  <meta property="og:image" content="https://wonjoonseol-ws.github.io/fitgymlog/images/og-en.jpg">
+  <meta property="og:image" content="https://wonjoonseol.github.io/fitgymlog/images/og-en.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="alternate" hreflang="ko" href="https://wonjoonseol-ws.github.io/fitgymlog/ko/">
+  <link rel="alternate" hreflang="ko" href="https://wonjoonseol.github.io/fitgymlog/ko/">
   <link rel="icon" href="assets/icon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,7 +27,7 @@
       <nav class="site-nav">
         <a href="#setup">Set up</a>
         <a href="privacy.html">Privacy</a>
-        <a href="https://github.com/wonjoonSeol-WS/fitgymlog">GitHub</a>
+        <a href="https://github.com/wonjoonSeol/fitgymlog">GitHub</a>
       </nav>
       <nav class="languages" aria-label="Language">
         <a href="./" lang="en" aria-current="true">EN</a>
@@ -44,9 +44,9 @@
           <p class="lead">FitGymLog is a workout log for Android. Press play on your Galaxy Fit to complete a set, feel a buzz when
             rest is over, and load the bar by tapping plates.</p>
           <div class="buttons">
-            <a class="button primary" href="https://github.com/wonjoonSeol-WS/fitgymlog/releases/latest">Download the APK</a>
+            <a class="button primary" href="https://github.com/wonjoonSeol/fitgymlog/releases/latest">Download the APK</a>
             <a class="button" href="#setup">Set it up</a>
-            <a class="button" href="https://github.com/wonjoonSeol-WS/fitgymlog">GitHub</a>
+            <a class="button" href="https://github.com/wonjoonSeol/fitgymlog">GitHub</a>
           </div>
           <p class="fine">Free and open source under the MIT License. Android 13 or newer, tested with a Galaxy Fit3 and a Galaxy Z Fold. Not on Google Play yet.</p>
         </div>
@@ -139,12 +139,47 @@
       </div>
     </section>
 
-    <section class="block">
+    <section class="block band" id="stats">
       <div class="wrap">
-        <h2>Unfold for the form guide</h2>
-        <p class="lead">On an unfolded Galaxy Fold the current set, the rest timer and the form guide sit on the left, and the sets
-          on the right keep their done boxes at the edge, under your thumb. History opens as a list with the workout beside it.</p>
-        <div class="wide-shot"><img src="images/fold-en.webp" width="1600" height="1143" alt="Unfolded Fold: the squat form video on the left, the sets on the right" loading="lazy"></div>
+        <h2>Your weeks, weight and records</h2>
+        <p class="lead">Workouts, time or volume for each of the last 12 weeks, and a weight trend that evens out day-to-day swings.
+          With the coach on, it reads body composition from an InBody or scale screenshot.</p>
+        <ul class="shots">
+          <li><figure><div class="phone"><img src="images/stats-en.webp" width="540" height="1110" alt="The Stats tab: workouts in each of the last 12 weeks as bars, then a weight trend of 78.2 kg, down 0.3 kg a week over the last 4 weeks, drawn over the daily readings" loading="lazy"></div>
+            <figcaption>Each week, and your weight trend</figcaption></figure></li>
+          <li><figure><div class="phone"><img src="images/body-en.webp" width="540" height="1110" alt="Body composition: body fat falling from 22% to 19% over three scans, and a table comparing body fat, fat mass, lean mass and skeletal muscle on Oct 21 with Sep 23 and Aug 26" loading="lazy"></div>
+            <figcaption>Body composition, compared scan to scan</figcaption></figure></li>
+          <li><figure><div class="phone"><img src="images/records-en.webp" width="540" height="1110" alt="Squat (Barbell): heaviest set 125 kg and estimated 1RM 145.8 kg, with a progress chart rising steadily since Aug 14" loading="lazy"></div>
+            <figcaption>Records for each exercise, with new ones marked in History</figcaption></figure></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="block" id="fold">
+      <div class="wrap fold-grid">
+        <div>
+          <h2>Unfold for two panes</h2>
+          <p class="lead">On an unfolded Galaxy Fold, Workout, History and Stats each split into two panes. The done boxes stay at the right edge, under your thumb.</p>
+        </div>
+        <div class="fold-carousel" role="region" aria-roledescription="carousel" aria-label="Screens on an unfolded Fold">
+          <ul class="fold-track" tabindex="0">
+            <li class="fold-slide" aria-roledescription="slide" aria-label="1 / 3: Workout">
+              <figure><img src="images/fold-en.webp" width="1600" height="1142" alt="Workout on an unfolded Fold: the squat form video on the left, the sets on the right" loading="lazy">
+                <figcaption>Workout: the current set and form guide on the left, the sets on the right</figcaption></figure></li>
+            <li class="fold-slide" aria-roledescription="slide" aria-label="2 / 3: History">
+              <figure><img src="images/fold-history-en.webp" width="1600" height="1143" alt="History on an unfolded Fold: workouts with their new records on the left, the chosen workout's sets on the right, marked New record: Heaviest set, Estimated 1RM" loading="lazy">
+                <figcaption>History: the workout opens next to the list, new records marked</figcaption></figure></li>
+            <li class="fold-slide" aria-roledescription="slide" aria-label="3 / 3: Stats">
+              <figure><img src="images/fold-stats-en.webp" width="1600" height="1143" alt="Stats on an unfolded Fold: the weekly chart and exercises on the left, the weight trend on the right" loading="lazy">
+                <figcaption>Stats: weeks and exercises on the left, your weight trend on the right</figcaption></figure></li>
+          </ul>
+          <div class="fold-controls" hidden>
+            <button type="button" class="nav-btn" data-step="-1" aria-label="Previous screen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+            <div class="dots"><button type="button" aria-label="Workout screen"></button><button type="button" aria-label="History screen"></button><button type="button" aria-label="Stats screen"></button></div>
+            <button type="button" class="nav-btn" data-step="1" aria-label="Next screen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+            <button type="button" class="nav-btn pause" aria-pressed="false" aria-label="Pause the slideshow"><svg class="stop" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg><svg class="play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l11 7-11 7z"/></svg></button>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -190,28 +225,82 @@
     <section class="block soft" id="cardio">
       <div class="wrap">
         <h2>Cardio and ready-made programs</h2>
-        <p class="lead">Log the treadmill, the stair machine or the bike in minutes, with the incline or level, and plan them in a routine: 20 minutes at incline 12 is filled in when you start. Each block goes to Samsung Health as its own session. Start from StrongLifts 5x5, full body, upper/lower or push/pull/legs, or build your own.</p>
+        <p class="lead">Log the treadmill, the stair machine, the bike or the rower in minutes, with the treadmill's speed and incline or the machine's level, and plan them in a routine: 20 minutes at incline 12 is filled in when you start. Each block goes to Samsung Health as its own session. Start from StrongLifts 5x5, full body, upper/lower or push/pull/legs, or build your own.</p>
       </div>
     </section>
 
     <section class="block" id="coach">
       <div class="wrap">
-        <h2>An optional coach, on your own AI account</h2>
-        <p class="lead">Turn it on in Settings and connect your own AI account. The app works out the numbers with its own rules; the model reads your history, explains, and adjusts only within the limits the app sets. It stays off unless you turn it on.</p>
+        <h2>A coach for what to lift today</h2>
+        <p class="lead">It works from your last three sessions and trims the workout on a busy day. Nothing changes until you tap Apply.</p>
+        <div class="coach-shots">
+          <figure>
+            <div class="app-screen" role="img" aria-label="Example Today's targets card. Squat (Barbell) 80 kg x 5, same as last time, because the knee feels stiff. Deadlift (Barbell) 100 kg x 5, 5 kg more, because all 5 reps were done last time. Apply all and Not now buttons below.">
+              <div class="app-card">
+                <p class="app-title">Today's targets</p>
+                <div class="target-row">
+                  <div><p>Squat (Barbell)</p><p class="app-sub">Knee feels stiff, same as last time</p></div>
+                  <div><span class="app-num">80 kg x 5</span><span class="delta same">=</span></div>
+                </div>
+                <div class="target-row">
+                  <div><p>Deadlift (Barbell)</p><p class="app-sub">All 5 reps done last time</p></div>
+                  <div><span class="app-num">100 kg x 5</span><span class="delta gain">+5</span></div>
+                </div>
+                <div class="app-actions"><span class="app-btn">Apply all</span><span class="app-btn ghost">Not now</span></div>
+              </div>
+            </div>
+            <figcaption>The app works out the weights. The coach moves them only within its limits.</figcaption>
+          </figure>
+          <figure>
+            <div class="app-screen" role="img" aria-label="Example coach chat. You write that you are short on time today, and the coach suggests fewer squat sets and bench press instead of the treadmill. A Changes to today's workout card has Squat (Barbell) 2 sets, Remove Treadmill, and Add Bench Press (Barbell) 3 sets, 8 reps ticked, with an Apply button.">
+              <p class="bubble me">Short on time today</p>
+              <div class="bubble coach">
+                <p>Fewer squat sets, and bench instead of the treadmill.</p>
+                <div class="app-card changes">
+                  <p class="app-title">Changes to today's workout</p>
+                  <div class="change"><span class="box"></span><div><p>Squat (Barbell)</p><p class="app-num">2 sets</p></div></div>
+                  <div class="change"><span class="box"></span><div><p>Remove Treadmill</p></div></div>
+                  <div class="change"><span class="box"></span><div><p>Add Bench Press (Barbell)</p><p class="app-num">3 sets, 8 reps</p></div></div>
+                  <span class="app-btn">Apply</span>
+                </div>
+              </div>
+            </div>
+            <figcaption>Tick the changes you want and tap Apply.</figcaption>
+          </figure>
+          <figure>
+            <div class="app-screen" role="img" aria-label="Example after-workout cards. Coach notes: a clean deadlift at 100 kg, and add 2.5 kg to the squat next time if the knee feels fine. Food for today: calories today 3,010 kcal, protein 145 g, next meal 30 g, and meal ideas chicken rice bowl, Greek yogurt and banana, tofu kimchi.">
+              <div class="app-panel">
+                <p class="app-title">Coach notes</p>
+                <p>Clean deadlift at 100 kg. If the knee feels fine, add 2.5 kg to the squat next time.</p>
+              </div>
+              <div class="app-panel">
+                <p class="app-title">Food for today</p>
+                <div class="tiles">
+                  <p class="tile wide"><span>Calories today</span><span class="app-num">3,010 kcal</span></p>
+                  <p class="tile"><span>Protein</span><span class="app-num">145 g</span></p>
+                  <p class="tile"><span>Next meal</span><span class="app-num">30 g</span></p>
+                </div>
+                <ul class="ideas"><li>Chicken rice bowl</li><li>Greek yogurt and banana</li><li>Tofu kimchi</li></ul>
+              </div>
+            </div>
+            <figcaption>After a workout, notes and food for the day. The app works out the calories and protein.</figcaption>
+          </figure>
+        </div>
         <div class="split coach">
-          <dl class="facts">
-            <div><dt>Today's targets</dt><dd>When a workout starts, the app works out each lift's next weight from your last three sessions. The model may adjust it within those limits, for a sore knee or repeated misses, and says why in a line. Nothing changes until you tap Apply all.</dd></div>
-            <div><dt>After-workout notes</dt><dd>What went well and what to change next time, read from your sets and rest times.</dd></div>
-            <div><dt>Food for the day</dt><dd>Protein and a calorie target worked out by the app from your bodyweight, height, sex, age and the training you logged, for building muscle, keeping it, losing fat, or building muscle while losing fat. The model adds meal ideas but never makes up the numbers. Nothing to log.</dd></div>
-            <div><dt>Ask, and it remembers</dt><dd>Ask about a sore knee or what to eat. It can change today's targets, within the same limits, as cards you apply. Facts are saved only when you tap Save, short-lived ones like a sore knee expire on their own, and you can edit or delete any of them.</dd></div>
-            <div><dt>Your key, your data</dt><dd>Works with OpenAI, Gemini, Anthropic, OpenRouter, Groq, DeepSeek or any OpenAI-compatible address. The key is encrypted on your phone and sent only to that provider, and your height and birth year are not sent at all. Preview exactly what is sent.</dd></div>
-          </dl>
+          <div class="coach-key">
+            <h3>On your own API key</h3>
+            <p>Off until you turn it on. Then it sends only to the provider you pick, with your own key, and nothing to the developer.</p>
+            <ul class="providers" aria-label="Providers you can connect">
+              <li>OpenAI</li><li>Gemini</li><li>Anthropic</li><li>OpenRouter</li><li>Groq</li><li>DeepSeek</li><li>Any OpenAI-compatible address</li>
+            </ul>
+            <p><a href="privacy.html">What is sent, in detail</a></p>
+          </div>
           <div>
             <h3>About what it costs a month</h3>
             <table class="prices">
               <thead><tr><th scope="col">Model</th><th scope="col">3 days a week</th><th scope="col">Every day</th></tr></thead>
               <tbody>
-                <tr><td>Gemini 3.8 Flash, free tier</td><td>Free</td><td>Free (daily cap)</td></tr>
+                <tr><td>Gemini 3.8 Flash, free tier*</td><td>Free</td><td>Free (daily cap)</td></tr>
                 <tr><td>GPT-6 Luna</td><td>$0.01</td><td>$0.02</td></tr>
                 <tr><td>Claude Haiku 5.5</td><td>$0.01</td><td>$0.03</td></tr>
                 <tr><td>Gemini 3.8 Flash, paid</td><td>$0.10</td><td>$0.25</td></tr>
@@ -219,7 +308,11 @@
                 <tr><td>GPT-6 Astra</td><td>$0.90</td><td>$2.10</td></tr>
               </tbody>
             </table>
-            <p class="note">Estimated from the app's measured requests: about 2,300 tokens in and 400 out per workout, plus three chat messages a week, or one a day for every-day training. List prices from each provider on October 22, 2026, before tax; Gemini Flash prices double from January 2027. The Gemini free tier may use your requests to improve Google's products and can't be used in the EEA, the UK or Switzerland. For comparison, Hevy Pro is ₩4,000 a month.</p>
+            <!-- Hevy Pro: US App Store listing (apps.apple.com/us/app/id1458862350) shows Monthly $2.99 and $3.99, checked 2026-10-23 -->
+            <p class="note">List prices from each provider on October 22, 2026, in US dollars before tax. Gemini Flash prices double from January 2027. For comparison, Hevy Pro starts at $2.99 a month.</p>
+            <p class="note">* Google may use free-tier requests to improve its products, and the free tier can't be used in the EEA, the UK or Switzerland.</p>
+            <details class="how"><summary>How it's worked out</summary>
+              <p>From the app's measured requests: about 2,300 tokens in and 400 out per workout, plus three chat messages a week, or one a day for every-day training.</p></details>
           </div>
         </div>
       </div>
@@ -254,6 +347,13 @@
         </dl>
       </div>
     </section>
+    <section class="block soft" id="more">
+      <div class="wrap">
+        <h2>Try my other open source projects</h2>
+        <p class="lead">QuietBuzz turns off vibration for every app in one tap. Subpair shows two subtitle lines at once on Netflix and Jellyfin. Like FitGymLog, they are free and open source.</p>
+        <div class="buttons"><a class="button primary" href="https://wonjoonseol.github.io/?from=fitgymlog">See all projects</a></div>
+      </div>
+    </section>
   </main>
 
   <footer class="site-footer">
@@ -261,10 +361,10 @@
       <span>FitGymLog</span>
       <a href="privacy.html">Privacy policy</a>
       <a href="terms.html">Terms of use</a>
-      <a href="https://github.com/wonjoonSeol-WS/fitgymlog">GitHub</a>
-      <a href="https://wonjoonseol-ws.github.io/?from=fitgymlog">Try my other open source projects</a>
+      <a href="https://github.com/wonjoonSeol/fitgymlog">GitHub</a>
       <span>Not affiliated with Samsung, Hevy, Strong or StrongLifts. Form videos and guides belong to their creators and open on their own sites.</span>
     </div>
   </footer>
+  <script src="assets/carousel.js" defer></script>
 </body>
 </html>
