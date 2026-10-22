@@ -14,11 +14,11 @@ class HevyCsvTest {
     /** Same layout as a real Korean-language export: localized dates and names, a blank weight, no final newline. */
     private val koreanKg = listOf(
         header,
-        "\"Strength 1\",\"19 10월 2026, 19:38\",\"19 10월 2026, 22:05\",\"\",\"스쿼트 (바벨)\",,\"\",0,\"normal\",60,8,,,",
-        "\"Strength 1\",\"19 10월 2026, 19:38\",\"19 10월 2026, 22:05\",\"\",\"스쿼트 (바벨)\",,\"\",1,\"normal\",60,8,,,",
-        "\"Strength 1\",\"19 10월 2026, 19:38\",\"19 10월 2026, 22:05\",\"\",\"오버헤드 프레스 (바벨)\",,\"\",0,\"normal\",30,4,,,",
-        "\"Strength 1\",\"19 10월 2026, 19:38\",\"19 10월 2026, 22:05\",\"\",\"오버헤드 프레스 (바벨)\",,\"\",1,\"normal\",,8,,,",
-        "\"Strength 1\",\"15 10월 2026, 21:08\",\"15 10월 2026, 22:40\",\"\",\"스쿼트 (바벨)\",,\"\",0,\"warmup\",40,8,,,",
+        "\"Strength 1\",\"12 3월 2026, 18:10\",\"12 3월 2026, 19:25\",\"\",\"스쿼트 (바벨)\",,\"\",0,\"normal\",60,8,,,",
+        "\"Strength 1\",\"12 3월 2026, 18:10\",\"12 3월 2026, 19:25\",\"\",\"스쿼트 (바벨)\",,\"\",1,\"normal\",60,8,,,",
+        "\"Strength 1\",\"12 3월 2026, 18:10\",\"12 3월 2026, 19:25\",\"\",\"오버헤드 프레스 (바벨)\",,\"\",0,\"normal\",30,4,,,",
+        "\"Strength 1\",\"12 3월 2026, 18:10\",\"12 3월 2026, 19:25\",\"\",\"오버헤드 프레스 (바벨)\",,\"\",1,\"normal\",,8,,,",
+        "\"Strength 1\",\"9 3월 2026, 07:30\",\"9 3월 2026, 08:45\",\"\",\"스쿼트 (바벨)\",,\"\",0,\"warmup\",40,8,,,",
     ).joinToString("\n")
 
     @Test
@@ -28,8 +28,8 @@ class HevyCsvTest {
         assertTrue(result.errors.isEmpty())
         assertEquals(2, result.workouts.size)
         val first = result.workouts[0]
-        assertEquals(LocalDateTime.of(2026, 10, 19, 19, 38), first.startedAt)
-        assertEquals(LocalDateTime.of(2026, 10, 19, 22, 5), first.endedAt)
+        assertEquals(LocalDateTime.of(2026, 3, 12, 18, 10), first.startedAt)
+        assertEquals(LocalDateTime.of(2026, 3, 12, 19, 25), first.endedAt)
         assertEquals(listOf("스쿼트 (바벨)", "오버헤드 프레스 (바벨)"), first.exercises.map { it.name })
         assertEquals(listOf(listOf(8, 8), listOf(4, 8)), first.exercises.map { exercise -> exercise.sets.map { it.reps } })
     }
