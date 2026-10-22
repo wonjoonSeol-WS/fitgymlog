@@ -1,6 +1,7 @@
 package io.fitgymlog.app.workout
 
 import android.content.Context
+import android.util.Log
 import io.fitgymlog.app.R
 import io.fitgymlog.app.data.ExerciseRepository
 import io.fitgymlog.app.data.SettingsRepository
@@ -12,6 +13,8 @@ import io.fitgymlog.app.model.WorkoutExercise
 import io.fitgymlog.app.model.WorkoutSet
 import io.fitgymlog.app.ui.name
 import java.time.Instant
+import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.flow.first
 
 /** Starting and ending workouts, which touch the database, the band service and Health Connect together. */
 class WorkoutActions(
@@ -65,8 +68,9 @@ class WorkoutActions(
     }
 
     suspend fun deleteWorkout(id: Long) {
+        val deleted = workouts.observe(id).first()
         workouts.delete(id)
-        runCatching { health.delete(id) }
+        if (deleted != null) safely { health.delete(deleted) }
     }
 
     /** Same sets as last time this exercise was done, or three empty sets the first time. */
@@ -82,13 +86,25 @@ class WorkoutActions(
 
     private suspend fun writeToHealth(workout: Workout) {
         val current = settings.settings.value
-        if (!current.healthConnectEnabled || !health.hasPermissions()) return
-        runCatching {
-            health.write(workout, current.healthSessionType, exercises::find) { it.name(context) }
+        if (!current.healthConnectEnabled) return
+        safely {
+            if (health.hasPermissions()) health.write(workout, current.healthSessionType, exercises::find) { it.name(context) }
+        }
+    }
+
+    /** Health Connect is best effort: a failure there must not undo or block the workout saved here. */
+    private suspend fun safely(call: suspend () -> Unit) {
+        try {
+            call()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w(TAG, "Health Connect call failed", e)
         }
     }
 
     private companion object {
+        const val TAG = "FitGymLog"
         const val DEFAULT_SETS = 3
     }
 }

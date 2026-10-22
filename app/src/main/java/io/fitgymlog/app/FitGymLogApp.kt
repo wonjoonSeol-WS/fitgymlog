@@ -2,6 +2,7 @@ package io.fitgymlog.app
 
 import android.app.Application
 import android.content.Context
+import android.util.Log
 import io.fitgymlog.app.data.ExerciseRepository
 import io.fitgymlog.app.data.GymDatabase
 import io.fitgymlog.app.data.RoutineRepository
@@ -12,6 +13,7 @@ import io.fitgymlog.app.sync.SyncEngine
 import io.fitgymlog.app.sync.SyncStore
 import io.fitgymlog.app.transfer.TransferService
 import io.fitgymlog.app.workout.WorkoutActions
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -27,7 +29,9 @@ class FitGymLogApp : Application() {
 }
 
 class AppContainer(context: Context) {
-    val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    val scope = CoroutineScope(
+        SupervisorJob() + Dispatchers.Default + CoroutineExceptionHandler { _, error -> Log.e(TAG, "Background work failed", error) },
+    )
     private val database = GymDatabase.create(context)
     val settings = SettingsRepository(context)
     val exercises = ExerciseRepository(context, database.customExercises(), database.exerciseLinks(), database.tombstones(), scope)
@@ -40,3 +44,5 @@ class AppContainer(context: Context) {
 }
 
 val Context.container: AppContainer get() = (applicationContext as FitGymLogApp).container
+
+private const val TAG = "FitGymLog"
