@@ -30,14 +30,14 @@ import io.fitgymlog.app.ui.formatClock
 import io.fitgymlog.app.ui.formatRest
 import io.fitgymlog.app.ui.lift
 import io.fitgymlog.app.ui.rememberNow
+import io.fitgymlog.app.workout.ActiveWorkout
 import java.time.Duration
-import java.time.Instant
 
 @Composable
-internal fun RestBar(startedAt: Instant?, endsAt: Instant?, onAdjust: (Long) -> Unit, onSkip: () -> Unit, modifier: Modifier = Modifier) {
-    val now = rememberNow()
-    val remaining = if (endsAt == null) Duration.ZERO else Duration.between(now, endsAt)
-    val totalSeconds = if (startedAt == null || endsAt == null) 0 else Duration.between(startedAt, endsAt).seconds.toInt().coerceAtLeast(0)
+internal fun RestBar(workout: ActiveWorkout, onAdjust: (Long) -> Unit, onSkip: () -> Unit, modifier: Modifier = Modifier) {
+    val clock = workout.restClock(rememberNow())
+    val remaining = clock?.left ?: Duration.ZERO
+    val totalSeconds = clock?.length?.seconds?.toInt() ?: 0
     val colors = MaterialTheme.lift
     Surface(
         color = colors.restBar,

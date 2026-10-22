@@ -267,7 +267,8 @@ private fun SetRow(
         ) { onEditSet(SetEditor(SetField.AMOUNT, ref)) }
         DoneToggle(set.isCompleted) {
             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-            onChange { it.toggleSet(ref, Instant.now()) }
+            val wasDone = set.isCompleted
+            onChange { if (wasDone) it.reopen(ref) else it.complete(ref, Instant.now()) }
         }
     }
 }
@@ -317,7 +318,7 @@ private fun previousText(previous: WorkoutSet?, kind: ExerciseKind, unit: Weight
     val weight = previous?.weightKg?.let { formatWeightNumber(it, unit) }
     val amount = previous?.amount(kind)?.let { if (kind == ExerciseKind.DURATION) stringResource(R.string.duration_seconds, it) else it.toString() }
     return when {
-        weight != null && amount != null -> stringResource(R.string.previous_weight_amount, weight, amount)
+        weight != null && amount != null -> stringResource(R.string.weight_times_amount, weight, amount)
         else -> weight ?: amount ?: "–"
     }
 }

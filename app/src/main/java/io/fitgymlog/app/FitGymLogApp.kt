@@ -17,6 +17,7 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 
 class FitGymLogApp : Application() {
     lateinit var container: AppContainer
@@ -30,7 +31,7 @@ class FitGymLogApp : Application() {
 
 class AppContainer(context: Context) {
     val scope = CoroutineScope(
-        SupervisorJob() + Dispatchers.Default + CoroutineExceptionHandler { _, error -> Log.e(TAG, "Background work failed", error) },
+        SupervisorJob() + Dispatchers.Default + CoroutineExceptionHandler { _, error -> Log.e(LOG_TAG, "Background work failed", error) },
     )
     private val database = GymDatabase.create(context)
     val settings = SettingsRepository(context)
@@ -41,8 +42,11 @@ class AppContainer(context: Context) {
     val actions = WorkoutActions(context, workouts, exercises, settings, health)
     val transfer = TransferService(context, exercises, workouts, routines, settings)
     val sync = SyncEngine(context, SyncStore(database), settings, scope)
+
+    /** Runs [block] in the app scope, so a write finishes even if the screen that asked for it has gone. */
+    suspend fun <T> inAppScope(block: suspend () -> T): T = scope.async { block() }.await()
 }
 
 val Context.container: AppContainer get() = (applicationContext as FitGymLogApp).container
 
-private const val TAG = "FitGymLog"
+const val LOG_TAG = "FitGymLog"

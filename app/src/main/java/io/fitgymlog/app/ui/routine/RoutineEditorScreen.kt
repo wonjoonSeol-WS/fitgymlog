@@ -66,7 +66,6 @@ import io.fitgymlog.app.ui.fromDisplayWeight
 import io.fitgymlog.app.ui.localizedName
 import io.fitgymlog.app.ui.REST_CHOICES
 import io.fitgymlog.app.ui.usesWeight
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -226,20 +225,19 @@ fun RoutineEditorScreen(routineId: Long, onDone: () -> Unit) {
     }
 }
 
-/** Writes run in the app scope so they finish even when the editor closes mid-write. */
 private class AppRoutineStore(private val app: AppContainer) : RoutineEditorStore {
     override suspend fun find(id: Long): Routine? = app.routines.find(id)
 
     override fun exists(id: Long): Flow<Boolean> = app.routines.routines.map { all -> all.any { it.id == id } }.distinctUntilChanged()
 
     override suspend fun save(routine: Routine) {
-        app.scope.async { app.routines.save(routine) }.await()
+        app.inAppScope { app.routines.save(routine) }
     }
 
-    override suspend fun delete(id: Long) = app.scope.async { app.routines.delete(id) }.await()
+    override suspend fun delete(id: Long) = app.inAppScope { app.routines.delete(id) }
 
     override suspend fun createExercise(exercise: NewExercise): String =
-        app.scope.async { app.exercises.createCustom(exercise.name, exercise.kind, listOfNotNull(exercise.link)).id }.await()
+        app.inAppScope { app.exercises.createCustom(exercise.name, exercise.kind, listOfNotNull(exercise.link)).id }
 }
 
 @Composable

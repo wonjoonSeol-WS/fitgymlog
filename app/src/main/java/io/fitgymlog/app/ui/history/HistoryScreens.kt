@@ -49,6 +49,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.fitgymlog.app.R
+import io.fitgymlog.app.catching
 import io.fitgymlog.app.container
 import io.fitgymlog.app.model.Exercise
 import io.fitgymlog.app.model.Routine
@@ -61,20 +62,18 @@ import io.fitgymlog.app.model.WorkoutSource
 import io.fitgymlog.app.ui.ConfirmDialog
 import io.fitgymlog.app.ui.NumberStyles
 import io.fitgymlog.app.ui.ReadableWidth
+import io.fitgymlog.app.ui.Stat
 import io.fitgymlog.app.ui.TwoPaneMinWidth
 import io.fitgymlog.app.ui.formatClock
 import io.fitgymlog.app.ui.formatWeightNumber
 import io.fitgymlog.app.ui.localizedName
-import io.fitgymlog.app.ui.Stat
 import io.fitgymlog.app.ui.setTypeName
 import io.fitgymlog.app.workout.setLine
 import java.time.Duration
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -171,23 +170,15 @@ fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (St
     var menuOpen by rememberSaveable(workoutId) { mutableStateOf(false) }
     var confirmDelete by rememberSaveable(workoutId) { mutableStateOf(false) }
     var deleting by remember(workoutId) { mutableStateOf(false) }
-    var savingRoutine by remember(workoutId) { mutableStateOf(false) }
-    var routineSaved by rememberSaveable(workoutId) { mutableStateOf<Boolean?>(null) }
+    var routineSave by rememberSaveable(workoutId) { mutableStateOf(RoutineSave.IDLE) }
 
     fun saveAsRoutine(current: Workout) {
-        if (savingRoutine || routineSaved == true) return
-        savingRoutine = true
+        if (routineSave == RoutineSave.SAVING || routineSave == RoutineSave.SAVED) return
+        routineSave = RoutineSave.SAVING
         val routine = current.toRoutine(settings.defaultRestSeconds)
         scope.launch {
-            routineSaved = try {
-                app.scope.async { app.routines.save(routine) }.await()
-                true
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                false
-            }
-            savingRoutine = false
+            val saved = catching { app.inAppScope { app.routines.save(routine) } }.isSuccess
+            routineSave = if (saved) RoutineSave.SAVED else RoutineSave.FAILED
         }
     }
 
@@ -206,7 +197,7 @@ fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (St
                             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                                 DropdownMenuItem(
                                     text = { Text(stringResource(R.string.save_as_routine)) },
-                                    enabled = !savingRoutine && routineSaved != true,
+                                    enabled = routineSave == RoutineSave.IDLE || routineSave == RoutineSave.FAILED,
                                     onClick = { menuOpen = false; saveAsRoutine(workout) },
                                 )
                                 DropdownMenuItem(text = { Text(stringResource(R.string.delete_workout)) }, onClick = { menuOpen = false; confirmDelete = true })
@@ -231,10 +222,10 @@ fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (St
                         sourceName(current.source)?.let { source ->
                             Text(stringResource(R.string.imported_from, stringResource(source)), style = MaterialTheme.typography.bodySmall)
                         }
-                        when (routineSaved) {
-                            true -> Text(stringResource(R.string.saved_as_routine), color = MaterialTheme.colorScheme.primary)
-                            false -> Text(stringResource(R.string.routine_save_failed), color = MaterialTheme.colorScheme.error)
-                            null -> Unit
+                        when (routineSave) {
+                            RoutineSave.SAVED -> Text(stringResource(R.string.saved_as_routine), color = MaterialTheme.colorScheme.primary)
+                            RoutineSave.FAILED -> Text(stringResource(R.string.routine_save_failed), color = MaterialTheme.colorScheme.error)
+                            RoutineSave.IDLE, RoutineSave.SAVING -> Unit
                         }
                         WorkoutStats(current, settings.unit)
                         if (current.notes.isNotBlank()) Text(current.notes)
@@ -341,3 +332,5 @@ fun SessionLines(context: Context, exercise: Exercise, sessions: List<Pair<Worko
         HorizontalDivider()
     }
 }
+
+private enum class RoutineSave { IDLE, SAVING, SAVED, FAILED }

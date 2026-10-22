@@ -73,8 +73,7 @@ internal fun FocusPanel(
         val endsAt = workout.restEndsAt
         when {
             endsAt != null -> RestBar(
-                startedAt = workout.restStartedAt(),
-                endsAt = endsAt,
+                workout = workout,
                 onAdjust = onAdjustRest,
                 onSkip = onSkipRest,
             )

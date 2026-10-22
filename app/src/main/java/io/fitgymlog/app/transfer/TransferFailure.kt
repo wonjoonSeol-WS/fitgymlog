@@ -7,7 +7,7 @@ enum class TransferFailure { UNRECOGNIZED, NEWER_BACKUP, MALFORMED_BACKUP, TOO_L
 
 class TransferException(val failure: TransferFailure, message: String, cause: Throwable? = null) : Exception(message, cause)
 
-fun Exception.transferFailure(): TransferFailure = when (this) {
+fun Throwable.transferFailure(): TransferFailure = when (this) {
     is TransferException -> failure
     is IOException, is SecurityException -> TransferFailure.IO
     else -> TransferFailure.UNKNOWN

@@ -2,5 +2,4 @@
 <resources>
     <string name="set_editor_title_typed">%1$s, %2$s</string>
     <string name="next_exercise">Next exercise</string>
-    <string name="previous_weight_amount">%1$s x %2$s</string>
 </resources>

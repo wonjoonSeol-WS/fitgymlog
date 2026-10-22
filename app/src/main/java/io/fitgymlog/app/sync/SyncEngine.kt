@@ -3,12 +3,13 @@ package io.fitgymlog.app.sync
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import io.fitgymlog.app.LOG_TAG
+import io.fitgymlog.app.catching
 import io.fitgymlog.app.data.SettingsRepository
 import java.io.IOException
 import java.security.MessageDigest
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicReference
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -146,27 +147,13 @@ class SyncEngine(
         }
     }
 
-    private suspend fun attempt(token: String, freshAccount: Boolean): SyncStatus = try {
-        syncWith(DriveAppData(token), freshAccount)
-    } catch (rejected: DriveAuthException) {
-        auth.forget(token)
-        val retryToken = auth.silentToken()
-        if (retryToken == null) {
-            SyncStatus.NeedsSignIn
-        } else {
-            try {
-                syncWith(DriveAppData(retryToken), freshAccount)
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (error: Exception) {
-                failure(error)
-            }
+    private suspend fun attempt(token: String, freshAccount: Boolean): SyncStatus =
+        catching { syncWith(DriveAppData(token), freshAccount) }.getOrElse { error ->
+            if (error !is DriveAuthException) return failure(error)
+            auth.forget(token)
+            val retryToken = auth.silentToken() ?: return SyncStatus.NeedsSignIn
+            catching { syncWith(DriveAppData(retryToken), freshAccount) }.getOrElse(::failure)
         }
-    } catch (cancelled: CancellationException) {
-        throw cancelled
-    } catch (error: Exception) {
-        failure(error)
-    }
 
     private suspend fun syncWith(drive: DriveAppData, freshAccount: Boolean): SyncStatus {
         val now = Instant.now()
@@ -186,8 +173,8 @@ class SyncEngine(
         return SyncStatus.Synced(now)
     }
 
-    private fun failure(error: Exception): SyncStatus.Failed {
-        Log.w(TAG, "Sync failed", error)
+    private fun failure(error: Throwable): SyncStatus.Failed {
+        Log.w(LOG_TAG, "Sync failed", error)
         return SyncStatus.Failed(SyncFailure.of(error))
     }
 
@@ -195,7 +182,6 @@ class SyncEngine(
         MessageDigest.getInstance("SHA-256").digest(snapshot.encode().toByteArray()).joinToString("") { "%02x".format(it) }
 
     private companion object {
-        const val TAG = "SyncEngine"
         const val LOCAL_CHANGE_DEBOUNCE_MILLIS = 3_000L
     }
 }

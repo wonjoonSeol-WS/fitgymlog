@@ -2,7 +2,9 @@ package io.fitgymlog.app.workout
 
 import android.content.Context
 import android.util.Log
+import io.fitgymlog.app.LOG_TAG
 import io.fitgymlog.app.R
+import io.fitgymlog.app.catching
 import io.fitgymlog.app.data.ExerciseRepository
 import io.fitgymlog.app.data.SettingsRepository
 import io.fitgymlog.app.data.WorkoutRepository
@@ -13,7 +15,6 @@ import io.fitgymlog.app.model.WorkoutExercise
 import io.fitgymlog.app.model.WorkoutSet
 import io.fitgymlog.app.ui.name
 import java.time.Instant
-import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.flow.first
 
 /** Starting and ending workouts, which touch the database, the band service and Health Connect together. */
@@ -94,17 +95,10 @@ class WorkoutActions(
 
     /** Health Connect is best effort: a failure there must not undo or block the workout saved here. */
     private suspend fun safely(call: suspend () -> Unit) {
-        try {
-            call()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Log.w(TAG, "Health Connect call failed", e)
-        }
+        catching { call() }.onFailure { Log.w(LOG_TAG, "Health Connect call failed", it) }
     }
 
     private companion object {
-        const val TAG = "FitGymLog"
         const val DEFAULT_SETS = 3
     }
 }

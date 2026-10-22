@@ -10,7 +10,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class BandTextTest {
+class RestClockTest {
     private val start = Instant.parse("2026-10-19T10:38:00Z")
 
     private fun sets(count: Int, kg: Double, reps: Int) = List(count) { WorkoutSet(weightKg = kg, reps = reps) }
@@ -23,13 +23,11 @@ class BandTextTest {
     fun `resting counts down over the set just done, as corrected by previous`() {
         val resting = workout().completeFocusedSet(start).lowerShownReps()
 
-        val screen = bandScreen(resting, start.plusSeconds(37))
-
-        val rest = screen.rest!!
+        val rest = resting.restClock(start.plusSeconds(37))!!
         assertEquals("1:23", formatClock(rest.left))
         assertEquals(Duration.ofSeconds(120), rest.length)
         assertEquals(Duration.ofSeconds(37), rest.elapsed)
-        val done = screen.view!!
+        val done = resting.bandView()!!
         assertEquals(1, done.setNumber)
         assertEquals(7, done.reps)
         assertTrue(done.isCompleted)
@@ -39,11 +37,8 @@ class BandTextTest {
     fun `after rest ends the band shows the set again`() {
         val rested = workout().completeFocusedSet(start).restOver()
 
-        val screen = bandScreen(rested, start.plusSeconds(200))
-
-        assertNull(screen.rest)
-        assertEquals(rested.bandView(), screen.view)
-        assertEquals(2, screen.view!!.setNumber)
+        assertNull(rested.restClock(start.plusSeconds(200)))
+        assertEquals(2, rested.bandView()!!.setNumber)
     }
 
     @Test
@@ -52,7 +47,7 @@ class BandTextTest {
         repeat(2) { current = current.completeFocusedSet(start).restOver() }
         val resting = current.completeFocusedSet(start)
 
-        val view = bandScreen(resting, start).view!!
+        val view = resting.bandView()!!
 
         assertEquals("squat_barbell", view.exerciseId)
         assertEquals(3, view.setNumber)
@@ -64,7 +59,7 @@ class BandTextTest {
         val resting = workout().completeFocusedSet(start.plusSeconds(10))
             .addExercise("bench_press_barbell", sets(1, 40.0, 5), restSeconds = 60, now = start.plusSeconds(30))
 
-        val rest = bandScreen(resting, start.plusSeconds(40)).rest!!
+        val rest = resting.restClock(start.plusSeconds(40))!!
 
         assertEquals(Duration.ofSeconds(120), rest.length)
         assertEquals(Duration.ofSeconds(30), rest.elapsed)

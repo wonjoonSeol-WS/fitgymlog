@@ -31,7 +31,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.fitgymlog.app.AppContainer
+import io.fitgymlog.app.LOG_TAG
 import io.fitgymlog.app.R
+import io.fitgymlog.app.catching
 import io.fitgymlog.app.container
 import io.fitgymlog.app.transfer.ExerciseChoice
 import io.fitgymlog.app.transfer.ExportFormat
@@ -43,7 +45,6 @@ import io.fitgymlog.app.transfer.transferFailure
 import io.fitgymlog.app.ui.exercise.ExercisePickerDialog
 import io.fitgymlog.app.ui.exercise.kindLabel
 import io.fitgymlog.app.ui.localizedName
-import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -81,13 +82,9 @@ class ImportFlow(private val app: AppContainer) : ViewModel() {
 
     private fun launchTask(block: suspend () -> Unit) {
         app.scope.launch(Dispatchers.Main) {
-            try {
-                block()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Log.w(TAG, "import or export failed", e)
-                notice = failureNotice(e.transferFailure())
+            catching { block() }.onFailure { error ->
+                Log.w(LOG_TAG, "Import or export failed", error)
+                notice = failureNotice(error.transferFailure())
             }
         }
     }
@@ -204,10 +201,6 @@ class ImportFlow(private val app: AppContainer) : ViewModel() {
                 confirmButton = { TextButton(onClick = { notice = null }) { Text(stringResource(R.string.close)) } },
             )
         }
-    }
-
-    private companion object {
-        const val TAG = "ImportFlow"
     }
 }
 

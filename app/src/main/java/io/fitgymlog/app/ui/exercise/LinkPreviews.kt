@@ -9,14 +9,13 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import io.fitgymlog.app.catching
 import io.fitgymlog.app.links.LinkPreview
 import io.fitgymlog.app.links.PreviewParser
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.withTimeoutOrNull
@@ -57,12 +56,7 @@ object LinkPreviews {
     /** Offline, every card would otherwise wait out its timeouts again on each visit. */
     private suspend fun <T : Any> remembered(key: String, load: suspend () -> T?): T? {
         if (failures.isRecent(key)) return null
-        val result = try {
-            load()
-        } catch (e: Exception) {
-            null
-        }
-        currentCoroutineContext().ensureActive()
+        val result = catching { load() }.getOrNull()
         if (result == null) failures.record(key) else failures.forget(key)
         return result
     }

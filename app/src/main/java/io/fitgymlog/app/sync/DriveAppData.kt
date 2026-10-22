@@ -8,13 +8,14 @@ import com.google.android.gms.auth.api.identity.AuthorizationRequest
 import com.google.android.gms.auth.api.identity.ClearTokenRequest
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.common.api.Scope
+import io.fitgymlog.app.LOG_TAG
+import io.fitgymlog.app.catching
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 import java.time.Instant
 import java.util.UUID
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -42,27 +43,16 @@ class DriveAuth(private val context: Context) {
     fun finish(data: Intent?): String? = runCatching { client.getAuthorizationResultFromIntent(data).accessToken }.getOrNull()
 
     /** A token without showing anything, or null when the user has to sign in again. */
-    suspend fun silentToken(): String? = try {
-        (start() as? Start.Granted)?.token
-    } catch (cancelled: CancellationException) {
-        throw cancelled
-    } catch (error: Exception) {
-        Log.w(TAG, "No silent token", error)
-        null
-    }
+    suspend fun silentToken(): String? = catching { (start() as? Start.Granted)?.token }
+        .onFailure { Log.w(LOG_TAG, "No silent token", it) }
+        .getOrNull()
 
     suspend fun forget(token: String) {
-        try {
-            client.clearToken(ClearTokenRequest.builder().setToken(token).build()).await()
-        } catch (cancelled: CancellationException) {
-            throw cancelled
-        } catch (error: Exception) {
-            Log.w(TAG, "Could not clear the rejected token", error)
-        }
+        catching { client.clearToken(ClearTokenRequest.builder().setToken(token).build()).await() }
+            .onFailure { Log.w(LOG_TAG, "Could not clear the rejected token", it) }
     }
 
     private companion object {
-        const val TAG = "DriveAuth"
         const val DRIVE_APPDATA = "https://www.googleapis.com/auth/drive.appdata"
     }
 }
@@ -97,7 +87,7 @@ class DriveAppData(private val token: String) {
     }
 
     suspend fun accountEmail(): String? = withContext(Dispatchers.IO) {
-        runCatching { JSONObject(request("GET", "$API/about?fields=user(emailAddress)")).getJSONObject("user").getString("emailAddress") }.getOrNull()
+        catching { JSONObject(request("GET", "$API/about?fields=user(emailAddress)")).getJSONObject("user").getString("emailAddress") }.getOrNull()
     }
 
     private fun request(method: String, url: String, body: String? = null, contentType: String? = null, headers: Map<String, String> = emptyMap()): String {

@@ -6,10 +6,10 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.fitgymlog.app.catching
 import io.fitgymlog.app.model.Routine
 import io.fitgymlog.app.model.RoutineExercise
 import io.fitgymlog.app.ui.exercise.NewExercise
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
@@ -116,13 +116,7 @@ class RoutineEditorViewModel(
         savedState[DRAFT_KEY] = next.encode()
     }
 
-    private suspend fun <T : Any> attempt(block: suspend () -> T): T? = try {
-        block()
-    } catch (e: CancellationException) {
-        throw e
-    } catch (e: Exception) {
-        null
-    }
+    private suspend fun <T : Any> attempt(block: suspend () -> T): T? = catching { block() }.getOrNull()
 
     private companion object {
         const val NEW_ROUTINE = 0L

@@ -9,6 +9,10 @@ import java.time.Instant
 
 data class SetRef(val exerciseIndex: Int, val setIndex: Int)
 
+data class RestClock(val left: Duration, val length: Duration) {
+    val elapsed: Duration get() = (length - left).coerceAtLeast(Duration.ZERO)
+}
+
 /** What the band shows: the set just completed while resting, otherwise the next set of the focused exercise. */
 data class BandView(
     val exerciseId: String,
@@ -65,28 +69,27 @@ data class ActiveWorkout(
     fun focusedNextSet(): SetRef? = nextSetOf(focus)
 
     /** What play on the band completes: during rest the rest ends first, so it reaches the next exercise too. */
-    fun nextSetToComplete(): SetRef? = afterRest().focusedNextSet()
+    fun nextSetToComplete(): SetRef? = (if (restEndsAt != null) restOver() else this).focusedNextSet()
 
-    fun completeNextSet(now: Instant, expected: SetRef?): ActiveWorkout = afterRest().completeFocusedSet(now, expected)
+    fun completeFocusedSet(now: Instant): ActiveWorkout = nextSetOf(focus)?.let { complete(it, now) } ?: this
 
-    private fun afterRest(): ActiveWorkout = if (restEndsAt != null) restOver() else this
-
-    /**
-     * With [expected], completes that set only if it is still open, so the screen and the band
-     * completing the same set at once do not also tick the one after it.
-     */
-    fun completeFocusedSet(now: Instant, expected: SetRef? = null): ActiveWorkout {
-        val ref = expected ?: nextSetOf(focus) ?: return this
+    /** Does nothing for a set that is already done, so the screen and the band ticking it together count once. */
+    fun complete(ref: SetRef, now: Instant): ActiveWorkout {
         if (setAt(ref)?.isCompleted != false) return this
-        return complete(ref, now)
+        val rest = exercises[ref.exerciseIndex].restSeconds
+        val completed = updateSet(ref) { it.copy(completedAt = now, reps = it.reps ?: it.targetReps) }
+            .copy(focus = ref.exerciseIndex, shownCompletedSet = ref, lastActivityAt = now)
+        return if (rest > 0) completed.copy(restEndsAt = now.plusSeconds(rest.toLong())) else completed.restOver()
     }
 
-    fun toggleSet(ref: SetRef, now: Instant): ActiveWorkout {
-        val set = setAt(ref) ?: return this
-        if (!set.isCompleted) return complete(ref, now)
+    fun reopen(ref: SetRef): ActiveWorkout {
+        if (setAt(ref)?.isCompleted != true) return this
         val reopened = updateSet(ref) { it.copy(completedAt = null) }
         return if (shownCompletedSet == ref) reopened.copy(shownCompletedSet = null, restEndsAt = null) else reopened
     }
+
+    fun toggleSet(ref: SetRef, now: Instant): ActiveWorkout =
+        if (setAt(ref)?.isCompleted == true) reopen(ref) else complete(ref, now)
 
     /**
      * Lowers the reps of the set the band shows; below zero it wraps back to the planned reps, or to
@@ -121,9 +124,17 @@ data class ActiveWorkout(
     fun isRestDue(now: Instant): Boolean = restEndsAt?.isAfter(now) == false
 
     /** Rest starts when a set is ticked, so the latest tick marks the start of the current rest. */
-    fun restStartedAt(): Instant? {
-        if (restEndsAt == null) return null
-        return exercises.flatMap { it.sets }.mapNotNull { it.completedAt }.maxOrNull() ?: lastActivityAt
+    fun restClock(now: Instant): RestClock? {
+        val endsAt = restEndsAt ?: return null
+        var startedAt: Instant? = null
+        for (exercise in exercises) for (set in exercise.sets) {
+            val at = set.completedAt ?: continue
+            if (startedAt == null || at.isAfter(startedAt)) startedAt = at
+        }
+        return RestClock(
+            left = Duration.between(now, endsAt).coerceAtLeast(Duration.ZERO),
+            length = Duration.between(startedAt ?: lastActivityAt, endsAt).coerceAtLeast(Duration.ZERO),
+        )
     }
 
     fun adjustRest(delta: Duration, now: Instant): ActiveWorkout {
@@ -253,13 +264,6 @@ data class ActiveWorkout(
             .filter { it.sets.isNotEmpty() }
         if (lifted.isEmpty()) return null
         return workout.copy(endedAt = endedAt, exercises = lifted)
-    }
-
-    private fun complete(ref: SetRef, now: Instant): ActiveWorkout {
-        val rest = exercises[ref.exerciseIndex].restSeconds
-        val completed = updateSet(ref) { it.copy(completedAt = now, reps = it.reps ?: it.targetReps) }
-            .copy(focus = ref.exerciseIndex, shownCompletedSet = ref, lastActivityAt = now)
-        return if (rest > 0) completed.copy(restEndsAt = now.plusSeconds(rest.toLong())) else completed.restOver()
     }
 
     private fun nextSetOf(exerciseIndex: Int): SetRef? {

@@ -12,6 +12,7 @@ import android.media.session.PlaybackState
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import io.fitgymlog.app.LOG_TAG
 import io.fitgymlog.app.R
 import io.fitgymlog.app.container
 import io.fitgymlog.app.model.WeightUnit
@@ -42,7 +43,7 @@ class WorkoutService : Service() {
     override fun onCreate() {
         super.onCreate()
         Notifications.ensureChannels(this)
-        session = MediaSession(this, TAG).apply { setCallback(BandCallback(), Handler(Looper.getMainLooper())) }
+        session = MediaSession(this, LOG_TAG).apply { setCallback(BandCallback(), Handler(Looper.getMainLooper())) }
         val container = container
         scope.launch {
             container.workouts.awaitLoaded()
@@ -77,32 +78,39 @@ class WorkoutService : Service() {
         }
         bandNextSet = active.nextSetToComplete()
         session.isActive = settings.bandRemoteEnabled
-        if (settings.bandRemoteEnabled) publishToBand(active, settings.unit, Instant.now())
-        val notification = workoutNotification(active, bandText(this, active, container.exercises::find, settings.unit), settings.bandRemoteEnabled)
+        val text = bandText(this, active, container.exercises::find, settings.unit)
+        if (settings.bandRemoteEnabled) publishToBand(active, text)
+        val notification = workoutNotification(active, text, settings.bandRemoteEnabled)
         lastNotification = notification
         getSystemService(NotificationManager::class.java).notify(Notifications.ID_WORKOUT, notification)
     }
 
     // A main-thread delay does not run while the phone sleeps, so the countdown never wakes it.
     private suspend fun countDownRest(active: ActiveWorkout, unit: WeightUnit) {
-        val endsAt = active.restEndsAt ?: return
-        while (Instant.now().isBefore(endsAt)) {
+        if (active.restEndsAt == null) return
+        val text = bandText(this, active, container.exercises::find, unit)
+        while (true) {
             delay(REST_REFRESH_MILLIS)
-            publishToBand(active, unit, Instant.now())
+            val rest = active.restClock(Instant.now()) ?: return
+            if (rest.left.isZero) return
+            session.setMetadata(metadata(active, text.resting(this, rest), rest))
         }
     }
 
-    private fun publishToBand(active: ActiveWorkout, unit: WeightUnit, now: Instant) {
-        val screen = bandScreen(active, now)
-        val text = bandScreenText(this, screen, active.workout.title, container.exercises::find, unit)
-        val metadata = MediaMetadata.Builder()
+    /** Players move the position on their own at speed 1, so the state is set once per change, not per tick. */
+    private fun publishToBand(active: ActiveWorkout, text: BandText) {
+        val rest = active.restClock(Instant.now())
+        session.setMetadata(metadata(active, rest?.let { text.resting(this, it) } ?: text, rest))
+        session.setPlaybackState(playing(rest?.elapsed?.toMillis() ?: PlaybackState.PLAYBACK_POSITION_UNKNOWN))
+    }
+
+    private fun metadata(active: ActiveWorkout, text: BandText, rest: RestClock?): MediaMetadata =
+        MediaMetadata.Builder()
             .putString(MediaMetadata.METADATA_KEY_TITLE, text.title)
             .putString(MediaMetadata.METADATA_KEY_ARTIST, text.subtitle)
             .putString(MediaMetadata.METADATA_KEY_ALBUM, active.workout.title)
-        screen.rest?.let { metadata.putLong(MediaMetadata.METADATA_KEY_DURATION, it.length.toMillis()) }
-        session.setMetadata(metadata.build())
-        session.setPlaybackState(playing(screen.rest?.elapsed?.toMillis() ?: PlaybackState.PLAYBACK_POSITION_UNKNOWN))
-    }
+            .apply { rest?.let { putLong(MediaMetadata.METADATA_KEY_DURATION, it.length.toMillis()) } }
+            .build()
 
     private fun workoutNotification(active: ActiveWorkout, text: BandText, withSession: Boolean): Notification {
         val resting = active.restEndsAt
@@ -153,8 +161,8 @@ class WorkoutService : Service() {
         override fun onSkipToPrevious() = change { it.lowerShownReps() }
 
         private fun completeNextSet() {
-            val expected = bandNextSet
-            change { it.completeNextSet(Instant.now(), expected) }
+            val expected = bandNextSet ?: return
+            change { it.complete(expected, Instant.now()) }
         }
 
         private fun change(transform: (ActiveWorkout) -> ActiveWorkout) {
@@ -165,7 +173,6 @@ class WorkoutService : Service() {
     private data class ShownSettings(val unit: WeightUnit, val bandRemoteEnabled: Boolean)
 
     companion object {
-        private const val TAG = "FitGymLog"
         private const val IDLE_CHECK_MILLIS = 60_000L
         private const val REST_REFRESH_MILLIS = 5_000L
         private const val BAND_ACTIONS = PlaybackState.ACTION_PLAY or

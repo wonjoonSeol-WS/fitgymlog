@@ -71,7 +71,9 @@ import io.fitgymlog.app.ui.NumberStyles
 import io.fitgymlog.app.ui.Numerals
 import io.fitgymlog.app.ui.formatWeightNumber
 import io.fitgymlog.app.ui.fromDisplayWeight
+import io.fitgymlog.app.ui.isDecimalInput
 import io.fitgymlog.app.ui.lift
+import io.fitgymlog.app.ui.parseDecimal
 import io.fitgymlog.app.ui.toDisplayWeight
 import io.fitgymlog.app.workout.Plates
 import kotlin.math.max
@@ -181,10 +183,9 @@ fun WeightSheet(
     fun tick() = haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
 
     fun type(input: String) {
-        val typed = readTypedWeight(input)
-        if (typed == TypedWeight.Rejected) return
+        if (!isDecimalInput(input)) return
         text = input
-        value = (typed as? TypedWeight.Amount)?.value
+        value = parseDecimal(input)
         side = Plates.perSide(value ?: bar, bar, plates).side
     }
 

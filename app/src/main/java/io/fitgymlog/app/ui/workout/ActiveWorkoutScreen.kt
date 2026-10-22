@@ -211,7 +211,7 @@ fun ActiveWorkoutScreen(onBack: () -> Unit, onFinished: (Long?) -> Unit, onOpenE
                         exerciseOf = ::exerciseOf,
                         unit = settings.unit,
                         bandRemote = settings.bandRemoteEnabled,
-                        onComplete = { expected -> change { it.completeFocusedSet(Instant.now(), expected) } },
+                        onComplete = { expected -> change { it.complete(expected, Instant.now()) } },
                         onNextExercise = { change { it.focusNextExercise() } },
                         onAdjustRest = { seconds -> change { it.adjustRest(Duration.ofSeconds(seconds), Instant.now()) } },
                         onSkipRest = { change { it.restOver() } },
@@ -229,8 +229,7 @@ fun ActiveWorkoutScreen(onBack: () -> Unit, onFinished: (Long?) -> Unit, onOpenE
                     modifier = Modifier.align(Alignment.BottomCenter),
                 ) {
                     RestBar(
-                        startedAt = workout.restStartedAt(),
-                        endsAt = workout.restEndsAt,
+                        workout = workout,
                         onAdjust = { seconds -> change { it.adjustRest(Duration.ofSeconds(seconds), Instant.now()) } },
                         onSkip = { change { it.restOver() } },
                         modifier = Modifier.navigationBarsPadding().padding(12.dp),

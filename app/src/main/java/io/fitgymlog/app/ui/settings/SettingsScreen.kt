@@ -37,6 +37,7 @@ import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.fitgymlog.app.BuildConfig
 import io.fitgymlog.app.R
+import io.fitgymlog.app.catching
 import io.fitgymlog.app.container
 import io.fitgymlog.app.model.WeightUnit
 import io.fitgymlog.app.transfer.ExportFormat
@@ -44,7 +45,6 @@ import io.fitgymlog.app.ui.ChoiceDialog
 import io.fitgymlog.app.ui.ReadableWidth
 import io.fitgymlog.app.ui.formatRest
 import java.time.LocalDate
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 private enum class Language(val tag: String) { SYSTEM(""), ENGLISH("en"), KOREAN("ko") }
@@ -82,7 +82,7 @@ fun SettingsScreen(onOpenBandGuide: () -> Unit) {
 
     fun enableHealthConnect() {
         scope.launch {
-            try {
+            catching {
                 when {
                     !app.health.isAvailable -> healthMessage = resources.getString(R.string.health_unavailable)
                     app.health.hasPermissions() -> {
@@ -91,11 +91,7 @@ fun SettingsScreen(onOpenBandGuide: () -> Unit) {
                     }
                     else -> healthPermission.launch(app.health.permissions)
                 }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                healthMessage = resources.getString(R.string.health_unavailable)
-            }
+            }.onFailure { healthMessage = resources.getString(R.string.health_unavailable) }
         }
     }
     val today = LocalDate.now().toString()

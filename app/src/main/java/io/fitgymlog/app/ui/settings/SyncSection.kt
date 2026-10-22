@@ -27,12 +27,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.fitgymlog.app.LOG_TAG
 import io.fitgymlog.app.R
+import io.fitgymlog.app.catching
 import io.fitgymlog.app.container
 import io.fitgymlog.app.sync.DriveAuth
 import io.fitgymlog.app.sync.SyncFailure
 import io.fitgymlog.app.sync.SyncStatus
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 /** Google Drive sync: connect once per phone, then it runs on its own; this shows how it is going. */
@@ -50,12 +51,8 @@ fun SyncSection() {
     fun connect() {
         connectError = null
         scope.launch {
-            val start = try {
-                app.sync.connect()
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (error: Exception) {
-                Log.w("SyncSection", "Connect failed", error)
+            val start = catching { app.sync.connect() }.getOrElse { error ->
+                Log.w(LOG_TAG, "Connect failed", error)
                 connectError = SyncFailure.of(error).label
                 return@launch
             }

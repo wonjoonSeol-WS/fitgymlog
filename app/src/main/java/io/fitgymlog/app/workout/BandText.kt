@@ -8,40 +8,12 @@ import io.fitgymlog.app.model.WeightUnit
 import io.fitgymlog.app.ui.formatClock
 import io.fitgymlog.app.ui.formatWeight
 import io.fitgymlog.app.ui.name
-import java.time.Duration
-import java.time.Instant
 
 /** The two lines the band's music screen shows: which set, and what to lift. */
 data class BandText(val title: String, val subtitle: String)
 
-data class RestClock(val left: Duration, val length: Duration) {
-    val elapsed: Duration get() = (length - left).coerceAtLeast(Duration.ZERO)
-}
-
-/** During rest the band counts down over the set just done, so "previous" corrects what it shows. */
-data class BandScreen(val view: BandView?, val rest: RestClock?)
-
-fun bandScreen(active: ActiveWorkout, now: Instant): BandScreen {
-    val endsAt = active.restEndsAt ?: return BandScreen(active.bandView(), rest = null)
-    val startedAt = active.restStartedAt() ?: endsAt
-    val rest = RestClock(
-        left = Duration.between(now, endsAt).coerceAtLeast(Duration.ZERO),
-        length = Duration.between(startedAt, endsAt).coerceAtLeast(Duration.ZERO),
-    )
-    return BandScreen(active.bandView(), rest)
-}
-
-fun bandText(context: Context, active: ActiveWorkout, exerciseOf: (String) -> Exercise, unit: WeightUnit): BandText =
-    viewText(context, active.workout.title, active.bandView(), exerciseOf, unit)
-
-fun bandScreenText(context: Context, screen: BandScreen, workoutTitle: String, exerciseOf: (String) -> Exercise, unit: WeightUnit): BandText {
-    val text = viewText(context, workoutTitle, screen.view, exerciseOf, unit)
-    val rest = screen.rest ?: return text
-    return BandText(context.getString(R.string.band_resting, formatClock(rest.left)), text.subtitle)
-}
-
-private fun viewText(context: Context, workoutTitle: String, view: BandView?, exerciseOf: (String) -> Exercise, unit: WeightUnit): BandText {
-    if (view == null) return BandText(workoutTitle, context.getString(R.string.band_add_exercise))
+fun bandText(context: Context, active: ActiveWorkout, exerciseOf: (String) -> Exercise, unit: WeightUnit): BandText {
+    val view = active.bandView() ?: return BandText(active.workout.title, context.getString(R.string.band_add_exercise))
     val exercise = exerciseOf(view.exerciseId)
     val name = exercise.name(context)
     if (view.isExerciseDone) {
@@ -53,6 +25,9 @@ private fun viewText(context: Context, workoutTitle: String, view: BandView?, ex
         subtitle = setLine(context, exercise.kind, view.weightKg, view.reps, unit, view.durationSeconds),
     )
 }
+
+/** During rest the title counts down over the set just done, which is the set "previous" corrects. */
+fun BandText.resting(context: Context, rest: RestClock): BandText = copy(title = context.getString(R.string.band_resting, formatClock(rest.left)))
 
 fun setLine(context: Context, kind: ExerciseKind, weightKg: Double?, reps: Int?, unit: WeightUnit, durationSeconds: Int? = null): String {
     val weightText = weightKg?.let {
@@ -71,7 +46,7 @@ fun setLine(context: Context, kind: ExerciseKind, weightKg: Double?, reps: Int?,
     return when {
         weightText == null -> amountText ?: context.getString(R.string.set_not_recorded)
         amountText == null -> weightText
-        kind == ExerciseKind.DURATION -> context.getString(R.string.weight_times_duration, weightText, amountText)
+        kind == ExerciseKind.DURATION -> context.getString(R.string.weight_times_amount, weightText, amountText)
         else -> context.getString(R.string.weight_times_reps, weightText, reps)
     }
 }

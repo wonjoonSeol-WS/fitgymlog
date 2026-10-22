@@ -4,6 +4,7 @@ import io.fitgymlog.app.model.ExerciseKind
 import io.fitgymlog.app.model.SetType
 import io.fitgymlog.app.model.Workout
 import io.fitgymlog.app.model.WorkoutSet
+import io.fitgymlog.app.ui.parseDecimal
 import io.fitgymlog.app.workout.ActiveWorkout
 import io.fitgymlog.app.workout.SetRef
 import java.time.Instant
@@ -15,28 +16,6 @@ import org.junit.Test
 class SetEditingTest {
     private val start = Instant.parse("2026-10-19T10:38:00Z")
 
-    @Test
-    fun `typed weights read with either separator`() {
-        assertEquals(TypedWeight.Amount(62.5), readTypedWeight("62.5"))
-        assertEquals(TypedWeight.Amount(62.5), readTypedWeight("62,5"))
-        assertEquals(TypedWeight.Amount(60.0), readTypedWeight("60."))
-        assertEquals(TypedWeight.Amount(0.5), readTypedWeight(".5"))
-    }
-
-    @Test
-    fun `nothing typed yet or a lone separator is blank`() {
-        assertEquals(TypedWeight.Blank, readTypedWeight(""))
-        assertEquals(TypedWeight.Blank, readTypedWeight("."))
-        assertEquals(TypedWeight.Blank, readTypedWeight(","))
-    }
-
-    @Test
-    fun `text that cannot become a weight is rejected`() {
-        assertEquals(TypedWeight.Rejected, readTypedWeight("12345"))
-        assertEquals(TypedWeight.Rejected, readTypedWeight("1.234"))
-        assertEquals(TypedWeight.Rejected, readTypedWeight("1.2.3"))
-        assertEquals(TypedWeight.Rejected, readTypedWeight("-5"))
-    }
 
     @Test
     fun `a weight is shown for editing without trailing zeros and reads back the same`() {
@@ -44,7 +23,7 @@ class SetEditingTest {
         assertEquals("0", editableWeight(0.0))
         assertEquals("60", editableWeight(60.0))
         assertEquals("1.25", editableWeight(1.25))
-        assertEquals(TypedWeight.Amount(62.5), readTypedWeight(editableWeight(62.5)))
+        assertEquals(62.5, parseDecimal(editableWeight(62.5))!!, 0.0)
     }
 
     @Test

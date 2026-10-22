@@ -223,7 +223,7 @@ class ActiveWorkoutTest {
     fun `completing the set the screen showed does nothing once the band already completed it`() {
         val byBand = workout().completeFocusedSet(start)
 
-        val byScreen = byBand.completeFocusedSet(start.plusSeconds(1), expected = SetRef(0, 0))
+        val byScreen = byBand.complete(SetRef(0, 0), start.plusSeconds(1))
 
         assertEquals(byBand, byScreen)
         assertFalse(byScreen.exercises[0].sets[1].isCompleted)
@@ -231,7 +231,7 @@ class ActiveWorkoutTest {
 
     @Test
     fun `completing an expected set completes that set even after focus moved`() {
-        val done = workout().focusExercise(1).completeFocusedSet(start, expected = SetRef(0, 0))
+        val done = workout().focusExercise(1).complete(SetRef(0, 0), start)
 
         assertTrue(done.exercises[0].sets[0].isCompleted)
         assertFalse(done.exercises[1].sets[0].isCompleted)
@@ -336,7 +336,7 @@ class ActiveWorkoutTest {
         val resting = current.completeFocusedSet(start)
 
         val expected = resting.nextSetToComplete()
-        val after = resting.completeNextSet(start.plusSeconds(30), expected)
+        val after = resting.complete(expected!!, start.plusSeconds(30))
 
         assertEquals(SetRef(1, 0), expected)
         assertEquals(1, after.focus)
@@ -348,8 +348,8 @@ class ActiveWorkoutTest {
         val resting = workout().completeFocusedSet(start)
         val expected = resting.nextSetToComplete()
 
-        val once = resting.completeNextSet(start.plusSeconds(30), expected)
-        val twice = once.completeNextSet(start.plusSeconds(31), expected)
+        val once = resting.complete(expected!!, start.plusSeconds(30))
+        val twice = once.complete(expected, start.plusSeconds(31))
 
         assertEquals(SetRef(0, 1), expected)
         assertEquals(2, once.exercises[0].sets.count { it.isCompleted })

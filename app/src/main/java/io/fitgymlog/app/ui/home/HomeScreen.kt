@@ -48,6 +48,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.fitgymlog.app.R
+import io.fitgymlog.app.catching
 import io.fitgymlog.app.container
 import io.fitgymlog.app.model.Routine
 import io.fitgymlog.app.model.Workout
@@ -60,9 +61,7 @@ import io.fitgymlog.app.ui.lift
 import io.fitgymlog.app.ui.localizedName
 import io.fitgymlog.app.ui.rememberNow
 import java.time.Duration
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -88,13 +87,7 @@ fun HomeScreen(onOpenWorkout: () -> Unit, onEditRoutine: (Long) -> Unit, onOpenB
     fun addStrongLifts() {
         addingStrongLifts = true
         scope.launch {
-            val added = try {
-                app.scope.async { StrongLiftsRoutines.addTo(app.routines, settings.defaultRestSeconds) }.await()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                null
-            }
+            val added = catching { app.inAppScope { StrongLiftsRoutines.addTo(app.routines, settings.defaultRestSeconds) } }.getOrNull()
             addingStrongLifts = false
             when (added) {
                 null -> Toast.makeText(context, R.string.routine_save_failed, Toast.LENGTH_SHORT).show()

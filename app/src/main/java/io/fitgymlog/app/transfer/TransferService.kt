@@ -3,6 +3,7 @@ package io.fitgymlog.app.transfer
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import io.fitgymlog.app.LOG_TAG
 import io.fitgymlog.app.data.ExerciseRepository
 import io.fitgymlog.app.data.RoutineRepository
 import io.fitgymlog.app.data.SettingsRepository
@@ -83,7 +84,7 @@ class TransferService(
     }
 
     private suspend fun csv(source: WorkoutSource, result: ParseResult): PendingImport.Csv {
-        result.errors.firstOrNull()?.let { Log.w(TAG, "${result.errors.size} unreadable rows, first at row ${it.rowNumber}: ${it.message}") }
+        result.errors.firstOrNull()?.let { Log.w(LOG_TAG, "${result.errors.size} unreadable rows, first at row ${it.rowNumber}: ${it.message}") }
         return pendingCsv(source, result, exercises.matcher())
     }
 
@@ -143,9 +144,5 @@ class TransferService(
                 ImportedExercise(this@TransferService.exercises.find(exercise.exerciseId).englishName, exercise.notes, exercise.sets)
             },
         )
-    }
-
-    private companion object {
-        const val TAG = "TransferService"
     }
 }

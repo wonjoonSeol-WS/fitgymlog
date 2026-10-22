@@ -67,12 +67,11 @@ class MainActivity : ComponentActivity() {
         try {
             startActivity(Intent(Intent.ACTION_VIEW, PRIVACY_POLICY_URL.toUri()))
         } catch (e: ActivityNotFoundException) {
-            Log.w(TAG, "No browser to show the privacy policy", e)
+            Log.w(LOG_TAG, "No browser to show the privacy policy", e)
         }
     }
 
     private companion object {
-        const val TAG = "FitGymLog"
         const val PRIVACY_POLICY_URL = "https://wonjoonseol-ws.github.io/fitgymlog/privacy.html"
 
         // Health Connect opens these to show the privacy policy: the first up to Android 13, the second from Android 14.

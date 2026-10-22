@@ -3,5 +3,5 @@
     <string name="band_resting">Rest %1$s</string>
     <string name="duration_seconds">%1$d s</string>
     <string name="rest_over_text">%1$s, %2$s</string>
-    <string name="weight_times_duration">%1$s x %2$s</string>
+    <string name="weight_times_amount">%1$s x %2$s</string>
 </resources>

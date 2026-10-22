@@ -62,9 +62,12 @@ fun ReadableWidth(modifier: Modifier = Modifier, content: @Composable () -> Unit
 private val DECIMAL_TEXT = Regex("""\d{0,4}([.,]\d{0,3})?""")
 private val WHOLE_TEXT = Regex("""\d{0,4}""")
 
-/** Either decimal separator counts, so "60,5" and "60." are not rewritten while the user types them. */
-internal fun sameNumber(typed: String, value: String): Boolean =
-    typed.replace(',', '.').toDoubleOrNull() == value.replace(',', '.').toDoubleOrNull()
+internal fun isDecimalInput(text: String): Boolean = DECIMAL_TEXT.matches(text)
+
+/** Either decimal separator counts; "", "." and "," are no number yet. */
+internal fun parseDecimal(text: String): Double? = text.replace(',', '.').toDoubleOrNull()
+
+internal fun sameNumber(typed: String, value: String): Boolean = parseDecimal(typed) == parseDecimal(value)
 
 @Composable
 fun NumberField(
