@@ -2,6 +2,8 @@
 <resources>
     <string name="band_resting">휴식 중 %1$s</string>
     <string name="duration_seconds">%1$d초</string>
+    <string name="duration_minutes">%1$d분</string>
+    <string name="duration_minutes_seconds">%1$d분 %2$d초</string>
     <string name="rest_over_text">%1$s, %2$s</string>
     <string name="weight_times_amount">%1$s x %2$s</string>
 </resources>

@@ -21,6 +21,7 @@
     <string name="col_previous">Previous</string>
     <string name="col_reps">Reps</string>
     <string name="col_seconds">Sec</string>
+    <string name="col_minutes">Min</string>
     <string name="col_set">Set</string>
     <string name="complete_set">Complete set</string>
     <string name="create">Create</string>
@@ -66,6 +67,7 @@
     <string name="kind_assisted_bodyweight">Assisted bodyweight</string>
     <string name="kind_bodyweight">Bodyweight</string>
     <string name="kind_duration">Duration</string>
+    <string name="kind_cardio">Cardio</string>
     <string name="kind_weight_reps">Weight and reps</string>
     <string name="kind_weighted_bodyweight">Weighted bodyweight</string>
     <string name="language_system">System default</string>

@@ -13,6 +13,8 @@ import io.fitgymlog.app.model.Routine
 import io.fitgymlog.app.model.Workout
 import io.fitgymlog.app.model.WorkoutExercise
 import io.fitgymlog.app.model.WorkoutSet
+import io.fitgymlog.app.model.defaultRestSeconds
+import io.fitgymlog.app.model.defaultSets
 import io.fitgymlog.app.ui.name
 import java.time.Instant
 import kotlinx.coroutines.flow.first
@@ -38,7 +40,11 @@ class WorkoutActions(
                 restSeconds = planned.restSeconds,
                 sets = List(planned.sets) { setIndex ->
                     val last = previous.getOrNull(setIndex) ?: previous.lastOrNull()
-                    WorkoutSet(weightKg = planned.weightKg ?: lastKnownWeight(previous, setIndex), reps = planned.reps ?: last?.reps)
+                    WorkoutSet(
+                        weightKg = planned.weightKg ?: lastKnownWeight(previous, setIndex),
+                        reps = planned.reps ?: last?.reps,
+                        durationSeconds = last?.durationSeconds,
+                    )
                 },
             )
         }
@@ -47,7 +53,7 @@ class WorkoutActions(
 
     suspend fun addExercise(exerciseId: String) {
         val sets = prefilledSets(exerciseId)
-        val rest = settings.settings.value.defaultRestSeconds
+        val rest = exercises.find(exerciseId).kind.defaultRestSeconds(settings.settings.value.defaultRestSeconds)
         workouts.update { it.addExercise(exerciseId, sets, rest, Instant.now()) }
     }
 
@@ -71,14 +77,16 @@ class WorkoutActions(
     suspend fun deleteWorkout(id: Long) {
         val deleted = workouts.observe(id).first()
         workouts.delete(id)
-        if (deleted != null) safely { health.delete(deleted) }
+        if (deleted != null) safely { health.delete(deleted, exercises::find) }
     }
 
-    /** Same sets as last time this exercise was done, or three empty sets the first time. */
+    /** Same sets as last time this exercise was done, or empty sets the first time. */
     private suspend fun prefilledSets(exerciseId: String): List<WorkoutSet> {
         val previous = workouts.previousSets(exerciseId)
-        if (previous.isEmpty()) return List(DEFAULT_SETS) { WorkoutSet() }
-        return previous.mapIndexed { index, set -> WorkoutSet(type = set.type, weightKg = lastKnownWeight(previous, index), reps = set.reps) }
+        if (previous.isEmpty()) return List(exercises.find(exerciseId).kind.defaultSets()) { WorkoutSet() }
+        return previous.mapIndexed { index, set ->
+            WorkoutSet(type = set.type, weightKg = lastKnownWeight(previous, index), reps = set.reps, durationSeconds = set.durationSeconds)
+        }
     }
 
     /** A set logged without a weight borrows the closest earlier weight, so one missed entry doesn't blank the next session. */
@@ -96,9 +104,5 @@ class WorkoutActions(
     /** Health Connect is best effort: a failure there must not undo or block the workout saved here. */
     private suspend fun safely(call: suspend () -> Unit) {
         catching { call() }.onFailure { Log.w(LOG_TAG, "Health Connect call failed", it) }
-    }
-
-    private companion object {
-        const val DEFAULT_SETS = 3
     }
 }

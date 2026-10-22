@@ -21,6 +21,7 @@
     <string name="col_previous">지난 기록</string>
     <string name="col_reps">횟수</string>
     <string name="col_seconds">초</string>
+    <string name="col_minutes">분</string>
     <string name="col_set">세트</string>
     <string name="complete_set">세트 완료</string>
     <string name="create">만들기</string>
@@ -66,6 +67,7 @@
     <string name="kind_assisted_bodyweight">어시스트 맨몸</string>
     <string name="kind_bodyweight">맨몸</string>
     <string name="kind_duration">시간</string>
+    <string name="kind_cardio">유산소</string>
     <string name="kind_weight_reps">무게와 횟수</string>
     <string name="kind_weighted_bodyweight">중량 맨몸</string>
     <string name="language_system">시스템 설정</string>

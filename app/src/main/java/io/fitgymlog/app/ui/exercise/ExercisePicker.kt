@@ -184,5 +184,6 @@ fun kindLabel(kind: ExerciseKind): String = stringResource(
         ExerciseKind.WEIGHTED_BODYWEIGHT -> R.string.kind_weighted_bodyweight
         ExerciseKind.ASSISTED_BODYWEIGHT -> R.string.kind_assisted_bodyweight
         ExerciseKind.DURATION -> R.string.kind_duration
+        ExerciseKind.CARDIO -> R.string.kind_cardio
     },
 )

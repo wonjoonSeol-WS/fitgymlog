@@ -70,4 +70,16 @@ class SetEditingTest {
         assertEquals(300, SECOND_CHOICES.last())
         assertEquals(SECOND_CHOICES.sorted(), SECOND_CHOICES)
     }
+
+    @Test
+    fun `cardio is entered in whole minutes and stored in seconds`() {
+        assertEquals(300, ExerciseKind.CARDIO.secondsOf(5))
+        assertEquals(45, ExerciseKind.DURATION.secondsOf(45))
+        assertEquals(5, WorkoutSet(durationSeconds = 300).amount(ExerciseKind.CARDIO))
+        assertEquals(6, WorkoutSet(durationSeconds = 330).amount(ExerciseKind.CARDIO))
+        assertEquals(5, WorkoutSet(durationSeconds = 270).amount(ExerciseKind.CARDIO))
+        assertEquals(300, WorkoutSet(durationSeconds = 300).amount(ExerciseKind.DURATION))
+        assertTrue(5 in ExerciseKind.CARDIO.amountChoices())
+        assertEquals(ExerciseKind.CARDIO.amountChoices().sorted(), ExerciseKind.CARDIO.amountChoices())
+    }
 }

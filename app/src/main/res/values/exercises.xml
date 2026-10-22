@@ -40,4 +40,7 @@
     <string name="exercise_chest_dip_weighted">Chest Dip (Weighted)</string>
     <string name="exercise_push_up">Push Up</string>
     <string name="exercise_plank">Plank</string>
+    <string name="exercise_treadmill">Treadmill</string>
+    <string name="exercise_stair_machine">Stair Machine (Floors)</string>
+    <string name="exercise_stationary_bike">Cycling</string>
 </resources>

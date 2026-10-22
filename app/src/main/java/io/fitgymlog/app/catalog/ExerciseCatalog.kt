@@ -476,5 +476,29 @@ object ExerciseCatalog {
                 "https://www.strengthlog.com/plank/",
             ),
         ),
+        BuiltinExercise(
+            id = "treadmill",
+            nameRes = R.string.exercise_treadmill,
+            hevyName = "Treadmill",
+            kind = ExerciseKind.CARDIO,
+            equipment = Equipment.MACHINE,
+            segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_RUNNING_TREADMILL,
+        ),
+        BuiltinExercise(
+            id = "stair_machine",
+            nameRes = R.string.exercise_stair_machine,
+            hevyName = "Stair Machine (Floors)",
+            kind = ExerciseKind.CARDIO,
+            equipment = Equipment.MACHINE,
+            segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_STAIR_CLIMBING_MACHINE,
+        ),
+        BuiltinExercise(
+            id = "stationary_bike",
+            nameRes = R.string.exercise_stationary_bike,
+            hevyName = "Cycling",
+            kind = ExerciseKind.CARDIO,
+            equipment = Equipment.MACHINE,
+            segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_BIKING_STATIONARY,
+        ),
     )
 }

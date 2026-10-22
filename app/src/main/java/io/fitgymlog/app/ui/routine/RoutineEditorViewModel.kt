@@ -7,9 +7,12 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.fitgymlog.app.catching
+import io.fitgymlog.app.model.ExerciseKind
 import io.fitgymlog.app.model.NewExercise
 import io.fitgymlog.app.model.Routine
 import io.fitgymlog.app.model.RoutineExercise
+import io.fitgymlog.app.model.defaultRestSeconds
+import io.fitgymlog.app.model.defaultSets
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
@@ -63,13 +66,14 @@ class RoutineEditorViewModel(
         if (phase == EditorPhase.EDITING) keep(transform(draft))
     }
 
-    fun add(exerciseId: String, restSeconds: Int) =
-        edit { it.add(RoutineExercise(exerciseId, sets = DEFAULT_SETS, reps = null, weightKg = null, restSeconds = restSeconds)) }
+    fun add(exerciseId: String, kind: ExerciseKind, restSeconds: Int) = edit {
+        it.add(RoutineExercise(exerciseId, sets = kind.defaultSets(), reps = null, weightKg = null, restSeconds = kind.defaultRestSeconds(restSeconds)))
+    }
 
     fun createAndAdd(exercise: NewExercise, restSeconds: Int) {
         viewModelScope.launch {
             val id = attempt { store.createExercise(exercise) } ?: return@launch
-            add(id, restSeconds)
+            add(id, exercise.kind, restSeconds)
         }
     }
 
@@ -120,7 +124,6 @@ class RoutineEditorViewModel(
 
     private companion object {
         const val NEW_ROUTINE = 0L
-        const val DEFAULT_SETS = 3
         const val DRAFT_KEY = "routine_draft"
     }
 }

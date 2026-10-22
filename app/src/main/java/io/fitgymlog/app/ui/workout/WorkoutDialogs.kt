@@ -22,10 +22,10 @@ import androidx.compose.ui.res.stringResource
 import io.fitgymlog.app.R
 import io.fitgymlog.app.data.Settings
 import io.fitgymlog.app.model.Exercise
-import io.fitgymlog.app.model.ExerciseKind
 import io.fitgymlog.app.model.WeightUnit
 import io.fitgymlog.app.model.WorkoutExercise
 import io.fitgymlog.app.model.WorkoutSet
+import io.fitgymlog.app.model.isTimed
 import io.fitgymlog.app.ui.localizedName
 import io.fitgymlog.app.ui.setTypeName
 import io.fitgymlog.app.workout.ActiveWorkout
@@ -98,14 +98,14 @@ internal fun SetEditorSheet(
             )
         }
         SetField.AMOUNT -> {
-            val duration = info.kind == ExerciseKind.DURATION
+            val kind = info.kind
             NumberPadSheet(
                 title = setTitle,
-                options = if (duration) SECOND_CHOICES else REP_CHOICES,
-                selected = set.amount(info.kind),
-                target = if (duration) null else set.targetReps,
+                options = kind.amountChoices(),
+                selected = set.amount(kind),
+                target = if (kind.isTimed) null else set.targetReps,
                 onPick = { value ->
-                    onChange { if (duration) it.setDuration(ref, value) else it.setRepsFromHere(ref, value) }
+                    onChange { if (kind.isTimed) it.setDuration(ref, value?.let(kind::secondsOf)) else it.setRepsFromHere(ref, value) }
                     onDismiss()
                 },
                 onDismiss = onDismiss,

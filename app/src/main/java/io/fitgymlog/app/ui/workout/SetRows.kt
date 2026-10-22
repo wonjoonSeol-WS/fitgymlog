@@ -42,6 +42,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
@@ -54,8 +55,10 @@ import io.fitgymlog.app.model.SetType
 import io.fitgymlog.app.model.WeightUnit
 import io.fitgymlog.app.model.WorkoutExercise
 import io.fitgymlog.app.model.WorkoutSet
+import io.fitgymlog.app.model.isTimed
 import io.fitgymlog.app.ui.NumberStyles
 import io.fitgymlog.app.ui.exercise.ExerciseAvatar
+import io.fitgymlog.app.ui.formatDuration
 import io.fitgymlog.app.ui.formatRest
 import io.fitgymlog.app.ui.formatWeightNumber
 import io.fitgymlog.app.ui.lift
@@ -174,11 +177,17 @@ private fun SetHeader(kind: ExerciseKind, unit: WeightUnit) {
         HeaderCell(stringResource(R.string.col_set), Modifier.width(32.dp), TextAlign.Center)
         HeaderCell(stringResource(R.string.col_previous), Modifier.weight(1.3f))
         if (kind.usesWeight()) HeaderCell(weightHeader(kind, unit), Modifier.weight(1f), TextAlign.Center)
-        HeaderCell(stringResource(if (kind == ExerciseKind.DURATION) R.string.col_seconds else R.string.col_reps), Modifier.weight(1f), TextAlign.Center)
+        HeaderCell(stringResource(amountHeader(kind)), Modifier.weight(1f), TextAlign.Center)
         Box(Modifier.width(40.dp), contentAlignment = Alignment.Center) {
             Icon(Icons.Default.Check, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
         }
     }
+}
+
+private fun amountHeader(kind: ExerciseKind): Int = when (kind) {
+    ExerciseKind.CARDIO -> R.string.col_minutes
+    ExerciseKind.DURATION -> R.string.col_seconds
+    else -> R.string.col_reps
 }
 
 @Composable
@@ -317,7 +326,8 @@ private fun DoneToggle(done: Boolean, onToggle: () -> Unit) {
 @Composable
 private fun previousText(previous: WorkoutSet?, kind: ExerciseKind, unit: WeightUnit): String {
     val weight = previous?.weightKg?.let { formatWeightNumber(it, unit) }
-    val amount = previous?.amount(kind)?.let { if (kind == ExerciseKind.DURATION) stringResource(R.string.duration_seconds, it) else it.toString() }
+    val resources = LocalResources.current
+    val amount = if (kind.isTimed) previous?.durationSeconds?.let { formatDuration(resources, it, kind) } else previous?.reps?.toString()
     return when {
         weight != null && amount != null -> stringResource(R.string.weight_times_amount, weight, amount)
         else -> weight ?: amount ?: "–"

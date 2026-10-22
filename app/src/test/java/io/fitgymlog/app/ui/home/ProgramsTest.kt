@@ -1,10 +1,9 @@
 package io.fitgymlog.app.ui.home
 
-import io.fitgymlog.app.R
 import io.fitgymlog.app.catalog.ExerciseCatalog
 import io.fitgymlog.app.model.Routine
-import java.io.File
-import javax.xml.parsers.DocumentBuilderFactory
+import io.fitgymlog.app.resourceName
+import io.fitgymlog.app.stringsIn
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
@@ -58,12 +57,4 @@ class ProgramsTest {
             assertEquals(names.distinct(), names)
         }
     }
-
-    private fun resourceName(id: Int): String = R.string::class.java.fields.first { it.getInt(null) == id }.name
-
-    private fun stringsIn(directory: String): Map<String, String> =
-        File("src/main/res/$directory").listFiles { file -> file.extension == "xml" }.orEmpty().flatMap { file ->
-            val strings = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file).getElementsByTagName("string")
-            (0 until strings.length).map { strings.item(it) }.map { it.attributes.getNamedItem("name").nodeValue to it.textContent }
-        }.toMap()
 }

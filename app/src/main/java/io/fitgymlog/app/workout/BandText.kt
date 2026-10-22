@@ -5,7 +5,9 @@ import io.fitgymlog.app.R
 import io.fitgymlog.app.model.Exercise
 import io.fitgymlog.app.model.ExerciseKind
 import io.fitgymlog.app.model.WeightUnit
+import io.fitgymlog.app.model.isTimed
 import io.fitgymlog.app.ui.formatClock
+import io.fitgymlog.app.ui.formatDuration
 import io.fitgymlog.app.ui.formatWeight
 import io.fitgymlog.app.ui.name
 import java.time.Duration
@@ -50,15 +52,15 @@ fun setLine(context: Context, kind: ExerciseKind, weightKg: Double?, reps: Int?,
             else -> formatted
         }
     }
-    val amountText = if (kind == ExerciseKind.DURATION) {
-        durationSeconds?.let { context.getString(R.string.duration_seconds, it) }
+    val amountText = if (kind.isTimed) {
+        durationSeconds?.let { formatDuration(context.resources, it, kind) }
     } else {
         reps?.let { context.resources.getQuantityString(R.plurals.reps, it, it) }
     }
     return when {
         weightText == null -> amountText ?: context.getString(R.string.set_not_recorded)
         amountText == null -> weightText
-        kind == ExerciseKind.DURATION -> context.getString(R.string.weight_times_amount, weightText, amountText)
+        kind.isTimed -> context.getString(R.string.weight_times_amount, weightText, amountText)
         else -> context.getString(R.string.weight_times_reps, weightText, reps)
     }
 }

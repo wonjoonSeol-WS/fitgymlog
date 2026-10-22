@@ -56,6 +56,7 @@ import io.fitgymlog.app.model.Exercise
 import io.fitgymlog.app.model.NewExercise
 import io.fitgymlog.app.model.Routine
 import io.fitgymlog.app.model.WeightUnit
+import io.fitgymlog.app.model.isTimed
 import io.fitgymlog.app.ui.ChoiceDialog
 import io.fitgymlog.app.ui.ConfirmDialog
 import io.fitgymlog.app.ui.NumberField
@@ -167,7 +168,7 @@ fun RoutineEditorScreen(routineId: Long, onDone: () -> Unit) {
         ExercisePickerDialog(
             exercises = exercises,
             onPick = { id ->
-                editor.add(id, settings.defaultRestSeconds)
+                editor.add(id, exercises.byId(id).kind, settings.defaultRestSeconds)
                 picking = false
             },
             onCreate = { new ->
@@ -272,8 +273,10 @@ private fun PlannedExerciseCard(
                 Labeled(stringResource(R.string.sets), Modifier.weight(1f)) {
                     NumberField(item.sets.toString(), { text -> plannedSets(text)?.let { sets -> onChange { it.copy(sets = sets) } } }, decimal = false)
                 }
-                Labeled(stringResource(R.string.col_reps), Modifier.weight(1f)) {
-                    NumberField(item.reps?.toString().orEmpty(), { text -> onChange { it.copy(reps = text.toIntOrNull()) } }, decimal = false, placeholder = "-")
+                if (!exercise.kind.isTimed) {
+                    Labeled(stringResource(R.string.col_reps), Modifier.weight(1f)) {
+                        NumberField(item.reps?.toString().orEmpty(), { text -> onChange { it.copy(reps = text.toIntOrNull()) } }, decimal = false, placeholder = "-")
+                    }
                 }
                 if (exercise.kind.usesWeight()) {
                     Labeled(unitLabel(unit), Modifier.weight(1f)) {

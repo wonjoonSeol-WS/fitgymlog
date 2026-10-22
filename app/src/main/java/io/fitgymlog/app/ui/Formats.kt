@@ -1,16 +1,24 @@
 package io.fitgymlog.app.ui
 
 import android.content.Context
+import android.content.res.Resources
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import io.fitgymlog.app.R
 import io.fitgymlog.app.model.Exercise
+import io.fitgymlog.app.model.ExerciseKind
 import io.fitgymlog.app.model.SetType
 import io.fitgymlog.app.model.WeightUnit
 import java.time.Duration
 import java.util.Locale
 
 private const val KG_PER_LB = 0.45359237
+
+fun formatDuration(resources: Resources, seconds: Int, kind: ExerciseKind): String = when {
+    kind != ExerciseKind.CARDIO -> resources.getString(R.string.duration_seconds, seconds)
+    seconds % 60 == 0 -> resources.getString(R.string.duration_minutes, seconds / 60)
+    else -> resources.getString(R.string.duration_minutes_seconds, seconds / 60, seconds % 60)
+}
 
 fun Exercise.name(context: Context): String = nameRes?.let(context::getString) ?: customName ?: englishName
 

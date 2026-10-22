@@ -8,7 +8,15 @@ enum class ExerciseKind {
     WEIGHTED_BODYWEIGHT,
     ASSISTED_BODYWEIGHT,
     DURATION,
+    CARDIO,
 }
+
+val ExerciseKind.isTimed: Boolean get() = this == ExerciseKind.DURATION || this == ExerciseKind.CARDIO
+
+fun ExerciseKind.defaultSets(): Int = if (this == ExerciseKind.CARDIO) 1 else 3
+
+/** Cardio is one block with nothing to rest for after it. */
+fun ExerciseKind.defaultRestSeconds(setting: Int): Int = if (this == ExerciseKind.CARDIO) 0 else setting
 
 enum class SetType { NORMAL, WARMUP, DROP, FAILURE }
 
