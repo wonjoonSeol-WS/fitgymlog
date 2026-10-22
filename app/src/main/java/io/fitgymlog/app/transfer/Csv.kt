@@ -19,8 +19,9 @@ object Csv {
                     field.append('"')
                     i++
                 }
-                c == '"' -> inQuotes = !inQuotes
+                inQuotes && c == '"' -> inQuotes = false
                 inQuotes -> field.append(c)
+                c == '"' && startsField(body, i, delimiter) -> inQuotes = true
                 c == delimiter -> {
                     row.add(field.toString())
                     field.clear()
@@ -53,6 +54,9 @@ object Csv {
         return if (needsQuotes) "\"${value.replace("\"", "\"\"")}\"" else value
     }
 
+    private fun startsField(body: String, i: Int, delimiter: Char): Boolean =
+        i == 0 || body[i - 1] == delimiter || body[i - 1] == '\n' || body[i - 1] == '\r'
+
     private fun detectDelimiter(text: String): Char {
         val header = text.lineSequence().firstOrNull().orEmpty()
         return if (header.count { it == ';' } > header.count { it == ',' }) ';' else ','
@@ -62,8 +66,6 @@ object Csv {
 /** A CSV row addressed by header name, case-insensitively. */
 class CsvRecord(private val header: Map<String, Int>, private val values: List<String>, val rowNumber: Int) {
     operator fun get(column: String): String? = header[column.lowercase()]?.let { values.getOrNull(it) }?.trim()?.takeIf { it.isNotEmpty() }
-
-    fun has(column: String): Boolean = column.lowercase() in header
 }
 
 fun csvRecords(text: String): List<CsvRecord> {

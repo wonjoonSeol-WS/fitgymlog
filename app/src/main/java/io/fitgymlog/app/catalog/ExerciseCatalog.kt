@@ -60,6 +60,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.WEIGHT_REPS,
             equipment = Equipment.BARBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_OTHER_WORKOUT,
+            links = listOf(
+                "https://www.youtube.com/watch?v=Weu9HMHdiDA",
+                "https://www.strengthlog.com/pendlay-row/",
+            ),
         ),
         BuiltinExercise(
             id = "front_squat",
@@ -68,6 +72,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.WEIGHT_REPS,
             equipment = Equipment.BARBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_SQUAT,
+            links = listOf(
+                "https://www.youtube.com/watch?v=tlfahNdNPPI",
+                "https://www.strengthlog.com/front-squat/",
+            ),
         ),
         BuiltinExercise(
             id = "romanian_deadlift_barbell",
@@ -76,6 +84,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.WEIGHT_REPS,
             equipment = Equipment.BARBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_DEADLIFT,
+            links = listOf(
+                "https://www.youtube.com/watch?v=JCXUYuzwNrM",
+                "https://www.strengthlog.com/romanian-deadlift/",
+            ),
         ),
         BuiltinExercise(
             id = "incline_bench_press_barbell",
@@ -84,6 +96,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.WEIGHT_REPS,
             equipment = Equipment.BARBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_BENCH_PRESS,
+            links = listOf(
+                "https://www.youtube.com/watch?v=DbFgADa2PL8",
+                "https://www.strengthlog.com/incline-bench-press/",
+            ),
         ),
         BuiltinExercise(
             id = "hip_thrust_barbell",
@@ -92,6 +108,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.WEIGHT_REPS,
             equipment = Equipment.BARBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_HIP_THRUST,
+            links = listOf(
+                "https://www.youtube.com/watch?v=mJObkwsEkWs",
+                "https://www.strengthlog.com/hip-thrust/",
+            ),
         ),
         BuiltinExercise(
             id = "shrug_barbell",
@@ -100,6 +120,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.WEIGHT_REPS,
             equipment = Equipment.BARBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_OTHER_WORKOUT,
+            links = listOf(
+                "https://www.youtube.com/watch?v=jTVbilkxSAk",
+                "https://www.strengthlog.com/barbell-shrug/",
+            ),
         ),
         BuiltinExercise(
             id = "bench_press_dumbbell",
@@ -108,6 +132,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.WEIGHT_REPS,
             equipment = Equipment.DUMBBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_BENCH_PRESS,
+            links = listOf(
+                "https://www.youtube.com/watch?v=VmB1G1K7v94",
+                "https://www.strengthlog.com/dumbbell-chest-press/",
+            ),
         ),
         BuiltinExercise(
             id = "incline_bench_press_dumbbell",
@@ -116,6 +144,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.WEIGHT_REPS,
             equipment = Equipment.DUMBBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_BENCH_PRESS,
+            links = listOf(
+                "https://www.youtube.com/watch?v=8iPEnn-ltC8",
+                "https://www.strengthlog.com/dumbbell-incline-press/",
+            ),
         ),
         BuiltinExercise(
             id = "shoulder_press_dumbbell",
@@ -124,6 +156,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.WEIGHT_REPS,
             equipment = Equipment.DUMBBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_SHOULDER_PRESS,
+            links = listOf(
+                "https://www.youtube.com/watch?v=qEwKCR5JCog",
+                "https://www.strengthlog.com/seated-dumbbell-shoulder-press/",
+            ),
         ),
         BuiltinExercise(
             id = "lateral_raise_dumbbell",
@@ -132,6 +168,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.WEIGHT_REPS,
             equipment = Equipment.DUMBBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_DUMBBELL_LATERAL_RAISE,
+            links = listOf(
+                "https://www.youtube.com/watch?v=3VcKaXpzqRo",
+                "https://www.strengthlog.com/dumbbell-lateral-raise/",
+            ),
         ),
         BuiltinExercise(
             id = "bent_over_row_dumbbell",
@@ -140,6 +180,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.WEIGHT_REPS,
             equipment = Equipment.DUMBBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_DUMBBELL_ROW,
+            links = listOf(
+                "https://www.youtube.com/watch?v=pYcpY20QaE8",
+                "https://www.strengthlog.com/dumbbell-row/",
+            ),
         ),
         BuiltinExercise(
             id = "chest_supported_incline_row_dumbbell",
@@ -148,6 +192,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.WEIGHT_REPS,
             equipment = Equipment.DUMBBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_DUMBBELL_ROW,
+            links = listOf(
+                "https://www.youtube.com/watch?v=llFTFDwmGcw",
+                "https://www.strengthlog.com/chest-supported-dumbbell-row/",
+            ),
         ),
         BuiltinExercise(
             id = "bicep_curl_dumbbell",
@@ -156,6 +204,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.WEIGHT_REPS,
             equipment = Equipment.DUMBBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_ARM_CURL,
+            links = listOf(
+                "https://www.youtube.com/watch?v=sAq_ocpRh_I",
+                "https://www.strengthlog.com/dumbbell-curl/",
+            ),
         ),
         BuiltinExercise(
             id = "hammer_curl_dumbbell",
@@ -164,6 +216,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.WEIGHT_REPS,
             equipment = Equipment.DUMBBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_ARM_CURL,
+            links = listOf(
+                "https://www.youtube.com/watch?v=zC3nLlEvin4",
+                "https://www.strengthlog.com/hammer-curl/",
+            ),
         ),
         BuiltinExercise(
             id = "romanian_deadlift_dumbbell",
@@ -172,6 +228,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.WEIGHT_REPS,
             equipment = Equipment.DUMBBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_DEADLIFT,
+            links = listOf(
+                "https://www.youtube.com/watch?v=FQKfr1YDhEk",
+                "https://www.strengthlog.com/dumbbell-romanian-deadlift/",
+            ),
         ),
         BuiltinExercise(
             id = "lunge_dumbbell",
@@ -180,6 +240,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.WEIGHT_REPS,
             equipment = Equipment.DUMBBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_LUNGE,
+            links = listOf(
+                "https://www.youtube.com/watch?v=D7KaRcUTQeE",
+                "https://www.strengthlog.com/dumbbell-lunge/",
+            ),
         ),
         BuiltinExercise(
             id = "bulgarian_split_squat",
@@ -188,6 +252,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.WEIGHT_REPS,
             equipment = Equipment.DUMBBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_LUNGE,
+            links = listOf(
+                "https://www.youtube.com/watch?v=2C-uNgKwPLE",
+                "https://www.strengthlog.com/bulgarian-split-squat/",
+            ),
         ),
         BuiltinExercise(
             id = "lat_pulldown_cable",
@@ -196,6 +264,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.WEIGHT_REPS,
             equipment = Equipment.CABLE,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_LAT_PULL_DOWN,
+            links = listOf(
+                "https://www.youtube.com/watch?v=CAwf7n6Luuc",
+                "https://www.strengthlog.com/lat-pulldown-with-pronated-grip/",
+            ),
         ),
         BuiltinExercise(
             id = "seated_cable_row_v_grip",
@@ -204,6 +276,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.WEIGHT_REPS,
             equipment = Equipment.CABLE,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_OTHER_WORKOUT,
+            links = listOf(
+                "https://www.youtube.com/watch?v=GZbfZ033f74",
+                "https://www.strengthlog.com/cable-close-grip-seated-row/",
+            ),
         ),
         BuiltinExercise(
             id = "triceps_pushdown",
@@ -212,6 +288,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.WEIGHT_REPS,
             equipment = Equipment.CABLE,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_DOUBLE_ARM_TRICEPS_EXTENSION,
+            links = listOf(
+                "https://www.youtube.com/watch?v=2-LAMcpzODU",
+                "https://www.strengthlog.com/tricep-pushdown-with-bar/",
+            ),
         ),
         BuiltinExercise(
             id = "face_pull",
@@ -220,6 +300,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.WEIGHT_REPS,
             equipment = Equipment.CABLE,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_OTHER_WORKOUT,
+            links = listOf(
+                "https://www.youtube.com/watch?v=rep-qVOkqgk",
+                "https://www.strengthlog.com/face-pull/",
+            ),
         ),
         BuiltinExercise(
             id = "leg_press_machine",
@@ -228,6 +312,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.WEIGHT_REPS,
             equipment = Equipment.MACHINE,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_LEG_PRESS,
+            links = listOf(
+                "https://www.youtube.com/watch?v=oujca3_Shgw",
+                "https://www.strengthlog.com/leg-press/",
+            ),
         ),
         BuiltinExercise(
             id = "leg_extension_machine",
@@ -236,6 +324,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.WEIGHT_REPS,
             equipment = Equipment.MACHINE,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_LEG_EXTENSION,
+            links = listOf(
+                "https://www.youtube.com/watch?v=ljO4jkwv8wQ",
+                "https://www.strengthlog.com/leg-extension/",
+            ),
         ),
         BuiltinExercise(
             id = "lying_leg_curl_machine",
@@ -244,6 +336,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.WEIGHT_REPS,
             equipment = Equipment.MACHINE,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_LEG_CURL,
+            links = listOf(
+                "https://www.youtube.com/watch?v=1Tq3QdYUuHs",
+                "https://www.strengthlog.com/lying-leg-curl/",
+            ),
         ),
         BuiltinExercise(
             id = "seated_leg_curl_machine",
@@ -252,6 +348,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.WEIGHT_REPS,
             equipment = Equipment.MACHINE,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_LEG_CURL,
+            links = listOf(
+                "https://www.youtube.com/watch?v=ELOCsoDSmrg",
+                "https://www.strengthlog.com/seated-leg-curl/",
+            ),
         ),
         BuiltinExercise(
             id = "chest_fly_machine",
@@ -260,6 +360,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.WEIGHT_REPS,
             equipment = Equipment.MACHINE,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_OTHER_WORKOUT,
+            links = listOf(
+                "https://www.youtube.com/watch?v=3RSVEKVy4Cg",
+                "https://www.strengthlog.com/pec-deck/",
+            ),
         ),
         BuiltinExercise(
             id = "standing_calf_raise_machine",
@@ -268,6 +372,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.WEIGHT_REPS,
             equipment = Equipment.MACHINE,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_OTHER_WORKOUT,
+            links = listOf(
+                "https://www.youtube.com/watch?v=YMmgqO8Jo-k",
+                "https://www.strengthlog.com/standing-calf-raise/",
+            ),
         ),
         BuiltinExercise(
             id = "pull_up",
@@ -276,7 +384,11 @@ object ExerciseCatalog {
             kind = ExerciseKind.BODYWEIGHT_REPS,
             equipment = Equipment.BODYWEIGHT,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_PULL_UP,
-            links = listOf("https://stronglifts.com/pullups/"),
+            links = listOf(
+                "https://www.youtube.com/watch?v=ylVmNQlKdAI",
+                "https://stronglifts.com/pullups/",
+                "https://www.strengthlog.com/pull-up/",
+            ),
         ),
         BuiltinExercise(
             id = "pull_up_weighted",
@@ -285,7 +397,11 @@ object ExerciseCatalog {
             kind = ExerciseKind.WEIGHTED_BODYWEIGHT,
             equipment = Equipment.BODYWEIGHT,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_PULL_UP,
-            links = listOf("https://stronglifts.com/pullups/"),
+            links = listOf(
+                "https://www.youtube.com/watch?v=ylVmNQlKdAI",
+                "https://stronglifts.com/pullups/",
+                "https://www.strengthlog.com/pull-up/",
+            ),
         ),
         BuiltinExercise(
             id = "pull_up_assisted",
@@ -294,6 +410,11 @@ object ExerciseCatalog {
             kind = ExerciseKind.ASSISTED_BODYWEIGHT,
             equipment = Equipment.BODYWEIGHT,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_PULL_UP,
+            links = listOf(
+                "https://www.youtube.com/watch?v=ylVmNQlKdAI",
+                "https://stronglifts.com/pullups/",
+                "https://www.strengthlog.com/pull-up/",
+            ),
         ),
         BuiltinExercise(
             id = "chin_up",
@@ -302,6 +423,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.BODYWEIGHT_REPS,
             equipment = Equipment.BODYWEIGHT,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_PULL_UP,
+            links = listOf(
+                "https://www.youtube.com/watch?v=bZ6Ysk9jf6E",
+                "https://www.strengthlog.com/chin-up/",
+            ),
         ),
         BuiltinExercise(
             id = "chest_dip",
@@ -310,6 +435,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.BODYWEIGHT_REPS,
             equipment = Equipment.BODYWEIGHT,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_OTHER_WORKOUT,
+            links = listOf(
+                "https://www.youtube.com/watch?v=8UugSoVJLag",
+                "https://www.strengthlog.com/bar-dip/",
+            ),
         ),
         BuiltinExercise(
             id = "chest_dip_weighted",
@@ -318,6 +447,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.WEIGHTED_BODYWEIGHT,
             equipment = Equipment.BODYWEIGHT,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_OTHER_WORKOUT,
+            links = listOf(
+                "https://www.youtube.com/watch?v=8UugSoVJLag",
+                "https://www.strengthlog.com/bar-dip/",
+            ),
         ),
         BuiltinExercise(
             id = "push_up",
@@ -326,6 +459,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.BODYWEIGHT_REPS,
             equipment = Equipment.BODYWEIGHT,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_OTHER_WORKOUT,
+            links = listOf(
+                "https://www.youtube.com/watch?v=wxhNoKZlfY8",
+                "https://www.strengthlog.com/push-up/",
+            ),
         ),
         BuiltinExercise(
             id = "plank",
@@ -334,10 +471,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.DURATION,
             equipment = Equipment.BODYWEIGHT,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_PLANK,
+            links = listOf(
+                "https://www.youtube.com/watch?v=pSHjTRCQxIw",
+                "https://www.strengthlog.com/plank/",
+            ),
         ),
     )
-
-    private val byId = all.associateBy { it.id }
-
-    fun find(id: String): BuiltinExercise? = byId[id]
 }

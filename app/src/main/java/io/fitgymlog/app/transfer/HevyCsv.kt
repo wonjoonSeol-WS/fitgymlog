@@ -104,7 +104,7 @@ data class ExportWorkout(
     val exercises: List<ImportedExercise>,
 )
 
-internal fun CsvRecord.number(column: String): Double? = this[column]?.replace(',', '.')?.toDoubleOrNull()
+internal fun CsvRecord.number(column: String): Double? = this[column]?.replace(',', '.')?.toDoubleOrNull()?.takeIf { it.isFinite() }
 
 internal fun Double?.plain(): String = when {
     this == null -> ""

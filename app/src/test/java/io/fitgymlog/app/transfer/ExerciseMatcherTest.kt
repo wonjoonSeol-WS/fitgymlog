@@ -23,4 +23,11 @@ class ExerciseMatcherTest {
     fun `returns null for unknown names`() {
         assertNull(matcher.match("Zercher Squat"))
     }
+
+    @Test
+    fun `a name made only of punctuation matches nothing`() {
+        val withSymbolName = ExerciseMatcher(mapOf("custom-1" to listOf("---")))
+
+        assertNull(withSymbolName.match("???"))
+    }
 }

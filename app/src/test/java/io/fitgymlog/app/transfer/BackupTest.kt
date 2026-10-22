@@ -51,13 +51,30 @@ class BackupTest {
         assertEquals(backup.customExercises, decoded.customExercises)
     }
 
-    @Test
-    fun `recognizes its own files and rejects newer versions`() {
-        val text = BackupFile.encode(BackupFile(exportedAt = "x", customExercises = emptyList(), routines = emptyList(), workouts = emptyList()))
+    private val empty = BackupFile.encode(BackupFile(exportedAt = "x", customExercises = emptyList(), routines = emptyList(), workouts = emptyList()))
 
-        assertTrue(BackupFile.looksLike(text))
-        assertThrows(IllegalArgumentException::class.java) {
-            BackupFile.decode(text.replace("\"version\": 1", "\"version\": 99"))
-        }
+    @Test
+    fun `recognizes its own files, with or without a byte order mark`() {
+        assertTrue(BackupFile.looksLike(empty))
+        assertTrue(BackupFile.looksLike("\uFEFF" + empty))
+        assertEquals("x", BackupFile.decode("\uFEFF" + empty).exportedAt)
+    }
+
+    @Test
+    fun `reports a backup from a newer app version as newer, not as damaged`() {
+        val newer = empty.replace("\"version\": ${BackupFile.VERSION}", "\"version\": ${BackupFile.VERSION + 1}")
+
+        val error = assertThrows(TransferException::class.java) { BackupFile.decode(newer) }
+
+        assertEquals(TransferFailure.NEWER_BACKUP, error.failure)
+    }
+
+    @Test
+    fun `reports truncated or mistyped files as damaged backups`() {
+        val truncated = assertThrows(TransferException::class.java) { BackupFile.decode(empty.dropLast(10)) }
+        val mistyped = assertThrows(TransferException::class.java) { BackupFile.decode(empty.replace("\"routines\": []", "\"routines\": 3")) }
+
+        assertEquals(TransferFailure.MALFORMED_BACKUP, truncated.failure)
+        assertEquals(TransferFailure.MALFORMED_BACKUP, mistyped.failure)
     }
 }
