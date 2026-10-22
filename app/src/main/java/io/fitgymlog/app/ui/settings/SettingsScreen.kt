@@ -118,23 +118,23 @@ fun SettingsScreen(onOpenBandGuide: () -> Unit) {
     ) { padding ->
         ReadableWidth(Modifier.padding(padding)) {
             Column(Modifier.verticalScroll(rememberScrollState())) {
-                Section(stringResource(R.string.section_workout))
-                Item(stringResource(R.string.setting_unit), unitName(settings.unit)) { picker = Picker.UNIT }
-                Item(stringResource(R.string.setting_language), languageName(currentLanguage(context))) { picker = Picker.LANGUAGE }
-                Item(stringResource(R.string.setting_default_rest), formatRest(settings.defaultRestSeconds)) { picker = Picker.REST }
-                Item(stringResource(R.string.setting_auto_finish), stringResource(R.string.minutes_value, settings.idleFinishMinutes)) { picker = Picker.IDLE }
+                SettingsSection(stringResource(R.string.section_workout))
+                SettingsItem(stringResource(R.string.setting_unit), unitName(settings.unit)) { picker = Picker.UNIT }
+                SettingsItem(stringResource(R.string.setting_language), languageName(currentLanguage(context))) { picker = Picker.LANGUAGE }
+                SettingsItem(stringResource(R.string.setting_default_rest), formatRest(settings.defaultRestSeconds)) { picker = Picker.REST }
+                SettingsItem(stringResource(R.string.setting_auto_finish), stringResource(R.string.minutes_value, settings.idleFinishMinutes)) { picker = Picker.IDLE }
 
-                Section(stringResource(R.string.section_band))
-                Item(stringResource(R.string.band_guide_title), stringResource(R.string.band_guide_card_text), onOpenBandGuide)
-                SwitchItem(
+                SettingsSection(stringResource(R.string.section_band))
+                SettingsItem(stringResource(R.string.band_guide_title), stringResource(R.string.band_guide_card_text), onOpenBandGuide)
+                SettingsSwitch(
                     title = stringResource(R.string.setting_band_remote),
                     help = stringResource(R.string.setting_band_remote_help),
                     checked = settings.bandRemoteEnabled,
                     onCheckedChange = { enabled -> app.settings.update { it.copy(bandRemoteEnabled = enabled) } },
                 )
 
-                Section(stringResource(R.string.section_samsung_health))
-                SwitchItem(
+                SettingsSection(stringResource(R.string.section_samsung_health))
+                SettingsSwitch(
                     title = stringResource(R.string.setting_health_connect),
                     help = healthMessage ?: stringResource(R.string.setting_health_connect_help),
                     checked = settings.healthConnectEnabled,
@@ -142,18 +142,18 @@ fun SettingsScreen(onOpenBandGuide: () -> Unit) {
                         if (enabled) enableHealthConnect() else app.settings.update { it.copy(healthConnectEnabled = false) }
                     },
                 )
-                Item(stringResource(R.string.setting_health_type), sessionTypeName(settings.healthSessionType)) { picker = Picker.SESSION_TYPE }
+                SettingsItem(stringResource(R.string.setting_health_type), sessionTypeName(settings.healthSessionType)) { picker = Picker.SESSION_TYPE }
 
-                Section(stringResource(R.string.section_sync))
+                SettingsSection(stringResource(R.string.section_sync))
                 SyncSection()
 
-                Section(stringResource(R.string.section_data))
-                Item(stringResource(R.string.import_data), stringResource(R.string.import_data_help)) { importFile.launch(IMPORT_TYPES) }
-                Item(stringResource(R.string.export_backup), stringResource(R.string.export_backup_help)) { exportBackup.launch("fitgymlog-backup-$today.json") }
-                Item(stringResource(R.string.export_hevy), stringResource(R.string.export_hevy_help)) { exportHevy.launch("fitgymlog-hevy-$today.csv") }
-                Item(stringResource(R.string.export_strong), stringResource(R.string.export_strong_help)) { exportStrong.launch("fitgymlog-strong-$today.csv") }
+                SettingsSection(stringResource(R.string.section_data))
+                SettingsItem(stringResource(R.string.import_data), stringResource(R.string.import_data_help)) { importFile.launch(IMPORT_TYPES) }
+                SettingsItem(stringResource(R.string.export_backup), stringResource(R.string.export_backup_help)) { exportBackup.launch("fitgymlog-backup-$today.json") }
+                SettingsItem(stringResource(R.string.export_hevy), stringResource(R.string.export_hevy_help)) { exportHevy.launch("fitgymlog-hevy-$today.csv") }
+                SettingsItem(stringResource(R.string.export_strong), stringResource(R.string.export_strong_help)) { exportStrong.launch("fitgymlog-strong-$today.csv") }
 
-                Section(stringResource(R.string.section_about))
+                SettingsSection(stringResource(R.string.section_about))
                 ListItem(headlineContent = { Text(stringResource(R.string.app_name)) }, supportingContent = { Text(BuildConfig.VERSION_NAME) })
             }
         }
@@ -207,7 +207,7 @@ fun SettingsScreen(onOpenBandGuide: () -> Unit) {
 }
 
 @Composable
-private fun Section(title: String) {
+internal fun SettingsSection(title: String) {
     HorizontalDivider(Modifier.padding(top = 8.dp))
     Text(
         title,
@@ -218,7 +218,7 @@ private fun Section(title: String) {
 }
 
 @Composable
-private fun Item(title: String, value: String, onClick: () -> Unit) {
+internal fun SettingsItem(title: String, value: String, onClick: () -> Unit) {
     ListItem(
         headlineContent = { Text(title) },
         supportingContent = { Text(value) },
@@ -227,7 +227,7 @@ private fun Item(title: String, value: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun SwitchItem(title: String, help: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+internal fun SettingsSwitch(title: String, help: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
     ListItem(
         headlineContent = { Text(title) },
         supportingContent = { Text(help) },

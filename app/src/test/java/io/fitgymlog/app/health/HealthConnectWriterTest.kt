@@ -93,6 +93,30 @@ class HealthConnectWriterTest {
     }
 
     @Test
+    fun `alternating cardio and lifting gives four sessions in order, none overlapping`() {
+        val day = workout.copy(
+            endedAt = at(27),
+            exercises = listOf(
+                exercise("treadmill", cardio(minutes = 5, tickedAt = 5)),
+                exercise("squat_barbell", lift(8), lift(11)),
+                exercise("stair_machine", cardio(minutes = 5, tickedAt = 20)),
+                exercise("bench_press_barbell", lift(23), lift(26)),
+            ),
+        )
+
+        assertEquals(
+            listOf(
+                listOf(ExerciseSessionRecord.EXERCISE_TYPE_RUNNING_TREADMILL, at(0), at(5), "$base-0-0"),
+                listOf(ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING, at(5), at(15), base),
+                listOf(ExerciseSessionRecord.EXERCISE_TYPE_STAIR_CLIMBING_MACHINE, at(15), at(20), "$base-2-0"),
+                listOf(ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING, at(20), at(27), "$base-lifting-1"),
+            ),
+            summary(day),
+        )
+        assertEquals(listOf("Squat (Barbell): 60kg x 5, 60kg x 5", "Bench Press (Barbell): 60kg x 5, 60kg x 5"), sessions(day).filter { it.exerciseType == ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING }.map { it.notes })
+    }
+
+    @Test
     fun `back-to-back cardio sets follow each other, each with its own record`() {
         val day = workout.copy(
             endedAt = at(30),

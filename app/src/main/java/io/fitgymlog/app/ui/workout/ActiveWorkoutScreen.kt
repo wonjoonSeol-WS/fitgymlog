@@ -66,6 +66,7 @@ import io.fitgymlog.app.ui.ChoiceDialog
 import io.fitgymlog.app.ui.ConfirmDialog
 import io.fitgymlog.app.ui.REST_CHOICES
 import io.fitgymlog.app.ui.ReadableWidth
+import io.fitgymlog.app.ui.coach.TargetsCard
 import io.fitgymlog.app.ui.Stat
 import io.fitgymlog.app.ui.TwoPaneMinWidth
 import io.fitgymlog.app.ui.exercise.ExercisePickerDialog
@@ -139,6 +140,11 @@ fun ActiveWorkoutScreen(onBack: () -> Unit, onFinished: (Long?) -> Unit, onOpenE
     val workoutList: @Composable () -> Unit = {
         LazyColumn(state = listState, contentPadding = PaddingValues(bottom = 140.dp)) {
             item { WorkoutStats(workout, settings.unit) }
+            item {
+                TargetsCard(workout, ::exerciseOf, settings.unit) { targets ->
+                    change { current -> targets.fold(current) { next, target -> next.applyTarget(target.exerciseId, target.weightKg, target.reps) } }
+                }
+            }
             item { HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant) }
             itemsIndexed(workout.exercises, key = { _, exercise -> exercise.key }) { index, exercise ->
                 val focused = index == workout.focus

@@ -52,6 +52,7 @@ import io.fitgymlog.app.R
 import io.fitgymlog.app.catching
 import io.fitgymlog.app.container
 import io.fitgymlog.app.data.byId
+import io.fitgymlog.app.ui.coach.ReviewCard
 import io.fitgymlog.app.model.Exercise
 import io.fitgymlog.app.model.ExerciseKind
 import io.fitgymlog.app.model.Routine
@@ -235,6 +236,7 @@ fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (St
                         if (current.notes.isNotBlank()) Text(current.notes)
                     }
                 }
+                item { ReviewCard(current) }
                 items(current.exercises, key = { it.key }) { exercise ->
                     val info = exercises.byId(exercise.exerciseId)
                     Surface(

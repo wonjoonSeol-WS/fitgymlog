@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="coach">Coach</string>
+    <string name="section_coach">Coach</string>
+    <string name="coach_setting_help">Suggestions from your own history through an AI model you connect. Off unless you turn it on.</string>
+    <string name="coach_enable">Gym coach</string>
+    <string name="coach_connection">Connection (any OpenAI-compatible API)</string>
+    <string name="coach_address">API address</string>
+    <string name="coach_address_invalid">Use the https address your provider documents.</string>
+    <string name="coach_key">API key</string>
+    <string name="coach_key_saved">Saved, encrypted on this phone</string>
+    <string name="coach_key_change">Change</string>
+    <string name="coach_key_remove">Remove</string>
+    <string name="coach_key_save">Save key</string>
+    <string name="coach_connect">Connect</string>
+    <string name="coach_connecting">Connecting…</string>
+    <string name="coach_connected">Connected, %1$d models available</string>
+    <string name="coach_model">Model</string>
+    <string name="coach_model_hint">Connect to pick from the list, or type the model name.</string>
+    <string name="coach_task_models">Model for each task</string>
+    <string name="coach_task_targets">Workout targets</string>
+    <string name="coach_task_review">After-workout notes</string>
+    <string name="coach_task_chat">Chat</string>
+    <string name="coach_model_default">Default</string>
+    <string name="coach_about_you">About you</string>
+    <string name="coach_bodyweight">Bodyweight</string>
+    <string name="coach_bodyweight_unset">Not set. Needed for the food guide.</string>
+    <string name="coach_goal">Goal</string>
+    <string name="coach_goal_build">Build muscle</string>
+    <string name="coach_goal_keep">Keep what I have</string>
+    <string name="coach_goal_lose">Lose fat</string>
+    <string name="coach_food_guide">Food guide</string>
+    <string name="coach_food_guide_help">Protein for the day and meal ideas after each workout. No calorie counting.</string>
+    <string name="coach_what_it_sees">What the coach can see</string>
+    <string name="coach_what_it_sees_text">Your workouts and sets, today\'s workout, bodyweight and goal. Nothing else leaves the phone.</string>
+    <string name="coach_share_notes">Share what it remembers</string>
+    <string name="coach_share_notes_help">Injuries, food limits, schedule and goals you saved.</string>
+    <string name="coach_memory">What the coach remembers</string>
+    <string name="coach_memory_count">%1$d notes</string>
+    <string name="coach_preview">Preview what is sent</string>
+    <string name="coach_preview_help">The exact request for today\'s targets, without your key.</string>
+    <string name="coach_footer">Suggestions are never applied without you. The key is encrypted on this phone and sent only to the address above. General guidance, not medical or dietary advice.</string>
+    <string name="coach_not_set_up">Set up the coach in Settings first.</string>
+
+    <string name="coach_targets_title">Today\'s targets</string>
+    <string name="coach_targets_text">From your last three sessions. Nothing changes until you apply.</string>
+    <string name="coach_targets_loading">The coach is looking at your last sessions…</string>
+    <string name="coach_targets_rules">The coach could not be reached, so these come from the progression rules. %1$s</string>
+    <string name="coach_apply_all">Apply all</string>
+    <string name="coach_not_now">Not now</string>
+    <string name="coach_applied">Applied</string>
+    <string name="coach_reason_all_reps">All reps done last time</string>
+    <string name="coach_reason_missed">Missed reps, same weight</string>
+    <string name="coach_reason_stalled">Third stall in a row, 10% lighter</string>
+    <string name="coach_reason_first">No history yet</string>
+    <string name="coach_reason_same">Same as last time</string>
+
+    <string name="coach_notes_title">Coach notes</string>
+    <string name="coach_notes_get">Get coach notes</string>
+    <string name="coach_notes_loading">The coach is reading this workout…</string>
+    <string name="coach_food_title">Food for today</string>
+    <string name="coach_protein">Protein</string>
+    <string name="coach_next_meal">Next meal</string>
+    <string name="grams">%1$d g</string>
+    <string name="coach_disclaimer">General guidance from your coach model, not medical or dietary advice. You can turn the food guide off in Coach settings.</string>
+
+    <string name="coach_ask">Ask your coach</string>
+    <string name="coach_chat_empty">Ask about today\'s workout, a sore knee, what to eat, or anything about your training.</string>
+    <string name="coach_send">Send</string>
+    <string name="coach_thinking">Thinking…</string>
+    <string name="coach_retry">Retry</string>
+    <string name="coach_change_title">%1$s, today</string>
+    <string name="coach_change_needs_workout">Start the workout to apply this.</string>
+    <string name="coach_remember_offer">Remember: %1$s</string>
+    <string name="coach_save">Save</string>
+    <string name="coach_saved">Saved: %1$s</string>
+
+    <string name="coach_memory_text">The coach asks before saving anything. Edit or delete any of it; it stays on this phone.</string>
+    <string name="coach_memory_empty">Nothing saved yet.</string>
+    <string name="coach_memory_add">Add something yourself</string>
+    <string name="coach_memory_edit">Edit note</string>
+    <string name="coach_memory_since">Since %1$s</string>
+    <string name="coach_topic_health">Health and injuries</string>
+    <string name="coach_topic_food">Food</string>
+    <string name="coach_topic_schedule">Schedule</string>
+    <string name="coach_topic_goals">Goals</string>
+
+    <string name="coach_error_key">The key was refused. Check it in Coach settings.</string>
+    <string name="coach_error_not_found">The address or the model was not found. Check them in Coach settings.</string>
+    <string name="coach_error_rate">The provider asked to slow down, or the quota is used up.</string>
+    <string name="coach_error_server">The provider had a problem. Try again later.</string>
+    <string name="coach_error_offline">Could not reach the provider. Check your connection.</string>
+    <string name="coach_error_reply">The model\'s reply could not be read. Try again or pick another model.</string>
+</resources>

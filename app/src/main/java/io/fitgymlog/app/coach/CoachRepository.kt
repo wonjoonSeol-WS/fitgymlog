@@ -10,7 +10,22 @@ import io.fitgymlog.app.workout.ActiveWorkout
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import io.fitgymlog.app.catching
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+
+data class TodaysTargets(
+    val workoutUuid: String,
+    val targets: List<Target>,
+    val error: Throwable?,
+    val applied: Set<String> = emptySet(),
+    val dismissed: Boolean = false,
+)
 
 class CoachRepository(
     private val context: Context,
@@ -22,6 +37,11 @@ class CoachRepository(
     private val appSettings: SettingsRepository,
 ) {
     private val client = ChatClient()
+    private val loadingTargets = Mutex()
+    private val _todaysTargets = MutableStateFlow<TodaysTargets?>(null)
+
+    /** Kept for the workout they were made for, so turning or unfolding the phone doesn't ask again. */
+    val todaysTargets: StateFlow<TodaysTargets?> = _todaysTargets.asStateFlow()
 
     val hasKey: Boolean get() = vault.hasKey
 
@@ -30,12 +50,20 @@ class CoachRepository(
     /** With [apiKey] null, the saved key is used. */
     suspend fun models(baseUrl: String, apiKey: String?): List<String> = client.models(Connection(baseUrl, apiKey ?: savedKey()))
 
-    suspend fun targets(active: ActiveWorkout): List<Target> =
-        Coach.targets(completer(CoachTask.TARGETS), profile(), plan(active), unit(), LocalDate.now())
-
-    suspend fun ruleTargets(active: ActiveWorkout): List<Target> = Coach.ruleTargets(plan(active), unit()).map { rule ->
-        Target(rule.exerciseId, rule.reason, rule.weightKg, rule.reps, rule.lastWeightKg, note = null)
+    suspend fun loadTargets(active: ActiveWorkout) = loadingTargets.withLock {
+        val uuid = active.workout.uuid
+        if (_todaysTargets.value?.workoutUuid == uuid) return@withLock
+        val plan = plan(active)
+        val result = catching { Coach.targets(completer(CoachTask.TARGETS), profile(), plan, unit(), LocalDate.now()) }
+        val targets = result.getOrElse {
+            Coach.ruleTargets(plan, unit()).map { rule -> Target(rule.exerciseId, rule.reason, rule.weightKg, rule.reps, rule.lastWeightKg, note = null) }
+        }
+        _todaysTargets.value = TodaysTargets(uuid, targets.filter { it.weightKg != null || it.reps != null }, result.exceptionOrNull())
     }
+
+    fun markApplied(exerciseIds: Collection<String>) = _todaysTargets.update { it?.copy(applied = it.applied + exerciseIds) }
+
+    fun dismissTargets() = _todaysTargets.update { it?.copy(dismissed = true) }
 
     suspend fun review(workout: Workout): Review {
         val coach = settings.settings.value
