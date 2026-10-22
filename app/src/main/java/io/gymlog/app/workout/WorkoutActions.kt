@@ -34,7 +34,7 @@ class WorkoutActions(
                 restSeconds = planned.restSeconds,
                 sets = List(planned.sets) { setIndex ->
                     val last = previous.getOrNull(setIndex) ?: previous.lastOrNull()
-                    WorkoutSet(weightKg = planned.weightKg ?: last?.weightKg, reps = planned.reps ?: last?.reps)
+                    WorkoutSet(weightKg = planned.weightKg ?: lastKnownWeight(previous, setIndex), reps = planned.reps ?: last?.reps)
                 },
             )
         }
@@ -73,8 +73,12 @@ class WorkoutActions(
     private suspend fun prefilledSets(exerciseId: String): List<WorkoutSet> {
         val previous = workouts.previousSets(exerciseId)
         if (previous.isEmpty()) return List(DEFAULT_SETS) { WorkoutSet() }
-        return previous.map { WorkoutSet(type = it.type, weightKg = it.weightKg, reps = it.reps) }
+        return previous.mapIndexed { index, set -> WorkoutSet(type = set.type, weightKg = lastKnownWeight(previous, index), reps = set.reps) }
     }
+
+    /** A set logged without a weight borrows the closest earlier weight, so one missed entry doesn't blank the next session. */
+    private fun lastKnownWeight(previous: List<WorkoutSet>, setIndex: Int): Double? =
+        previous.take(setIndex + 1).lastOrNull { it.weightKg != null }?.weightKg ?: previous.firstOrNull { it.weightKg != null }?.weightKg
 
     private suspend fun writeToHealth(workout: Workout) {
         val current = settings.settings.value

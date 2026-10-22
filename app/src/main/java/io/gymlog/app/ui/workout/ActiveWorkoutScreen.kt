@@ -53,6 +53,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.gymlog.app.R
 import io.gymlog.app.container
@@ -95,8 +97,10 @@ fun ActiveWorkoutScreen(onBack: () -> Unit, onFinished: (Long?) -> Unit, onOpenE
     val active by app.workouts.active.collectAsStateWithLifecycle()
     val settings by app.settings.settings.collectAsStateWithLifecycle()
     val exercises by app.exercises.exercises.collectAsStateWithLifecycle()
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
     val workout = active ?: run {
-        LaunchedEffect(Unit) { onBack() }
+        // Only when this screen is in front: after Finish it is still composed during the exit transition.
+        LaunchedEffect(Unit) { if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) onBack() }
         return
     }
     val now = rememberNow()
