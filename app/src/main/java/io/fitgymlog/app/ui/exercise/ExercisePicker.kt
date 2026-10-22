@@ -30,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -40,6 +41,7 @@ import io.fitgymlog.app.model.ExerciseKind
 import io.fitgymlog.app.ui.ChoiceDialog
 import io.fitgymlog.app.ui.ReadableWidth
 import io.fitgymlog.app.ui.localizedName
+import java.text.Collator
 
 data class NewExercise(val name: String, val kind: ExerciseKind, val link: String?)
 
@@ -52,11 +54,11 @@ fun ExercisePickerDialog(
     onDismiss: () -> Unit,
 ) {
     var query by rememberSaveable { mutableStateOf("") }
-    var creating by remember { mutableStateOf(false) }
-    val named = exercises.map { it to it.localizedName() }
-    val filtered = named
-        .filter { (exercise, name) -> query.isBlank() || name.contains(query, ignoreCase = true) || exercise.englishName.contains(query, ignoreCase = true) }
-        .sortedBy { (_, name) -> name.lowercase() }
+    var creating by rememberSaveable { mutableStateOf(false) }
+    val names = exercises.map { it.localizedName() }
+    val locale = LocalConfiguration.current.locales[0]
+    val sorted = remember(exercises, names, locale) { sortedByName(exercises.zip(names), Collator.getInstance(locale)) }
+    val filtered = remember(sorted, query) { matching(sorted, query) }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Scaffold(
@@ -119,12 +121,23 @@ fun ExercisePickerDialog(
     }
 }
 
+internal fun sortedByName(named: List<Pair<Exercise, String>>, collator: Collator): List<Pair<Exercise, String>> =
+    named.sortedWith(compareBy(collator) { it.second })
+
+internal fun matching(named: List<Pair<Exercise, String>>, query: String): List<Pair<Exercise, String>> {
+    val text = query.trim()
+    if (text.isEmpty()) return named
+    return named.filter { (exercise, name) -> name.contains(text, ignoreCase = true) || exercise.englishName.contains(text, ignoreCase = true) }
+}
+
 @Composable
 fun CreateExerciseDialog(initialName: String, onCreate: (NewExercise) -> Unit, onDismiss: () -> Unit) {
-    var name by remember { mutableStateOf(initialName) }
-    var link by remember { mutableStateOf("") }
-    var kind by remember { mutableStateOf(ExerciseKind.WEIGHT_REPS) }
-    var choosingKind by remember { mutableStateOf(false) }
+    var name by rememberSaveable { mutableStateOf(initialName) }
+    var linkText by rememberSaveable { mutableStateOf("") }
+    var kind by rememberSaveable { mutableStateOf(ExerciseKind.WEIGHT_REPS) }
+    var choosingKind by rememberSaveable { mutableStateOf(false) }
+    val link = WebLinks.normalize(linkText)
+    val linkInvalid = linkText.isNotBlank() && link == null
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.create_exercise)) },
@@ -132,21 +145,21 @@ fun CreateExerciseDialog(initialName: String, onCreate: (NewExercise) -> Unit, o
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(name, { name = it }, label = { Text(stringResource(R.string.exercise_name)) }, singleLine = true)
                 Row(modifier = Modifier.fillMaxWidth().clickable { choosingKind = true }.padding(vertical = 8.dp)) {
-                    Text(stringResource(R.string.exercise_kind) + ": " + kindLabel(kind))
+                    Text(stringResource(R.string.exercise_kind_value, kindLabel(kind)))
                 }
-                OutlinedTextField(
-                    link,
-                    { link = it },
+                LinkField(
+                    value = linkText,
+                    onValueChange = { linkText = it },
+                    error = if (linkInvalid) R.string.link_invalid else null,
                     label = { Text(stringResource(R.string.exercise_link)) },
                     placeholder = { Text("https://youtube.com/...") },
-                    singleLine = true,
                 )
             }
         },
         confirmButton = {
             TextButton(
-                enabled = name.isNotBlank(),
-                onClick = { onCreate(NewExercise(name.trim(), kind, link.trim().takeIf { it.isNotEmpty() })) },
+                enabled = name.isNotBlank() && !linkInvalid,
+                onClick = { onCreate(NewExercise(name.trim(), kind, link)) },
             ) { Text(stringResource(R.string.create)) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },

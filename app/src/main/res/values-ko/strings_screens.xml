@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="routine_discard_title">변경 사항을 버릴까요?</string>
+    <string name="routine_discard_text">이 루틴에서 바꾼 내용은 저장되지 않습니다.</string>
+    <string name="routine_not_found">이 루틴은 더 이상 없습니다. 다른 휴대폰에서 삭제되었을 수 있습니다.</string>
+    <string name="routine_update_failed">루틴을 변경하지 못했습니다.</string>
+    <string name="delete_routine_text">%1$s 루틴을 삭제합니다. 되돌릴 수 없습니다.</string>
+    <string name="stronglifts_already_added">StrongLifts A와 B가 이미 루틴에 있습니다.</string>
+    <string name="workout_not_found">이 운동 기록은 더 이상 없습니다. 다른 휴대폰에서 삭제되었을 수 있습니다.</string>
+    <string name="source_hevy">Hevy</string>
+    <string name="source_strong">Strong</string>
+    <string name="source_backup">백업</string>
+    <string name="link_invalid">웹 링크가 아닙니다.</string>
+    <string name="link_duplicate">이미 가이드에 있는 링크입니다.</string>
+    <string name="link_cannot_open">이 링크를 열 수 있는 앱이 없습니다.</string>
+    <string name="exercise_kind_value">종류: %1$s</string>
+    <string name="open_exercise_details">운동 상세 열기</string>
+</resources>

@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -87,7 +86,7 @@ internal fun ExerciseSection(
     var menuOpen by remember { mutableStateOf(false) }
     Column(Modifier.padding(top = 18.dp, bottom = 6.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 16.dp, end = 4.dp)) {
-            ExerciseAvatar(info, Modifier.clip(CircleShape).clickable(onClick = onOpenExercise))
+            ExerciseAvatar(info, onClick = onOpenExercise, onClickLabel = stringResource(R.string.open_exercise_details))
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(

@@ -1,6 +1,7 @@
 package io.fitgymlog.app.ui.exercise
 
 import android.graphics.BitmapFactory
+import android.os.SystemClock
 import android.util.LruCache
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
@@ -10,9 +11,13 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import java.net.HttpURLConnection
 import java.net.URL
-import java.net.URLEncoder
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runInterruptible
+import kotlinx.coroutines.withTimeoutOrNull
 
 data class LinkPreview(val title: String?, val imageUrl: String?)
 
@@ -22,58 +27,126 @@ object LinkPreviews {
         override fun sizeOf(key: String, value: ImageBitmap) = value.asAndroidBitmap().byteCount
     }
     private val previews = LruCache<String, LinkPreview>(48)
+    private val failures = RecentFailures(FAILURE_MEMORY_MILLIS, capacity = 128, now = SystemClock::elapsedRealtime)
 
     fun youtubeIdOf(url: String): String? = PreviewParser.youtubeIdOf(url)
 
-    suspend fun image(url: String): ImageBitmap? = cached(url) { download(url) }
+    suspend fun image(url: String): ImageBitmap? =
+        images.get(url) ?: remembered("image:$url") { download(url) }?.also { images.put(url, it) }
 
     /**
      * The sharpest still the video has. YouTube only makes the larger sizes for videos uploaded
      * in high resolution and answers 404 for the rest; its 4:3 sizes carry black bars that a 16:9 crop removes.
      */
-    suspend fun youtubeStill(id: String): ImageBitmap? = cached("youtube:$id") {
-        YOUTUBE_STILLS.firstNotNullOfOrNull { size -> download("https://i.ytimg.com/vi/$id/$size.jpg") }
+    suspend fun youtubeStill(id: String): ImageBitmap? {
+        val key = "youtube:$id"
+        return images.get(key) ?: remembered(key) {
+            YOUTUBE_STILLS.firstNotNullOfOrNull { size -> download(PreviewParser.youtubeStillUrl(id, size)) }
+        }?.also { images.put(key, it) }
     }
 
-    private suspend fun cached(key: String, load: () -> ImageBitmap?): ImageBitmap? =
-        images.get(key) ?: withContext(Dispatchers.IO) { load() }?.also { images.put(key, it) }
+    suspend fun preview(url: String): LinkPreview = previews.get(url) ?: remembered("page:$url") {
+        val videoId = youtubeIdOf(url)
+        if (videoId != null) {
+            fetch(PreviewParser.youtubeOembedUrl(videoId)) { LinkPreview(PreviewParser.oembedTitle(it.text()), null) }
+        } else {
+            fetch(url) { PreviewParser.page(it.text(), it.url.toString()) }
+        }
+    }?.also { previews.put(url, it) } ?: LinkPreview(null, null)
 
-    /** Full size so stills stay sharp on an unfolded Fold; only images over twice [MAX_IMAGE_WIDTH] are halved down. */
-    private fun download(url: String): ImageBitmap? = runCatching {
-        val bytes = open(url).inputStream.use { it.readNBytes(MAX_IMAGE_BYTES) }
+    /** Offline, every card would otherwise wait out its timeouts again on each visit. */
+    private suspend fun <T : Any> remembered(key: String, load: suspend () -> T?): T? {
+        if (failures.isRecent(key)) return null
+        val result = try {
+            load()
+        } catch (e: Exception) {
+            null
+        }
+        currentCoroutineContext().ensureActive()
+        if (result == null) failures.record(key) else failures.forget(key)
+        return result
+    }
+
+    /** Blocking socket reads ignore cancellation, so closing the connection is what ends them. */
+    private suspend fun <T> fetch(url: String, read: (HttpURLConnection) -> T): T? = withTimeoutOrNull(REQUEST_DEADLINE_MILLIS) {
+        val connection = (URL(url).openConnection() as HttpURLConnection).apply {
+            connectTimeout = TIMEOUT_MILLIS
+            readTimeout = TIMEOUT_MILLIS
+            setRequestProperty("User-Agent", "Mozilla/5.0 (Android) FitGymLog")
+        }
+        val closer = launch(Dispatchers.IO) {
+            try {
+                awaitCancellation()
+            } finally {
+                connection.disconnect()
+            }
+        }
+        try {
+            runInterruptible(Dispatchers.IO) {
+                if (connection.responseCode !in 200..299) null else read(connection)
+            }
+        } finally {
+            closer.cancel()
+        }
+    }
+
+    private suspend fun download(url: String): ImageBitmap? = fetch(url) { connection ->
+        val bytes = connection.inputStream.use { it.readNBytes(MAX_IMAGE_BYTES) }
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
-        var sampleSize = 1
-        while (bounds.outWidth / (sampleSize * 2) >= MAX_IMAGE_WIDTH) sampleSize *= 2
-        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply { inSampleSize = sampleSize })?.asImageBitmap()
-    }.getOrNull()
-
-    /** YouTube serves a consent page to plain requests, so video titles come from its oEmbed endpoint instead. */
-    suspend fun preview(url: String): LinkPreview = previews.get(url) ?: withContext(Dispatchers.IO) {
-        runCatching {
-            if (youtubeIdOf(url) != null) {
-                val json = read("https://www.youtube.com/oembed?format=json&url=" + URLEncoder.encode(url, "UTF-8"))
-                LinkPreview(PreviewParser.oembedTitle(json), null)
-            } else {
-                PreviewParser.page(read(url))
-            }
-        }.getOrNull()?.also { previews.put(url, it) } ?: LinkPreview(null, null)
+        imageSampleSize(bounds.outWidth, bounds.outHeight)?.let { sample ->
+            BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply { inSampleSize = sample })?.asImageBitmap()
+        }
     }
 
-    private fun read(url: String): String = open(url).inputStream.use { it.readNBytes(MAX_HTML_BYTES).decodeToString() }
-
-    private fun open(url: String): HttpURLConnection = (URL(url).openConnection() as HttpURLConnection).apply {
-        connectTimeout = TIMEOUT_MILLIS
-        readTimeout = TIMEOUT_MILLIS
-        setRequestProperty("User-Agent", "Mozilla/5.0 (Android) FitGymLog")
-    }
+    private fun HttpURLConnection.text(): String =
+        PreviewParser.decode(inputStream.use { it.readNBytes(MAX_HTML_BYTES) }, contentType)
 
     private val YOUTUBE_STILLS = listOf("maxresdefault", "sddefault", "hqdefault")
     private const val IMAGE_CACHE_BYTES = 32 * 1024 * 1024
     private const val MAX_IMAGE_BYTES = 4 * 1024 * 1024
-    private const val MAX_IMAGE_WIDTH = 1280
     private const val MAX_HTML_BYTES = 200_000
     private const val TIMEOUT_MILLIS = 8_000
+    private const val REQUEST_DEADLINE_MILLIS = 15_000L
+    private const val FAILURE_MEMORY_MILLIS = 60_000L
+}
+
+/**
+ * Full size up to twice [IMAGE_TARGET_SIDE] on each side so stills stay sharp on an unfolded Fold.
+ * Null for sources too large to decode safely.
+ */
+internal fun imageSampleSize(width: Int, height: Int): Int? {
+    if (width <= 0 || height <= 0 || width.toLong() * height > MAX_SOURCE_PIXELS) return null
+    var sample = 1
+    while (width / (sample * 2) >= IMAGE_TARGET_SIDE || height / (sample * 2) >= IMAGE_TARGET_SIDE) sample *= 2
+    return sample
+}
+
+private const val IMAGE_TARGET_SIDE = 1280
+private const val MAX_SOURCE_PIXELS = 40_000_000L
+
+internal class RecentFailures(private val ttlMillis: Long, private val capacity: Int, private val now: () -> Long) {
+    private val failedAt = object : LinkedHashMap<String, Long>(capacity, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Long>) = size > capacity
+    }
+
+    @Synchronized
+    fun isRecent(key: String): Boolean {
+        val at = failedAt[key] ?: return false
+        if (now() - at < ttlMillis) return true
+        failedAt.remove(key)
+        return false
+    }
+
+    @Synchronized
+    fun record(key: String) {
+        failedAt[key] = now()
+    }
+
+    @Synchronized
+    fun forget(key: String) {
+        failedAt.remove(key)
+    }
 }
 
 @Composable

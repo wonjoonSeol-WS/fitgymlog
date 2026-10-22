@@ -1,7 +1,9 @@
 package io.fitgymlog.app.ui.guide
 
 import android.Manifest
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.provider.Settings
@@ -36,14 +38,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import io.fitgymlog.app.R
 import io.fitgymlog.app.container
 import io.fitgymlog.app.ui.NumberStyles
@@ -64,9 +72,12 @@ fun BandGuideScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val app = context.container
     var notificationsAllowed by remember { mutableStateOf(notificationsAllowed(context)) }
-    var testSent by remember { mutableStateOf(false) }
+    var testSent by rememberSaveable { mutableStateOf(false) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { notificationsAllowed = notificationsAllowed(context) }
     val requestNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        notificationsAllowed = granted
+        notificationsAllowed = notificationsAllowed(context)
+        val askAgain = context.findActivity()?.let { ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.POST_NOTIFICATIONS) } == true
+        if (!notificationsAllowed && (granted || !askAgain)) openNotificationSettings(context)
     }
     val testTitle = stringResource(R.string.band_test_title)
     val testText = stringResource(R.string.band_test_text)
@@ -85,7 +96,16 @@ fun BandGuideScreen(onBack: () -> Unit) {
                 item {
                     Step(1, stringResource(R.string.band_step_notifications), stringResource(R.string.band_step_notifications_text), done = notificationsAllowed) {
                         if (!notificationsAllowed) {
-                            Button(onClick = { requestNotifications.launch(Manifest.permission.POST_NOTIFICATIONS) }, shape = RoundedCornerShape(12.dp)) {
+                            Button(
+                                onClick = {
+                                    if (permissionGranted(context)) {
+                                        openNotificationSettings(context)
+                                    } else {
+                                        requestNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                    }
+                                },
+                                shape = RoundedCornerShape(12.dp),
+                            ) {
                                 Text(stringResource(R.string.allow))
                             }
                         }
@@ -103,11 +123,13 @@ fun BandGuideScreen(onBack: () -> Unit) {
                         Button(
                             onClick = {
                                 testSent = true
+                                val appContext = context.applicationContext
                                 app.scope.launch {
                                     delay(TEST_DELAY_MILLIS)
-                                    Notifications.postRestOver(context, BandText(testTitle, testText))
+                                    Notifications.postRestOver(appContext, BandText(testTitle, testText))
                                 }
                             },
+                            enabled = notificationsAllowed,
                             shape = RoundedCornerShape(12.dp),
                         ) { Text(stringResource(R.string.send_test_buzz)) }
                     }
@@ -158,18 +180,34 @@ private fun ButtonRow(symbol: String, text: String) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier.size(36.dp).background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+            modifier = Modifier.size(36.dp).background(MaterialTheme.colorScheme.primaryContainer, CircleShape).clearAndSetSemantics {},
         ) { Text(symbol, color = MaterialTheme.colorScheme.onPrimaryContainer) }
         Text(text, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
 private fun notificationsAllowed(context: Context): Boolean =
+    permissionGranted(context) && NotificationManagerCompat.from(context).areNotificationsEnabled()
+
+private fun permissionGranted(context: Context): Boolean =
     ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
+
+private fun openNotificationSettings(context: Context) {
+    val notifications = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+    val appDetails = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, "package:${context.packageName}".toUri())
+    runCatching { context.startActivity(notifications.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+        .onFailure { runCatching { context.startActivity(appDetails.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }
+}
 
 private fun openGalaxyWearable(context: Context) {
     val launch = context.packageManager.getLaunchIntentForPackage(GALAXY_WEARABLE)
     val intent = launch ?: Intent(Intent.ACTION_VIEW, "market://details?id=$GALAXY_WEARABLE".toUri())
     runCatching { context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-        .onFailure { context.startActivity(Intent(Settings.ACTION_APPLICATION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+        .onFailure { runCatching { context.startActivity(Intent(Settings.ACTION_APPLICATION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }
 }

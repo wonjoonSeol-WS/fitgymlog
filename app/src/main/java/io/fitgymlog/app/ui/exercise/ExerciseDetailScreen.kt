@@ -21,6 +21,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -40,7 +41,9 @@ fun ExerciseDetailScreen(exerciseId: String, onBack: () -> Unit) {
     val context = LocalContext.current
     val app = context.container
     val exercises by app.exercises.exercises.collectAsStateWithLifecycle()
-    val history by app.workouts.history.collectAsStateWithLifecycle(emptyList())
+    val recent by remember(exerciseId) { app.workouts.recentWith(exerciseId, RECENT_SESSIONS) }
+        .collectAsStateWithLifecycle(null)
+    val sessions = remember(recent, exerciseId) { recent?.let { recentSessions(it, exerciseId, RECENT_SESSIONS) } }
     val settings by app.settings.settings.collectAsStateWithLifecycle()
     val exercise = exercises.firstOrNull { it.id == exerciseId } ?: app.exercises.find(exerciseId)
     val name = exercise.localizedName()
@@ -69,11 +72,10 @@ fun ExerciseDetailScreen(exerciseId: String, onBack: () -> Unit) {
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(stringResource(R.string.recent_sessions), style = MaterialTheme.typography.titleLarge)
-                    val sessions = recentSessions(history, exerciseId)
-                    if (sessions.isEmpty()) {
-                        Text(stringResource(R.string.no_sessions_yet), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    } else {
-                        SessionLines(context, exercise, sessions, settings.unit)
+                    when {
+                        sessions == null -> Unit
+                        sessions.isEmpty() -> Text(stringResource(R.string.no_sessions_yet), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        else -> SessionLines(context, exercise, sessions, settings.unit)
                     }
                 }
             }
@@ -90,6 +92,8 @@ fun ExerciseDetailScreen(exerciseId: String, onBack: () -> Unit) {
         }
     }
 }
+
+private const val RECENT_SESSIONS = 10
 
 @Composable
 private fun DetailColumn(modifier: Modifier = Modifier, content: LazyListScope.() -> Unit) {
