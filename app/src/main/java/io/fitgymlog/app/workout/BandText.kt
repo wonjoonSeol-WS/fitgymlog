@@ -8,6 +8,7 @@ import io.fitgymlog.app.model.WeightUnit
 import io.fitgymlog.app.ui.formatClock
 import io.fitgymlog.app.ui.formatWeight
 import io.fitgymlog.app.ui.name
+import java.time.Duration
 
 /** The two lines the band's music screen shows: which set, and what to lift. */
 data class BandText(val title: String, val subtitle: String)
@@ -27,7 +28,18 @@ fun bandText(context: Context, active: ActiveWorkout, exerciseOf: (String) -> Ex
 }
 
 /** During rest the title counts down over the set just done, which is the set "previous" corrects. */
-fun BandText.resting(context: Context, rest: RestClock): BandText = copy(title = context.getString(R.string.band_resting, formatClock(rest.left)))
+fun BandText.resting(context: Context, rest: RestClock): BandText =
+    copy(title = context.getString(R.string.band_resting, formatClock(bandRestLeft(rest.left))))
+
+/** The band's title changes once per step, so it shows whole steps: 2:00, 1:55, 1:50. */
+internal val BAND_REST_STEP: Duration = Duration.ofSeconds(5)
+
+internal fun bandRestLeft(left: Duration): Duration {
+    val step = BAND_REST_STEP.toMillis()
+    return Duration.ofMillis((left.toMillis() + step - 1) / step * step)
+}
+
+internal fun untilNextBandStep(left: Duration): Duration = Duration.ofMillis(left.toMillis() % BAND_REST_STEP.toMillis())
 
 fun setLine(context: Context, kind: ExerciseKind, weightKg: Double?, reps: Int?, unit: WeightUnit, durationSeconds: Int? = null): String {
     val weightText = weightKg?.let {

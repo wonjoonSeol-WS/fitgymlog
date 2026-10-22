@@ -90,7 +90,8 @@ class WorkoutService : Service() {
         if (active.restEndsAt == null) return
         val text = bandText(this, active, container.exercises::find, unit)
         while (true) {
-            delay(REST_REFRESH_MILLIS)
+            val left = active.restClock(Instant.now())?.left ?: return
+            delay(untilNextBandStep(left).toMillis() + LAND_AFTER_STEP_MILLIS)
             val rest = active.restClock(Instant.now()) ?: return
             if (rest.left.isZero) return
             session.setMetadata(metadata(active, text.resting(this, rest), rest))
@@ -174,7 +175,7 @@ class WorkoutService : Service() {
 
     companion object {
         private const val IDLE_CHECK_MILLIS = 60_000L
-        private const val REST_REFRESH_MILLIS = 5_000L
+        private const val LAND_AFTER_STEP_MILLIS = 20L
         private const val BAND_ACTIONS = PlaybackState.ACTION_PLAY or
             PlaybackState.ACTION_PAUSE or
             PlaybackState.ACTION_PLAY_PAUSE or

@@ -64,4 +64,20 @@ class RestClockTest {
         assertEquals(Duration.ofSeconds(120), rest.length)
         assertEquals(Duration.ofSeconds(30), rest.elapsed)
     }
+
+    @Test
+    fun `the band counts rest down in whole five second steps, rounding up`() {
+        assertEquals(Duration.ofSeconds(120), bandRestLeft(Duration.ofMillis(119_990)))
+        assertEquals(Duration.ofSeconds(115), bandRestLeft(Duration.ofMillis(115_000)))
+        assertEquals(Duration.ofSeconds(115), bandRestLeft(Duration.ofMillis(110_001)))
+        assertEquals(Duration.ofSeconds(5), bandRestLeft(Duration.ofMillis(1)))
+        assertEquals(Duration.ZERO, bandRestLeft(Duration.ZERO))
+    }
+
+    @Test
+    fun `the next band update comes when the rest left reaches a multiple of five seconds`() {
+        assertEquals(Duration.ofMillis(4_990), untilNextBandStep(Duration.ofMillis(119_990)))
+        assertEquals(Duration.ofSeconds(2), untilNextBandStep(Duration.ofSeconds(37)))
+        assertEquals(Duration.ZERO, untilNextBandStep(Duration.ofSeconds(115)))
+    }
 }
