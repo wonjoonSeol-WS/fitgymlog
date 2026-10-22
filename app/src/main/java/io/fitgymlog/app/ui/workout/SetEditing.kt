@@ -11,6 +11,8 @@ internal val SECOND_CHOICES = listOf(5, 10, 15, 20, 25, 30, 40, 45, 50, 60, 75, 
 
 internal val MINUTE_CHOICES = listOf(1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15, 20, 25, 30, 40, 45, 50, 60, 75, 90)
 
+internal val LEVEL_CHOICES = (0..20).toList()
+
 internal fun editableWeight(value: Double?): String =
     value?.let { BigDecimal.valueOf(it).stripTrailingZeros().toPlainString() }.orEmpty()
 

@@ -56,6 +56,8 @@ data class WorkoutSet(
     val distanceMeters: Double? = null,
     val durationSeconds: Int? = null,
     val completedAt: Instant? = null,
+    /** A cardio machine's setting: the treadmill's incline, the stair machine's or bike's level. */
+    val level: Int? = null,
 ) {
     val isCompleted: Boolean get() = completedAt != null
 }

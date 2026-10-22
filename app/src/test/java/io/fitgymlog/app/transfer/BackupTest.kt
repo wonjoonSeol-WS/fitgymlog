@@ -31,6 +31,12 @@ class BackupTest {
                     WorkoutSet(weightKg = null, reps = 8, rpe = 8.5),
                 ),
             ),
+            WorkoutExercise(
+                key = 2,
+                exerciseId = "treadmill",
+                restSeconds = 0,
+                sets = listOf(WorkoutSet(durationSeconds = 300, level = 8, completedAt = Instant.parse("2026-10-19T13:00:00Z"))),
+            ),
         ),
     )
     private val routine = Routine(name = "Day A", exercises = listOf(RoutineExercise("squat_barbell", 5, 8, 60.0, 180)))

@@ -10,6 +10,7 @@ import io.fitgymlog.app.ui.formatClock
 import io.fitgymlog.app.ui.formatDuration
 import io.fitgymlog.app.ui.formatWeight
 import io.fitgymlog.app.ui.name
+import io.fitgymlog.app.ui.withLevel
 import java.time.Duration
 
 /** The two lines the band's music screen shows: which set, and what to lift. */
@@ -25,7 +26,7 @@ fun bandText(context: Context, active: ActiveWorkout, exerciseOf: (String) -> Ex
     val titleRes = if (view.isCompleted) R.string.band_set_done else R.string.band_set
     return BandText(
         title = context.getString(titleRes, name, view.setNumber, view.setCount),
-        subtitle = setLine(context, exercise.kind, view.weightKg, view.reps, unit, view.durationSeconds),
+        subtitle = setLine(context, exercise, view.weightKg, view.reps, unit, view.durationSeconds, view.level),
     )
 }
 
@@ -43,7 +44,16 @@ internal fun bandRestLeft(left: Duration): Duration {
 
 internal fun untilNextBandStep(left: Duration): Duration = Duration.ofMillis(left.toMillis() % BAND_REST_STEP.toMillis())
 
-fun setLine(context: Context, kind: ExerciseKind, weightKg: Double?, reps: Int?, unit: WeightUnit, durationSeconds: Int? = null): String {
+fun setLine(
+    context: Context,
+    exercise: Exercise,
+    weightKg: Double?,
+    reps: Int?,
+    unit: WeightUnit,
+    durationSeconds: Int? = null,
+    level: Int? = null,
+): String {
+    val kind = exercise.kind
     val weightText = weightKg?.let {
         val formatted = formatWeight(context, it, unit)
         when (kind) {
@@ -57,10 +67,11 @@ fun setLine(context: Context, kind: ExerciseKind, weightKg: Double?, reps: Int?,
     } else {
         reps?.let { context.resources.getQuantityString(R.plurals.reps, it, it) }
     }
-    return when {
+    val line = when {
         weightText == null -> amountText ?: context.getString(R.string.set_not_recorded)
         amountText == null -> weightText
         kind.isTimed -> context.getString(R.string.weight_times_amount, weightText, amountText)
         else -> context.getString(R.string.weight_times_reps, weightText, reps)
     }
+    return level?.let { context.getString(exercise.withLevel(), line, it) } ?: line
 }

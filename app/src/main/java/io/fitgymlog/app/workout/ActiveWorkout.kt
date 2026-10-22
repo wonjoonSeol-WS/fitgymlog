@@ -21,6 +21,7 @@ data class BandView(
     val weightKg: Double?,
     val reps: Int?,
     val durationSeconds: Int?,
+    val level: Int?,
     val isCompleted: Boolean,
     val isExerciseDone: Boolean,
 )
@@ -45,6 +46,7 @@ data class ActiveWorkout(
                 weightKg = null,
                 reps = null,
                 durationSeconds = null,
+                level = null,
                 isCompleted = true,
                 isExerciseDone = true,
             )
@@ -57,6 +59,7 @@ data class ActiveWorkout(
             weightKg = set.weightKg,
             reps = set.reps ?: set.targetReps,
             durationSeconds = set.durationSeconds,
+            level = set.level,
             isCompleted = set.isCompleted,
             isExerciseDone = false,
         )
@@ -177,6 +180,8 @@ data class ActiveWorkout(
     }
 
     fun setDuration(ref: SetRef, seconds: Int?): ActiveWorkout = updateSet(ref) { it.copy(durationSeconds = seconds) }
+
+    fun setLevel(ref: SetRef, level: Int?): ActiveWorkout = updateSet(ref) { it.copy(level = level) }
 
     fun setType(ref: SetRef, type: SetType): ActiveWorkout = updateSet(ref) { it.copy(type = type) }
 

@@ -1,6 +1,7 @@
 package io.fitgymlog.app.data
 
 import android.content.Context
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -16,7 +17,8 @@ import androidx.room.RoomDatabase
         ExerciseLinkEntity::class,
         TombstoneEntity::class,
     ],
-    version = 1,
+    version = 2,
+    autoMigrations = [AutoMigration(from = 1, to = 2)],
 )
 abstract class GymDatabase : RoomDatabase() {
     abstract fun workouts(): WorkoutDao

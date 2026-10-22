@@ -61,11 +61,13 @@ import io.fitgymlog.app.ui.exercise.ExerciseAvatar
 import io.fitgymlog.app.ui.formatDuration
 import io.fitgymlog.app.ui.formatRest
 import io.fitgymlog.app.ui.formatWeightNumber
+import io.fitgymlog.app.ui.levelLabel
 import io.fitgymlog.app.ui.lift
 import io.fitgymlog.app.ui.localizedName
 import io.fitgymlog.app.ui.setTypeName
 import io.fitgymlog.app.ui.unitLabel
 import io.fitgymlog.app.ui.usesWeight
+import io.fitgymlog.app.ui.withLevel
 import io.fitgymlog.app.workout.ActiveWorkout
 import io.fitgymlog.app.workout.SetRef
 import java.time.Instant
@@ -130,14 +132,14 @@ internal fun ExerciseSection(
                 onClick = onEditRest,
             )
         }
-        SetHeader(info.kind, unit)
+        SetHeader(info, unit)
         val numbers = normalSetNumbers(exercise.sets)
         exercise.sets.forEachIndexed { setIndex, set ->
             SetRow(
                 label = setLabel(set.type, numbers[setIndex]),
                 set = set,
                 previous = previous.getOrNull(setIndex),
-                kind = info.kind,
+                info = info,
                 unit = unit,
                 ref = SetRef(index, setIndex),
                 onChange = onChange,
@@ -168,7 +170,8 @@ private fun setLabel(type: SetType, normalNumber: Int?): String = when (type) {
 }
 
 @Composable
-private fun SetHeader(kind: ExerciseKind, unit: WeightUnit) {
+private fun SetHeader(info: Exercise, unit: WeightUnit) {
+    val kind = info.kind
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -177,6 +180,7 @@ private fun SetHeader(kind: ExerciseKind, unit: WeightUnit) {
         HeaderCell(stringResource(R.string.col_set), Modifier.width(32.dp), TextAlign.Center)
         HeaderCell(stringResource(R.string.col_previous), Modifier.weight(1.3f))
         if (kind.usesWeight()) HeaderCell(weightHeader(kind, unit), Modifier.weight(1f), TextAlign.Center)
+        if (kind == ExerciseKind.CARDIO) HeaderCell(stringResource(info.levelLabel()), Modifier.weight(1f), TextAlign.Center)
         HeaderCell(stringResource(amountHeader(kind)), Modifier.weight(1f), TextAlign.Center)
         Box(Modifier.width(40.dp), contentAlignment = Alignment.Center) {
             Icon(Icons.Default.Check, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
@@ -217,12 +221,13 @@ private fun SetRow(
     label: String,
     set: WorkoutSet,
     previous: WorkoutSet?,
-    kind: ExerciseKind,
+    info: Exercise,
     unit: WeightUnit,
     ref: SetRef,
     onChange: ((ActiveWorkout) -> ActiveWorkout) -> Unit,
     onEditSet: (SetEditor) -> Unit,
 ) {
+    val kind = info.kind
     val haptics = LocalHapticFeedback.current
     var typeMenu by remember { mutableStateOf(false) }
     val rowColor by animateColorAsState(if (set.isCompleted) MaterialTheme.lift.doneRow else Color.Transparent, label = "row")
@@ -255,7 +260,7 @@ private fun SetRow(
             }
         }
         Text(
-            previousText(previous, kind, unit),
+            previousText(previous, info, unit),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
@@ -268,6 +273,14 @@ private fun SetRow(
                 completed = set.isCompleted,
                 modifier = Modifier.weight(1f),
             ) { onEditSet(SetEditor(SetField.WEIGHT, ref)) }
+        }
+        if (kind == ExerciseKind.CARDIO) {
+            ValueCell(
+                text = set.level?.toString(),
+                placeholder = previous?.level?.toString(),
+                completed = set.isCompleted,
+                modifier = Modifier.weight(1f),
+            ) { onEditSet(SetEditor(SetField.LEVEL, ref)) }
         }
         ValueCell(
             text = set.amount(kind)?.toString(),
@@ -324,12 +337,14 @@ private fun DoneToggle(done: Boolean, onToggle: () -> Unit) {
 }
 
 @Composable
-private fun previousText(previous: WorkoutSet?, kind: ExerciseKind, unit: WeightUnit): String {
-    val weight = previous?.weightKg?.let { formatWeightNumber(it, unit) }
+private fun previousText(previous: WorkoutSet?, info: Exercise, unit: WeightUnit): String {
+    val kind = info.kind
     val resources = LocalResources.current
+    val weight = previous?.weightKg?.let { formatWeightNumber(it, unit) }
     val amount = if (kind.isTimed) previous?.durationSeconds?.let { formatDuration(resources, it, kind) } else previous?.reps?.toString()
-    return when {
+    val line = when {
         weight != null && amount != null -> stringResource(R.string.weight_times_amount, weight, amount)
         else -> weight ?: amount ?: "–"
     }
+    return previous?.level?.let { stringResource(info.withLevel(), line, it) } ?: line
 }

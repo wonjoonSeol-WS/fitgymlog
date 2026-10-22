@@ -58,6 +58,7 @@ data class WorkoutSetEntity(
     val distanceMeters: Double?,
     val durationSeconds: Int?,
     val completedAt: Long?,
+    val level: Int? = null,
 )
 
 @Entity(tableName = "routine", indices = [Index("uuid")])

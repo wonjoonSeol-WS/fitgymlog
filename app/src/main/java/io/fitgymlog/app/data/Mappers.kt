@@ -93,6 +93,7 @@ private fun WorkoutSetEntity.toSet() = WorkoutSet(
     distanceMeters = distanceMeters,
     durationSeconds = durationSeconds,
     completedAt = completedAt?.let(Instant::ofEpochMilli),
+    level = level,
 )
 
 private fun WorkoutSet.toEntity(position: Int) = WorkoutSetEntity(
@@ -106,6 +107,7 @@ private fun WorkoutSet.toEntity(position: Int) = WorkoutSetEntity(
     distanceMeters = distanceMeters,
     durationSeconds = durationSeconds,
     completedAt = completedAt?.toEpochMilli(),
+    level = level,
 )
 
 fun RoutineWithExercises.toRoutine(): Routine = Routine(

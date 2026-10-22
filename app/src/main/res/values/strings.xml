@@ -21,6 +21,8 @@
     <string name="col_previous">Previous</string>
     <string name="col_reps">Reps</string>
     <string name="col_seconds">Sec</string>
+    <string name="col_incline">Incline</string>
+    <string name="col_level">Level</string>
     <string name="col_minutes">Min</string>
     <string name="col_set">Set</string>
     <string name="complete_set">Complete set</string>

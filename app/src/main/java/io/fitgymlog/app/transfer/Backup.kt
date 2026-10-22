@@ -89,6 +89,7 @@ data class BackupSet(
     val distanceMeters: Double? = null,
     val durationSeconds: Int? = null,
     val completedAt: String? = null,
+    val level: Int? = null,
 )
 
 fun Workout.toBackup() = BackupWorkout(
@@ -103,7 +104,7 @@ fun Workout.toBackup() = BackupWorkout(
             restSeconds = exercise.restSeconds,
             notes = exercise.notes,
             sets = exercise.sets.map { set ->
-                BackupSet(set.type.name, set.weightKg, set.reps, set.rpe, set.distanceMeters, set.durationSeconds, set.completedAt?.toString())
+                BackupSet(set.type.name, set.weightKg, set.reps, set.rpe, set.distanceMeters, set.durationSeconds, set.completedAt?.toString(), set.level)
             },
         )
     },
@@ -130,6 +131,7 @@ fun BackupWorkout.toWorkout() = Workout(
                     distanceMeters = set.distanceMeters,
                     durationSeconds = set.durationSeconds,
                     completedAt = set.completedAt?.let(Instant::parse),
+                    level = set.level,
                 )
             },
         )

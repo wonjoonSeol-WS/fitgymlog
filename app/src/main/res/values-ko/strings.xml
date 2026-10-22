@@ -21,6 +21,8 @@
     <string name="col_previous">지난 기록</string>
     <string name="col_reps">횟수</string>
     <string name="col_seconds">초</string>
+    <string name="col_incline">경사</string>
+    <string name="col_level">강도</string>
     <string name="col_minutes">분</string>
     <string name="col_set">세트</string>
     <string name="complete_set">세트 완료</string>

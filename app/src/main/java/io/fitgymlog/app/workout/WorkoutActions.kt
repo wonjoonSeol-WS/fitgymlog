@@ -44,6 +44,7 @@ class WorkoutActions(
                         weightKg = planned.weightKg ?: lastKnownWeight(previous, setIndex),
                         reps = planned.reps ?: last?.reps,
                         durationSeconds = last?.durationSeconds,
+                        level = last?.level,
                     )
                 },
             )
@@ -85,7 +86,13 @@ class WorkoutActions(
         val previous = workouts.previousSets(exerciseId)
         if (previous.isEmpty()) return List(exercises.find(exerciseId).kind.defaultSets()) { WorkoutSet() }
         return previous.mapIndexed { index, set ->
-            WorkoutSet(type = set.type, weightKg = lastKnownWeight(previous, index), reps = set.reps, durationSeconds = set.durationSeconds)
+            WorkoutSet(
+                type = set.type,
+                weightKg = lastKnownWeight(previous, index),
+                reps = set.reps,
+                durationSeconds = set.durationSeconds,
+                level = set.level,
+            )
         }
     }
 

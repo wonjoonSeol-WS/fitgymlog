@@ -49,7 +49,7 @@ internal val PickerTargetSaver = Saver<PickerTarget?, Int>(
     restore = { if (it == ADD_TARGET) PickerTarget.Add else PickerTarget.Replace(it) },
 )
 
-internal enum class SetField { WEIGHT, AMOUNT }
+internal enum class SetField { WEIGHT, AMOUNT, LEVEL }
 
 internal data class SetEditor(val field: SetField, val ref: SetRef)
 
@@ -111,6 +111,17 @@ internal fun SetEditorSheet(
                 onDismiss = onDismiss,
             )
         }
+        SetField.LEVEL -> NumberPadSheet(
+            title = setTitle,
+            options = LEVEL_CHOICES,
+            selected = set.level,
+            target = null,
+            onPick = { value ->
+                onChange { it.setLevel(ref, value) }
+                onDismiss()
+            },
+            onDismiss = onDismiss,
+        )
     }
 }
 
