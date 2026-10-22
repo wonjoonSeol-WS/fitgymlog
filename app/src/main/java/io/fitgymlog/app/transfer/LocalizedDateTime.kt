@@ -65,12 +65,13 @@ object LocalizedDateTime {
         }
         val day = plainNumbers.singleOrNull() ?: return null
         val clock = time ?: return null
+        val (hour, minute) = clock
         val hour24 = when (meridiem) {
-            null -> clock[0]
-            true -> if (clock[0] == 12) 12 else clock[0] + 12
-            false -> if (clock[0] == 12) 0 else clock[0]
+            null -> hour
+            true -> if (hour == 12) 12 else hour + 12
+            false -> if (hour == 12) 0 else hour
         }
-        return runCatching { LocalDateTime.of(year ?: return null, month, day, hour24, clock[1], clock.getOrElse(2) { 0 }) }.getOrNull()
+        return runCatching { LocalDateTime.of(year ?: return null, month, day, hour24, minute, clock.getOrElse(2) { 0 }) }.getOrNull()
     }
 
     /** Words under three letters, such as "de" or "di", are too often something else to count as a month without 월/月. */

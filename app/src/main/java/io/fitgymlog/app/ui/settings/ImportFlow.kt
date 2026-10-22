@@ -121,7 +121,7 @@ class ImportFlow(private val app: AppContainer) : ViewModel() {
                                     val outcome = when (val choice = choices[name]) {
                                         is ExerciseChoice.Existing -> exercises.firstOrNull { it.id == choice.id }
                                             ?.let { stringResource(R.string.import_maps_to, it.localizedName()) }
-                                        is ExerciseChoice.Create -> stringResource(R.string.import_creates, choice.name, kindLabel(choice.kind))
+                                        is ExerciseChoice.Create -> stringResource(R.string.import_creates, choice.exercise.name, kindLabel(choice.exercise.kind))
                                         null -> null
                                     }
                                     Column(Modifier.clickable { mapping = name }.padding(vertical = 6.dp)) {
@@ -168,7 +168,7 @@ class ImportFlow(private val app: AppContainer) : ViewModel() {
                     mapping = null
                 },
                 onCreate = { new ->
-                    choices[name] = ExerciseChoice.Create(new.name, new.kind, new.link)
+                    choices[name] = ExerciseChoice.Create(new)
                     mapping = null
                 },
                 onDismiss = { mapping = null },

@@ -38,8 +38,12 @@ fun formatWeightNumber(kg: Double, unit: WeightUnit): String {
     return "%.${decimals}f".format(Locale.ROOT, value).trimEnd('0').trimEnd('.')
 }
 
-fun unitLabel(context: Context, unit: WeightUnit): String =
-    context.getString(if (unit == WeightUnit.KG) R.string.unit_kg else R.string.unit_lb)
+private val WeightUnit.labelRes: Int get() = if (this == WeightUnit.KG) R.string.unit_kg else R.string.unit_lb
+
+fun unitLabel(context: Context, unit: WeightUnit): String = context.getString(unit.labelRes)
+
+@Composable
+fun unitLabel(unit: WeightUnit): String = stringResource(unit.labelRes)
 
 fun formatWeight(context: Context, kg: Double, unit: WeightUnit): String =
     "${formatWeightNumber(kg, unit)} ${unitLabel(context, unit)}"

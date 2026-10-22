@@ -75,6 +75,7 @@ import io.fitgymlog.app.ui.isDecimalInput
 import io.fitgymlog.app.ui.lift
 import io.fitgymlog.app.ui.parseDecimal
 import io.fitgymlog.app.ui.toDisplayWeight
+import io.fitgymlog.app.ui.unitLabel
 import io.fitgymlog.app.workout.Plates
 import kotlin.math.max
 import kotlin.math.roundToLong
@@ -177,7 +178,7 @@ fun WeightSheet(
     var fromHere by rememberSaveable { mutableStateOf(laterSetsMatch) }
     var typing by rememberSaveable { mutableStateOf(false) }
     var text by rememberSaveable { mutableStateOf(editableWeight(value)) }
-    val unitLabel = stringResource(if (unit == WeightUnit.KG) R.string.unit_kg else R.string.unit_lb)
+    val unitLabel = unitLabel(unit)
     val barbell = equipment == Equipment.BARBELL
 
     fun tick() = haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)

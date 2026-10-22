@@ -25,7 +25,7 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
-        container.sync.requestSync(0)
+        container.sync.requestSync()
     }
 
     private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }

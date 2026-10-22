@@ -61,6 +61,7 @@ import io.fitgymlog.app.ui.formatWeightNumber
 import io.fitgymlog.app.ui.lift
 import io.fitgymlog.app.ui.localizedName
 import io.fitgymlog.app.ui.setTypeName
+import io.fitgymlog.app.ui.unitLabel
 import io.fitgymlog.app.ui.usesWeight
 import io.fitgymlog.app.workout.ActiveWorkout
 import io.fitgymlog.app.workout.SetRef
@@ -182,7 +183,7 @@ private fun SetHeader(kind: ExerciseKind, unit: WeightUnit) {
 
 @Composable
 private fun weightHeader(kind: ExerciseKind, unit: WeightUnit): String {
-    val unitText = stringResource(if (unit == WeightUnit.KG) R.string.unit_kg else R.string.unit_lb)
+    val unitText = unitLabel(unit)
     return when (kind) {
         ExerciseKind.WEIGHTED_BODYWEIGHT -> "+$unitText"
         ExerciseKind.ASSISTED_BODYWEIGHT -> "−$unitText"

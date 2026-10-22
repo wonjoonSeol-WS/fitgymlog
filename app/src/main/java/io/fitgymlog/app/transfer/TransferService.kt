@@ -52,7 +52,6 @@ class TransferService(
         }
     }
 
-    /** Names in [choices] follow the user's pick; the other unrecognized names become custom exercises. */
     suspend fun apply(pending: PendingImport, choices: Map<String, ExerciseChoice> = emptyMap()): ImportSummary = withContext(Dispatchers.IO) {
         when (pending) {
             is PendingImport.Backup -> restore(pending.backup)
@@ -95,8 +94,8 @@ class TransferService(
             pending,
             choices,
             keepNew = { candidates -> workouts.notYetImported(candidates, { it.startedAt.atZone(zone).toInstant() }, { it.title }) },
-            createCustom = { exercises.createCustom(it.name, it.kind, it.links).id },
-            save = { fresh, ids -> workouts.importFinished(fresh.map { it.toWorkout(pending.source, zone, rest, ids) }) },
+            createCustom = { exercises.createCustom(it).id },
+            save = { fresh, ids -> workouts.saveImported(fresh.map { it.toWorkout(pending.source, zone, rest, ids) }) },
         )
     }
 

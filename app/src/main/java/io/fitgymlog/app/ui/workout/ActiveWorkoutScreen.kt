@@ -58,6 +58,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.fitgymlog.app.R
 import io.fitgymlog.app.container
+import io.fitgymlog.app.data.byId
 import io.fitgymlog.app.model.Exercise
 import io.fitgymlog.app.model.WeightUnit
 import io.fitgymlog.app.model.WorkoutSet
@@ -74,6 +75,7 @@ import io.fitgymlog.app.ui.formatRest
 import io.fitgymlog.app.ui.formatWeightNumber
 import io.fitgymlog.app.ui.lift
 import io.fitgymlog.app.ui.rememberNow
+import io.fitgymlog.app.ui.unitLabel
 import io.fitgymlog.app.workout.ActiveWorkout
 import java.time.Duration
 import java.time.Instant
@@ -113,7 +115,7 @@ fun ActiveWorkoutScreen(onBack: () -> Unit, onFinished: (Long?) -> Unit, onOpenE
         app.scope.launch { app.workouts.update(transform) }
     }
 
-    fun exerciseOf(id: String): Exercise = exercises.firstOrNull { it.id == id } ?: app.exercises.find(id)
+    fun exerciseOf(id: String): Exercise = exercises.byId(id)
 
     fun leave(end: suspend () -> Long?) {
         if (leaving) return
@@ -277,7 +279,7 @@ fun ActiveWorkoutScreen(onBack: () -> Unit, onFinished: (Long?) -> Unit, onOpenE
             onCreate = { new ->
                 picker = null
                 app.scope.launch {
-                    val created = app.exercises.createCustom(new.name, new.kind, listOfNotNull(new.link))
+                    val created = app.exercises.createCustom(new)
                     when (target) {
                         PickerTarget.Add -> app.actions.addExercise(created.id)
                         is PickerTarget.Replace -> app.actions.replaceExercise(target.index, created.id)
@@ -336,7 +338,7 @@ private fun WorkoutStats(workout: ActiveWorkout, unit: WeightUnit) {
     val volumeKg = done.sumOf { (it.weightKg ?: 0.0) * (it.reps ?: 0) }
     Row(horizontalArrangement = Arrangement.spacedBy(32.dp), modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
         ElapsedStat(workout.workout.startedAt)
-        Stat(stringResource(R.string.volume), "${formatWeightNumber(volumeKg, unit)} ${stringResource(if (unit == WeightUnit.KG) R.string.unit_kg else R.string.unit_lb)}")
+        Stat(stringResource(R.string.volume), "${formatWeightNumber(volumeKg, unit)} ${unitLabel(unit)}")
         Stat(stringResource(R.string.sets), done.size.toString())
     }
 }

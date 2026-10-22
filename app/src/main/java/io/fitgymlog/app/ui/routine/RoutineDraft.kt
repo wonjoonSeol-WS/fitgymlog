@@ -5,8 +5,8 @@ import io.fitgymlog.app.model.RoutineExercise
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
-const val MIN_PLANNED_SETS = 1
-const val MAX_PLANNED_SETS = 20
+private const val MIN_PLANNED_SETS = 1
+private const val MAX_PLANNED_SETS = 20
 
 fun plannedSets(input: String): Int? = input.toIntOrNull()?.coerceIn(MIN_PLANNED_SETS, MAX_PLANNED_SETS)
 

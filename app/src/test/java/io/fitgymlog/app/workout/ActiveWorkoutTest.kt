@@ -175,6 +175,18 @@ class ActiveWorkoutTest {
     }
 
     @Test
+    fun `the last completed set is the latest completion, not the last in the list, the last ticked or the latest activity`() {
+        val done = workout()
+            .toggleSet(SetRef(0, 2), start.plusSeconds(400))
+            .toggleSet(SetRef(0, 0), start.plusSeconds(600))
+            .toggleSet(SetRef(0, 1), start.plusSeconds(300))
+            .addExercise("bench_press_barbell", sets(1, 40.0, 5), restSeconds = 60, now = start.plusSeconds(900))
+
+        assertEquals(start.plusSeconds(600), done.lastCompletedAt())
+        assertNull(workout().lastCompletedAt())
+    }
+
+    @Test
     fun `completing a set keeps reps lowered before it, not its target`() {
         val done = workout().lowerShownReps().completeFocusedSet(start)
 

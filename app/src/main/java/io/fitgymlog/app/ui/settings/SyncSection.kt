@@ -87,7 +87,7 @@ fun SyncSection() {
                 SyncStatus.Off -> Button(onClick = ::connect, shape = RoundedCornerShape(12.dp)) { Text(stringResource(R.string.sync_connect)) }
                 SyncStatus.NeedsSignIn -> Button(onClick = ::connect, shape = RoundedCornerShape(12.dp)) { Text(stringResource(R.string.sync_sign_in_again)) }
                 else -> OutlinedButton(
-                    onClick = { app.sync.requestSync(0) },
+                    onClick = { app.sync.requestSync() },
                     enabled = status != SyncStatus.Syncing,
                     shape = RoundedCornerShape(12.dp),
                 ) { Text(stringResource(R.string.sync_now)) }

@@ -51,7 +51,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import io.fitgymlog.app.AppContainer
 import io.fitgymlog.app.R
 import io.fitgymlog.app.container
+import io.fitgymlog.app.data.byId
 import io.fitgymlog.app.model.Exercise
+import io.fitgymlog.app.model.NewExercise
 import io.fitgymlog.app.model.Routine
 import io.fitgymlog.app.model.WeightUnit
 import io.fitgymlog.app.ui.ChoiceDialog
@@ -59,12 +61,12 @@ import io.fitgymlog.app.ui.ConfirmDialog
 import io.fitgymlog.app.ui.NumberField
 import io.fitgymlog.app.ui.ReadableWidth
 import io.fitgymlog.app.ui.exercise.ExercisePickerDialog
-import io.fitgymlog.app.ui.exercise.NewExercise
 import io.fitgymlog.app.ui.formatRest
 import io.fitgymlog.app.ui.formatWeightNumber
 import io.fitgymlog.app.ui.fromDisplayWeight
 import io.fitgymlog.app.ui.localizedName
 import io.fitgymlog.app.ui.REST_CHOICES
+import io.fitgymlog.app.ui.unitLabel
 import io.fitgymlog.app.ui.usesWeight
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -140,7 +142,7 @@ fun RoutineEditorScreen(routineId: Long, onDone: () -> Unit) {
                 itemsIndexed(draft.planned, key = { _, item -> item.key }) { index, item ->
                     PlannedExerciseCard(
                         item = item,
-                        exercise = exercises.firstOrNull { it.id == item.exerciseId } ?: app.exercises.find(item.exerciseId),
+                        exercise = exercises.byId(item.exerciseId),
                         unit = settings.unit,
                         canMoveUp = index > 0,
                         canMoveDown = index < draft.planned.lastIndex,
@@ -237,7 +239,7 @@ private class AppRoutineStore(private val app: AppContainer) : RoutineEditorStor
     override suspend fun delete(id: Long) = app.inAppScope { app.routines.delete(id) }
 
     override suspend fun createExercise(exercise: NewExercise): String =
-        app.inAppScope { app.exercises.createCustom(exercise.name, exercise.kind, listOfNotNull(exercise.link)).id }
+        app.inAppScope { app.exercises.createCustom(exercise).id }
 }
 
 @Composable
@@ -274,7 +276,7 @@ private fun PlannedExerciseCard(
                     NumberField(item.reps?.toString().orEmpty(), { text -> onChange { it.copy(reps = text.toIntOrNull()) } }, decimal = false, placeholder = "-")
                 }
                 if (exercise.kind.usesWeight()) {
-                    Labeled(stringResource(if (unit == WeightUnit.KG) R.string.unit_kg else R.string.unit_lb), Modifier.weight(1f)) {
+                    Labeled(unitLabel(unit), Modifier.weight(1f)) {
                         NumberField(
                             item.weightKg?.let { formatWeightNumber(it, unit) }.orEmpty(),
                             { text -> onChange { it.copy(weightKg = text.toDoubleOrNull()?.let { value -> fromDisplayWeight(value, unit) }) } },

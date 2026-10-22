@@ -1,9 +1,9 @@
 package io.fitgymlog.app.ui.routine
 
 import androidx.lifecycle.SavedStateHandle
+import io.fitgymlog.app.model.NewExercise
 import io.fitgymlog.app.model.Routine
 import io.fitgymlog.app.model.RoutineExercise
-import io.fitgymlog.app.ui.exercise.NewExercise
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -46,6 +46,7 @@ class RoutineEditorViewModelTest {
         override fun exists(id: Long): Flow<Boolean> = present
         override suspend fun save(routine: Routine) {
             yield()
+            check(routine.id == 0L || this.routine?.id == routine.id) { "Routine ${routine.id} no longer exists" }
             saved += routine
         }
         override suspend fun delete(id: Long) {
@@ -110,6 +111,19 @@ class RoutineEditorViewModelTest {
 
         store.routine = null
         advanceUntilIdle()
+        editor.save()
+        advanceUntilIdle()
+
+        assertEquals(EditorPhase.MISSING, editor.phase)
+        assertTrue(store.saved.isEmpty())
+    }
+
+    @Test
+    fun `a save that finds the routine already gone reports it missing`() = runTest(dispatcher) {
+        val store = FakeStore(Routine(id = 7, name = "Legs", exercises = listOf(squat)))
+        val editor = editor(7, store)
+
+        store.routine = null
         editor.save()
         advanceUntilIdle()
 

@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.fitgymlog.app.R
 import io.fitgymlog.app.container
+import io.fitgymlog.app.data.byId
 import io.fitgymlog.app.ui.ReadableWidth
 import io.fitgymlog.app.ui.TwoPaneMinWidth
 import io.fitgymlog.app.ui.history.SessionLines
@@ -43,9 +44,9 @@ fun ExerciseDetailScreen(exerciseId: String, onBack: () -> Unit) {
     val exercises by app.exercises.exercises.collectAsStateWithLifecycle()
     val recent by remember(exerciseId) { app.workouts.recentWith(exerciseId, RECENT_SESSIONS) }
         .collectAsStateWithLifecycle(null)
-    val sessions = remember(recent, exerciseId) { recent?.let { recentSessions(it, exerciseId, RECENT_SESSIONS) } }
+    val sessions = remember(recent, exerciseId) { recent?.let { recentSessions(it, exerciseId) } }
     val settings by app.settings.settings.collectAsStateWithLifecycle()
-    val exercise = exercises.firstOrNull { it.id == exerciseId } ?: app.exercises.find(exerciseId)
+    val exercise = exercises.byId(exerciseId)
     val name = exercise.localizedName()
 
     Scaffold(

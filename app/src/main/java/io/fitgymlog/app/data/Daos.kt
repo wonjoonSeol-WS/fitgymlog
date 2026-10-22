@@ -167,12 +167,14 @@ abstract class RoutineDao {
         return id
     }
 
-    /** A routine that sync deleted while it was open in the editor is saved as a new one. */
     @Transaction
     open suspend fun saveEdit(id: Long, name: String, exercises: List<RoutineExerciseEntity>, now: Long): Long {
-        val existing = if (id == 0L) null else row(id)
-        val routine = existing?.copy(name = name, updatedAt = stampAfter(existing.updatedAt, now))
-            ?: RoutineEntity(uuid = UUID.randomUUID().toString(), updatedAt = now, name = name, position = nextPosition())
+        val routine = if (id == 0L) {
+            RoutineEntity(uuid = UUID.randomUUID().toString(), updatedAt = now, name = name, position = nextPosition())
+        } else {
+            val existing = checkNotNull(row(id)) { "Routine $id no longer exists" }
+            existing.copy(name = name, updatedAt = stampAfter(existing.updatedAt, now))
+        }
         return save(routine, exercises)
     }
 }
@@ -227,7 +229,6 @@ abstract class ExerciseLinkDao {
     }
 }
 
-/** Deletions that leave a tombstone, each written together with its delete so sync never sees one without the other. */
 @Dao
 abstract class TombstoneDao {
     @Query("SELECT * FROM tombstone")

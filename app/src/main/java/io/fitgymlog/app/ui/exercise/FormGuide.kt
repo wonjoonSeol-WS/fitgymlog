@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import io.fitgymlog.app.R
 import io.fitgymlog.app.container
+import io.fitgymlog.app.links.PreviewParser
 import io.fitgymlog.app.links.WebLinks
 import io.fitgymlog.app.model.Exercise
 import io.fitgymlog.app.ui.lift
@@ -63,13 +64,11 @@ import io.fitgymlog.app.ui.localizedName
 import kotlinx.coroutines.launch
 
 fun openLink(context: Context, url: String) {
-    val uri = url.trim().toUri()
-    val opened = uri.scheme?.lowercase() in WEB_SCHEMES &&
-        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.isSuccess
+    val link = url.trim()
+    val opened = WebLinks.isWeb(link) &&
+        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, link.toUri()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.isSuccess
     if (!opened) Toast.makeText(context, R.string.link_cannot_open, Toast.LENGTH_SHORT).show()
 }
-
-private val WEB_SCHEMES = setOf("http", "https")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -96,7 +95,7 @@ fun FormGuide(exercise: Exercise) {
     val app = context.container
     var adding by rememberSaveable { mutableStateOf(false) }
     val (videos, pages) = remember(exercise.links, exercise.userLinks) {
-        WebLinks.distinct(exercise.allLinks).partition { LinkPreviews.youtubeIdOf(it) != null }
+        WebLinks.distinct(exercise.allLinks).partition { PreviewParser.youtubeIdOf(it) != null }
     }
     val remove = { url: String -> app.scope.launch { app.exercises.removeLink(exercise.id, url) } }
 
@@ -134,7 +133,7 @@ fun FormGuide(exercise: Exercise) {
 
 @Composable
 private fun VideoCard(url: String, removable: Boolean, onRemove: () -> Unit, onOpen: () -> Unit) {
-    val id = LinkPreviews.youtubeIdOf(url) ?: return
+    val id = PreviewParser.youtubeIdOf(url) ?: return
     val thumbnail by rememberYoutubeStill(id)
     val preview by rememberLinkPreview(url)
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

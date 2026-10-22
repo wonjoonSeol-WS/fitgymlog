@@ -22,6 +22,8 @@ enum class WeightUnit { KG, LB }
  * Built-in exercises carry a string resource so their name follows the app language; custom ones
  * keep the name the user typed.
  */
+data class NewExercise(val name: String, val kind: ExerciseKind, val links: List<String> = emptyList())
+
 data class Exercise(
     val id: String,
     val englishName: String,

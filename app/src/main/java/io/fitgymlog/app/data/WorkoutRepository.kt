@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -43,7 +44,7 @@ class WorkoutRepository(private val dao: WorkoutDao, private val tombstones: Tom
     fun observe(id: Long): Flow<Workout?> = dao.observe(id).map { it?.toWorkout() }
 
     fun recentWith(exerciseId: String, limit: Int): Flow<List<Workout>> =
-        dao.finishedWith(exerciseId, limit).map { workouts -> workouts.map { it.toWorkout() } }
+        dao.finishedWith(exerciseId, limit).distinctUntilChanged().map { workouts -> workouts.map { it.toWorkout() } }
 
     suspend fun start(title: String, routine: Routine?, exercises: List<WorkoutExercise>, now: Instant): ActiveWorkout {
         loaded.await()
@@ -101,15 +102,14 @@ class WorkoutRepository(private val dao: WorkoutDao, private val tombstones: Tom
 
     suspend fun allFinished(): List<Workout> = dao.allFinished().map { it.toWorkout() }
 
-    /** Adds workouts from another app or a backup, skipping any that start in the same minute with the same title. */
-    suspend fun importFinished(workouts: List<Workout>): Int {
-        val fresh = notYetImported(workouts, { it.startedAt }, { it.title })
+    suspend fun importFinished(workouts: List<Workout>): Int = saveImported(notYetImported(workouts, { it.startedAt }, { it.title }))
+
+    suspend fun saveImported(workouts: List<Workout>): Int {
         val now = Instant.now()
-        dao.saveAll(fresh.map { it.copy(id = 0, uuid = UUID.randomUUID().toString(), updatedAt = now).toGraph() })
-        return fresh.size
+        dao.saveAll(workouts.map { it.copy(id = 0, uuid = UUID.randomUUID().toString(), updatedAt = now).toGraph() })
+        return workouts.size
     }
 
-    /** The items [importFinished] would add, for an import that has to know before it builds its workouts. */
     suspend fun <T> notYetImported(items: List<T>, startedAt: (T) -> Instant, title: (T) -> String): List<T> {
         val existing = dao.finishedKeys().map { minuteKey(Instant.ofEpochMilli(it.startedAt), it.title) }.toMutableSet()
         return items.filter { existing.add(minuteKey(startedAt(it), title(it))) }

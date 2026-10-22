@@ -6,7 +6,6 @@ import java.nio.charset.Charset
 
 data class LinkPreview(val title: String?, val imageUrl: String?)
 
-/** Pure parsing for link cards, kept free of Android so it can be tested on the JVM. */
 object PreviewParser {
     private val YOUTUBE_HOSTS = setOf(
         "youtube.com",
@@ -28,6 +27,9 @@ object PreviewParser {
     private val NAMED_ENTITIES = mapOf("amp" to "&", "lt" to "<", "gt" to ">", "quot" to "\"", "apos" to "'", "nbsp" to " ")
     private val headerCharset = Regex("""charset\s*=\s*["']?([A-Za-z0-9._:-]+)""", RegexOption.IGNORE_CASE)
     private val metaCharset = Regex("""<meta[^>]+charset\s*=\s*["']?\s*([A-Za-z0-9._:-]+)""", RegexOption.IGNORE_CASE)
+
+    // Browsers look for <meta charset> only in the first 1024 bytes (HTML encoding sniffing prescan).
+    private const val CHARSET_PRESCAN_BYTES = 1024
 
     fun youtubeIdOf(url: String): String? {
         val parts = webUrl.matchEntire(url.trim()) ?: return null
@@ -62,15 +64,17 @@ object PreviewParser {
                 "og:image" -> if (image == null) image = content
             }
         }
-        val pageTitle = htmlTitle.find(html)?.groupValues?.get(1)?.let(::unescapeHtml)?.trim()?.takeIf { it.isNotEmpty() }
-        return LinkPreview(title = title ?: pageTitle, imageUrl = image?.let { resolveImage(it, pageUrl) })
+        return LinkPreview(title = title ?: titleTag(html), imageUrl = image?.let { resolveImage(it, pageUrl) })
     }
+
+    private fun titleTag(html: String): String? =
+        htmlTitle.find(html)?.groupValues?.get(1)?.let(::unescapeHtml)?.trim()?.takeIf { it.isNotEmpty() }
 
     fun oembedTitle(json: String): String? = oembedTitle.find(json)?.groupValues?.get(1)?.let(::unescapeJson)
 
     fun decode(body: ByteArray, contentType: String?): String {
         val declared = contentType?.let { headerCharset.find(it)?.groupValues?.get(1) }
-            ?: metaCharset.find(String(body, Charsets.ISO_8859_1))?.groupValues?.get(1)
+            ?: metaCharset.find(String(body, 0, minOf(body.size, CHARSET_PRESCAN_BYTES), Charsets.ISO_8859_1))?.groupValues?.get(1)
         val charset = declared?.let { runCatching { Charset.forName(it) }.getOrNull() } ?: Charsets.UTF_8
         return String(body, charset)
     }

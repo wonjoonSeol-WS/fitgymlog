@@ -1,17 +1,15 @@
 package io.fitgymlog.app.transfer
 
 import io.fitgymlog.app.model.ExerciseKind
+import io.fitgymlog.app.model.NewExercise
 import io.fitgymlog.app.model.WorkoutSet
 import io.fitgymlog.app.model.WorkoutSource
 
-/** What the user picked for an exercise name the import did not recognize. */
 sealed interface ExerciseChoice {
     data class Existing(val id: String) : ExerciseChoice
 
-    data class Create(val name: String, val kind: ExerciseKind, val link: String?) : ExerciseChoice
+    data class Create(val exercise: NewExercise) : ExerciseChoice
 }
-
-data class NewCustomExercise(val name: String, val kind: ExerciseKind, val links: List<String>)
 
 internal fun pendingCsv(source: WorkoutSource, result: ParseResult, matcher: ExerciseMatcher): PendingImport.Csv {
     val names = result.workouts.flatMap { workout -> workout.exercises.map { it.name } }.distinct()
@@ -20,15 +18,12 @@ internal fun pendingCsv(source: WorkoutSource, result: ParseResult, matcher: Exe
     return PendingImport.Csv(source, result.workouts, result.errors, matched, unmatched)
 }
 
-/**
- * [keepNew] drops the workouts that are already saved, so a name only they use never becomes a custom
- * exercise. Names without a choice become one custom exercise per spelling group, of a kind read from the sets.
- */
+/** [keepNew] runs first, so a name used only by workouts already saved never becomes a custom exercise. */
 internal suspend fun importWorkouts(
     pending: PendingImport.Csv,
     choices: Map<String, ExerciseChoice>,
     keepNew: suspend (List<ImportedWorkout>) -> List<ImportedWorkout>,
-    createCustom: suspend (NewCustomExercise) -> String,
+    createCustom: suspend (NewExercise) -> String,
     save: suspend (workouts: List<ImportedWorkout>, exerciseIds: Map<String, String>) -> Int,
 ): ImportSummary {
     val fresh = keepNew(pending.workouts)
@@ -41,8 +36,8 @@ internal suspend fun importWorkouts(
         .forEach { (key, group) ->
             val id = when (val choice = chosen[key]) {
                 is ExerciseChoice.Existing -> choice.id
-                is ExerciseChoice.Create -> createCustom(NewCustomExercise(choice.name, choice.kind, listOfNotNull(choice.link))).also { created++ }
-                null -> createCustom(NewCustomExercise(group.first().name, inferKind(group.flatMap { it.sets }), emptyList())).also { created++ }
+                is ExerciseChoice.Create -> createCustom(choice.exercise).also { created++ }
+                null -> createCustom(NewExercise(group.first().name, inferKind(group.flatMap { it.sets }))).also { created++ }
             }
             group.forEach { ids[it.name] = id }
         }

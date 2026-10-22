@@ -51,6 +51,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.fitgymlog.app.R
 import io.fitgymlog.app.catching
 import io.fitgymlog.app.container
+import io.fitgymlog.app.data.byId
 import io.fitgymlog.app.model.Exercise
 import io.fitgymlog.app.model.Routine
 import io.fitgymlog.app.model.RoutineExercise
@@ -68,6 +69,7 @@ import io.fitgymlog.app.ui.formatClock
 import io.fitgymlog.app.ui.formatWeightNumber
 import io.fitgymlog.app.ui.localizedName
 import io.fitgymlog.app.ui.setTypeName
+import io.fitgymlog.app.ui.unitLabel
 import io.fitgymlog.app.workout.setLine
 import java.time.Duration
 import java.time.ZoneId
@@ -135,7 +137,7 @@ private fun HistoryList(history: List<Workout>, selectedId: Long?, onSelect: (Lo
                         WorkoutStats(workout, settings.unit)
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                         workout.exercises.forEach { exercise ->
-                            val info = exercises.firstOrNull { it.id == exercise.exerciseId } ?: app.exercises.find(exercise.exerciseId)
+                            val info = exercises.byId(exercise.exerciseId)
                             Text(
                                 pluralStringResource(R.plurals.sets_of_exercise, exercise.sets.size, exercise.sets.size, info.localizedName()),
                                 style = MaterialTheme.typography.bodyMedium,
@@ -232,7 +234,7 @@ fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (St
                     }
                 }
                 items(current.exercises, key = { it.key }) { exercise ->
-                    val info = exercises.firstOrNull { it.id == exercise.exerciseId } ?: app.exercises.find(exercise.exerciseId)
+                    val info = exercises.byId(exercise.exerciseId)
                     Surface(
                         onClick = { onOpenExercise(exercise.exerciseId) },
                         shape = RoundedCornerShape(16.dp),
@@ -285,7 +287,7 @@ private fun WorkoutStats(workout: Workout, unit: WeightUnit) {
     val volumeKg = sets.sumOf { (it.weightKg ?: 0.0) * (it.reps ?: 0) }
     Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
         workout.endedAt?.let { Stat(stringResource(R.string.duration), formatClock(Duration.between(workout.startedAt, it))) }
-        Stat(stringResource(R.string.volume), "${formatWeightNumber(volumeKg, unit)} ${stringResource(if (unit == WeightUnit.KG) R.string.unit_kg else R.string.unit_lb)}")
+        Stat(stringResource(R.string.volume), "${formatWeightNumber(volumeKg, unit)} ${unitLabel(unit)}")
         Stat(stringResource(R.string.sets), sets.size.toString())
     }
 }
@@ -316,11 +318,11 @@ private fun Workout.toRoutine(restSeconds: Int) = Routine(
 )
 
 /** Used by the exercise screen: the most recent sessions of one exercise, newest first. */
-fun recentSessions(history: List<Workout>, exerciseId: String, limit: Int = 10): List<Pair<Workout, List<WorkoutSet>>> =
+fun recentSessions(history: List<Workout>, exerciseId: String): List<Pair<Workout, List<WorkoutSet>>> =
     history.mapNotNull { workout ->
         val sets = workout.exercises.filter { it.exerciseId == exerciseId }.flatMap { it.sets }
         if (sets.isEmpty()) null else workout to sets
-    }.take(limit)
+    }
 
 @Composable
 fun SessionLines(context: Context, exercise: Exercise, sessions: List<Pair<Workout, List<WorkoutSet>>>, unit: WeightUnit) {

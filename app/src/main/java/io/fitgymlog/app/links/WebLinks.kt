@@ -3,10 +3,7 @@ package io.fitgymlog.app.links
 import java.net.URI
 
 object WebLinks {
-    /**
-     * The https form of a typed or pasted web link, or null when it is not one. The app blocks
-     * cleartext traffic, so an http link is upgraded rather than stored as a card that never loads.
-     */
+    /** Null when the input is not a web link; http becomes https because the app blocks cleartext traffic. */
     fun normalize(input: String): String? {
         val text = input.trim()
         if (text.isEmpty() || text.any { it.isWhitespace() }) return null
@@ -31,14 +28,14 @@ object WebLinks {
         }
     }
 
-    fun isDuplicate(link: String, existing: List<String>): Boolean = existing.any { sameTarget(it, link) }
+    fun isWeb(url: String): Boolean = url.startsWith("https://", ignoreCase = true) || url.startsWith("http://", ignoreCase = true)
+
+    fun isDuplicate(link: String, existing: List<String>): Boolean = existing.any { target(it) == target(link) }
 
     /** Built-in links come first in allLinks, so a user copy of one is the copy dropped. */
     fun distinct(links: List<String>): List<String> = links.distinctBy(::target)
 
     private const val UNSAFE = "\"<>\\^`{|}"
-
-    private fun sameTarget(a: String, b: String) = target(a) == target(b)
 
     private fun target(url: String): String =
         PreviewParser.youtubeIdOf(url)?.let { "youtube:$it" } ?: normalize(url) ?: url.trim()

@@ -9,15 +9,11 @@ import io.fitgymlog.app.data.SettingsRepository
 import java.io.IOException
 import java.security.MessageDigest
 import java.time.Instant
-import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -76,7 +72,6 @@ class SyncEngine(
     private val auth = DriveAuth(context.applicationContext)
     private val mutex = Mutex()
     private val requests = Channel<Unit>(Channel.CONFLATED)
-    private val waiting = AtomicReference<Job?>(null)
 
     @Volatile
     private var lastSyncedFingerprint: String? = null
@@ -93,18 +88,12 @@ class SyncEngine(
         scope.launch {
             settings.settings.map { it.syncEnabled }.distinctUntilChanged()
                 .flatMapLatest { on -> if (on) store.changes.drop(1).debounce(LOCAL_CHANGE_DEBOUNCE_MILLIS) else emptyFlow() }
-                .collect { if (fingerprint(store.snapshot()) != lastSyncedFingerprint) requestSync(0) }
+                .collect { if (fingerprint(store.snapshot()) != lastSyncedFingerprint) requestSync() }
         }
     }
 
-    fun requestSync(delayMillis: Long) {
-        if (!enabled) return
-        val next = scope.launch(start = CoroutineStart.LAZY) {
-            delay(delayMillis)
-            requests.send(Unit)
-        }
-        waiting.getAndSet(next)?.cancel()
-        next.start()
+    fun requestSync() {
+        if (enabled) requests.trySend(Unit)
     }
 
     /** First step of turning sync on: either a token straight away or a consent screen to show. */
@@ -124,7 +113,6 @@ class SyncEngine(
 
     /** Turns sync off at once; a sync already running finishes first, then its results are cleared. */
     fun disconnect() {
-        waiting.getAndSet(null)?.cancel()
         settings.update { it.copy(syncEnabled = false) }
         _status.value = SyncStatus.Off
         scope.launch {

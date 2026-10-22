@@ -1,5 +1,6 @@
 package io.fitgymlog.app.sync
 
+import io.fitgymlog.app.links.WebLinks
 import java.time.Duration
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -51,7 +52,7 @@ object SyncMerge {
             routines = newest(local.routines, remote.routines, SyncRoutine.serializer(), { it.uuid }, { it.updatedAt })
                 .filter { alive(TombstoneKind.ROUTINE, it.uuid, it.updatedAt) },
             customExercises = newest(local.customExercises, remote.customExercises, SyncCustomExercise.serializer(), { it.id }, { it.updatedAt }),
-            links = newest(local.links.filter { isWebUrl(it.url) }, remote.links.filter { isWebUrl(it.url) }, SyncLink.serializer(), ::linkKey, { it.addedAt })
+            links = newest(local.links.filter { WebLinks.isWeb(it.url) }, remote.links.filter { WebLinks.isWeb(it.url) }, SyncLink.serializer(), ::linkKey, { it.addedAt })
                 .filter { alive(TombstoneKind.LINK, linkKey(it), it.addedAt) },
             tombstones = latest(tombstones + duplicateTombstones),
         ).sorted()

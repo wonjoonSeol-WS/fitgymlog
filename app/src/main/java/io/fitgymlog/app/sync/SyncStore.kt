@@ -10,6 +10,7 @@ import io.fitgymlog.app.data.toEntity
 import io.fitgymlog.app.data.toGraph
 import io.fitgymlog.app.data.toRoutine
 import io.fitgymlog.app.data.toWorkout
+import io.fitgymlog.app.links.WebLinks
 import io.fitgymlog.app.transfer.toBackup
 import io.fitgymlog.app.transfer.toRoutine
 import io.fitgymlog.app.transfer.toWorkout
@@ -39,7 +40,7 @@ class SyncStore(private val database: GymDatabase) {
             workouts = workouts.allFinished().map { it.toWorkout() }.map { SyncWorkout(it.uuid, it.updatedAt.toEpochMilli(), it.toBackup()) },
             routines = routines.allNow().map { it.toRoutine() }.map { SyncRoutine(it.uuid, it.updatedAt.toEpochMilli(), it.toBackup()) },
             customExercises = customExercises.allNow().map { SyncCustomExercise(it.id, it.updatedAt, it.name, it.kind) },
-            links = links.allNow().filter { isWebUrl(it.url) }.map { SyncLink(it.exerciseId, it.url, it.addedAt) },
+            links = links.allNow().filter { WebLinks.isWeb(it.url) }.map { SyncLink(it.exerciseId, it.url, it.addedAt) },
             tombstones = tombstones.allNow().map { SyncTombstone(it.kind, it.key, it.deletedAt) },
         ).sorted()
     }
@@ -82,7 +83,7 @@ class SyncStore(private val database: GymDatabase) {
                 customExercises.upsert(CustomExerciseEntity(synced.id, synced.name, synced.kind, synced.updatedAt))
             }
         }
-        changes.upsertLinks.filter { isWebUrl(it.url) }.forEach { synced ->
+        changes.upsertLinks.forEach { synced ->
             val removedAt = removedHere[TombstoneKind.LINK to TombstoneKind.linkKey(synced.exerciseId, synced.url)]
             if (SyncMerge.isNewest(synced.addedAt, links.addedAtOf(synced.exerciseId, synced.url), removedAt)) {
                 links.upsert(ExerciseLinkEntity(synced.exerciseId, synced.url, synced.addedAt))

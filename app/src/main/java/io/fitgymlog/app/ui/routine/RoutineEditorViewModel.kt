@@ -7,9 +7,9 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.fitgymlog.app.catching
+import io.fitgymlog.app.model.NewExercise
 import io.fitgymlog.app.model.Routine
 import io.fitgymlog.app.model.RoutineExercise
-import io.fitgymlog.app.ui.exercise.NewExercise
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 

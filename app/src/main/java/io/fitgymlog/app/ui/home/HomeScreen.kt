@@ -50,6 +50,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.fitgymlog.app.R
 import io.fitgymlog.app.catching
 import io.fitgymlog.app.container
+import io.fitgymlog.app.data.byId
 import io.fitgymlog.app.model.Routine
 import io.fitgymlog.app.model.Workout
 import io.fitgymlog.app.ui.ConfirmDialog
@@ -145,7 +146,7 @@ fun HomeScreen(onOpenWorkout: () -> Unit, onEditRoutine: (Long) -> Unit, onOpenB
             RoutineCard(
                 routine = routine,
                 exerciseNames = routine.exercises.map { planned ->
-                    (exercises.firstOrNull { it.id == planned.exerciseId } ?: app.exercises.find(planned.exerciseId)).localizedName()
+                    exercises.byId(planned.exerciseId).localizedName()
                 },
                 canStart = active == null,
                 onStart = { start { app.actions.startRoutine(routine) } },

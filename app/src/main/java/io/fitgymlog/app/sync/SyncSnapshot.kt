@@ -14,7 +14,6 @@ object TombstoneKind {
 }
 
 /** Links open in an ACTION_VIEW intent, so a sync file must not bring in intent:, file: or javascript: ones. */
-fun isWebUrl(url: String): Boolean = url.startsWith("https://", ignoreCase = true) || url.startsWith("http://", ignoreCase = true)
 
 class NewerSyncFormatException(version: Int) : IllegalStateException("sync file version $version is newer than this app")
 

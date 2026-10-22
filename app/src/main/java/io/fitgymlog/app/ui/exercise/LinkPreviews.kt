@@ -28,36 +28,36 @@ object LinkPreviews {
     private val previews = LruCache<String, LinkPreview>(48)
     private val failures = RecentFailures(FAILURE_MEMORY_MILLIS, capacity = 128, now = SystemClock::elapsedRealtime)
 
-    fun youtubeIdOf(url: String): String? = PreviewParser.youtubeIdOf(url)
-
-    suspend fun image(url: String): ImageBitmap? =
-        images.get(url) ?: remembered("image:$url") { download(url) }?.also { images.put(url, it) }
+    suspend fun image(url: String): ImageBitmap? = cached(images, "image:$url") { download(url) }
 
     /**
      * The sharpest still the video has. YouTube only makes the larger sizes for videos uploaded
      * in high resolution and answers 404 for the rest; its 4:3 sizes carry black bars that a 16:9 crop removes.
      */
-    suspend fun youtubeStill(id: String): ImageBitmap? {
-        val key = "youtube:$id"
-        return images.get(key) ?: remembered(key) {
-            YOUTUBE_STILLS.firstNotNullOfOrNull { size -> download(PreviewParser.youtubeStillUrl(id, size)) }
-        }?.also { images.put(key, it) }
+    suspend fun youtubeStill(id: String): ImageBitmap? = cached(images, "youtube:$id") {
+        YOUTUBE_STILLS.firstNotNullOfOrNull { size -> download(PreviewParser.youtubeStillUrl(id, size)) }
     }
 
-    suspend fun preview(url: String): LinkPreview = previews.get(url) ?: remembered("page:$url") {
-        val videoId = youtubeIdOf(url)
+    suspend fun preview(url: String): LinkPreview = cached(previews, "page:$url") {
+        val videoId = PreviewParser.youtubeIdOf(url)
         if (videoId != null) {
             fetch(PreviewParser.youtubeOembedUrl(videoId)) { LinkPreview(PreviewParser.oembedTitle(it.text()), null) }
         } else {
             fetch(url) { PreviewParser.page(it.text(), it.url.toString()) }
         }
-    }?.also { previews.put(url, it) } ?: LinkPreview(null, null)
+    } ?: LinkPreview(null, null)
 
     /** Offline, every card would otherwise wait out its timeouts again on each visit. */
-    private suspend fun <T : Any> remembered(key: String, load: suspend () -> T?): T? {
+    private suspend fun <T : Any> cached(cache: LruCache<String, T>, key: String, load: suspend () -> T?): T? {
+        cache.get(key)?.let { return it }
         if (failures.isRecent(key)) return null
         val result = catching { load() }.getOrNull()
-        if (result == null) failures.record(key) else failures.forget(key)
+        if (result == null) {
+            failures.record(key)
+        } else {
+            failures.forget(key)
+            cache.put(key, result)
+        }
         return result
     }
 

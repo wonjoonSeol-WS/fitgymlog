@@ -146,7 +146,7 @@ class WorkoutService : Service() {
             if (!active.isIdle(Instant.now(), limit)) continue
             // Finishing stops this service and cancels its scope, so the save and Health Connect write run in the app scope.
             container.scope.launch {
-                container.actions.finish(endedAt = active.lastActivityAt)?.let { Notifications.postAutoFinished(app, it.title) }
+                container.actions.finish(endedAt = active.lastCompletedAt() ?: active.lastActivityAt)?.let { Notifications.postAutoFinished(app, it.title) }
             }
         }
     }

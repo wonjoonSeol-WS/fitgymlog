@@ -39,12 +39,11 @@ import io.fitgymlog.app.R
 import io.fitgymlog.app.links.WebLinks
 import io.fitgymlog.app.model.Exercise
 import io.fitgymlog.app.model.ExerciseKind
+import io.fitgymlog.app.model.NewExercise
 import io.fitgymlog.app.ui.ChoiceDialog
 import io.fitgymlog.app.ui.ReadableWidth
 import io.fitgymlog.app.ui.localizedName
 import java.text.Collator
-
-data class NewExercise(val name: String, val kind: ExerciseKind, val link: String?)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -160,7 +159,7 @@ fun CreateExerciseDialog(initialName: String, onCreate: (NewExercise) -> Unit, o
         confirmButton = {
             TextButton(
                 enabled = name.isNotBlank() && !linkInvalid,
-                onClick = { onCreate(NewExercise(name.trim(), kind, link)) },
+                onClick = { onCreate(NewExercise(name.trim(), kind, listOfNotNull(link))) },
             ) { Text(stringResource(R.string.create)) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },

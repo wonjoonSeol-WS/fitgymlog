@@ -7,6 +7,7 @@ import io.fitgymlog.app.catalog.ExerciseCatalog
 import io.fitgymlog.app.links.WebLinks
 import io.fitgymlog.app.model.Exercise
 import io.fitgymlog.app.model.ExerciseKind
+import io.fitgymlog.app.model.NewExercise
 import io.fitgymlog.app.transfer.ExerciseMatcher
 import java.util.Locale
 import java.util.UUID
@@ -42,13 +43,15 @@ class ExerciseRepository(
         }
     }.stateIn(scope, SharingStarted.Eagerly, builtins)
 
-    fun find(id: String): Exercise = exercises.value.firstOrNull { it.id == id } ?: unknown(id)
+    fun find(id: String): Exercise = exercises.value.byId(id)
 
-    suspend fun createCustom(name: String, kind: ExerciseKind, links: List<String> = emptyList()): Exercise {
-        val entity = CustomExerciseEntity(id = "custom-${UUID.randomUUID()}", name = name.trim(), kind = kind.name, updatedAt = System.currentTimeMillis())
+    suspend fun createCustom(exercise: NewExercise): Exercise {
+        val entity = CustomExerciseEntity(
+            id = "custom-${UUID.randomUUID()}", name = exercise.name.trim(), kind = exercise.kind.name, updatedAt = System.currentTimeMillis(),
+        )
         dao.upsert(entity)
-        links.forEach { addLink(entity.id, it) }
-        return entity.toExercise().copy(userLinks = links)
+        exercise.links.forEach { addLink(entity.id, it) }
+        return entity.toExercise().copy(userLinks = exercise.links)
     }
 
     suspend fun restoreCustom(id: String, name: String, kind: ExerciseKind) = dao.save(id, name, kind.name, System.currentTimeMillis())
@@ -77,12 +80,12 @@ class ExerciseRepository(
         segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_OTHER_WORKOUT,
         customName = name,
     )
-
-    private fun unknown(id: String) = Exercise(
-        id = id,
-        englishName = id,
-        kind = ExerciseKind.WEIGHT_REPS,
-        segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_OTHER_WORKOUT,
-        customName = id,
-    )
 }
+
+fun List<Exercise>.byId(id: String): Exercise = firstOrNull { it.id == id } ?: Exercise(
+    id = id,
+    englishName = id,
+    kind = ExerciseKind.WEIGHT_REPS,
+    segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_OTHER_WORKOUT,
+    customName = id,
+)

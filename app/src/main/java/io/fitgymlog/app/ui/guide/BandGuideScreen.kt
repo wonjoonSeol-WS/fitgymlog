@@ -1,12 +1,11 @@
 package io.fitgymlog.app.ui.guide
 
 import android.Manifest
-import android.app.Activity
 import android.content.Context
-import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.provider.Settings
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -70,13 +69,14 @@ private const val TEST_DELAY_MILLIS = 5_000L
 @Composable
 fun BandGuideScreen(onBack: () -> Unit) {
     val context = LocalContext.current
+    val activity = LocalActivity.current
     val app = context.container
     var notificationsAllowed by remember { mutableStateOf(notificationsAllowed(context)) }
     var testSent by rememberSaveable { mutableStateOf(false) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { notificationsAllowed = notificationsAllowed(context) }
     val requestNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         notificationsAllowed = notificationsAllowed(context)
-        val askAgain = context.findActivity()?.let { ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.POST_NOTIFICATIONS) } == true
+        val askAgain = activity?.let { ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.POST_NOTIFICATIONS) } == true
         if (!notificationsAllowed && (granted || !askAgain)) openNotificationSettings(context)
     }
     val testTitle = stringResource(R.string.band_test_title)
@@ -191,12 +191,6 @@ private fun notificationsAllowed(context: Context): Boolean =
 
 private fun permissionGranted(context: Context): Boolean =
     ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-
-private tailrec fun Context.findActivity(): Activity? = when (this) {
-    is Activity -> this
-    is ContextWrapper -> baseContext.findActivity()
-    else -> null
-}
 
 private fun openNotificationSettings(context: Context) {
     val notifications = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)

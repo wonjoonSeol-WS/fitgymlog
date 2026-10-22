@@ -25,10 +25,6 @@ data class BandView(
     val isExerciseDone: Boolean,
 )
 
-/**
- * An in-progress workout. Every change returns a new value, so the phone screen and the band remote
- * can share one source of truth.
- */
 data class ActiveWorkout(
     val workout: Workout,
     val focus: Int = 0,
@@ -91,10 +87,7 @@ data class ActiveWorkout(
     fun toggleSet(ref: SetRef, now: Instant): ActiveWorkout =
         if (setAt(ref)?.isCompleted == true) reopen(ref) else complete(ref, now)
 
-    /**
-     * Lowers the reps of the set the band shows; below zero it wraps back to the planned reps, or to
-     * the reps before the first lowering when nothing was planned, so a stray tap is recoverable.
-     */
+    /** Below zero it wraps back to the planned reps, or to the reps before lowering when nothing was planned. */
     fun lowerShownReps(): ActiveWorkout {
         val ref = shownCompletedSet ?: nextSetOf(focus) ?: return this
         val set = setAt(ref) ?: return this
@@ -126,15 +119,19 @@ data class ActiveWorkout(
     /** Rest starts when a set is ticked, so the latest tick marks the start of the current rest. */
     fun restClock(now: Instant): RestClock? {
         val endsAt = restEndsAt ?: return null
-        var startedAt: Instant? = null
-        for (exercise in exercises) for (set in exercise.sets) {
-            val at = set.completedAt ?: continue
-            if (startedAt == null || at.isAfter(startedAt)) startedAt = at
-        }
         return RestClock(
             left = Duration.between(now, endsAt).coerceAtLeast(Duration.ZERO),
-            length = Duration.between(startedAt ?: lastActivityAt, endsAt).coerceAtLeast(Duration.ZERO),
+            length = Duration.between(lastCompletedAt() ?: lastActivityAt, endsAt).coerceAtLeast(Duration.ZERO),
         )
+    }
+
+    fun lastCompletedAt(): Instant? {
+        var latest: Instant? = null
+        for (exercise in exercises) for (set in exercise.sets) {
+            val at = set.completedAt ?: continue
+            if (latest == null || at.isAfter(latest)) latest = at
+        }
+        return latest
     }
 
     fun adjustRest(delta: Duration, now: Instant): ActiveWorkout {
@@ -161,10 +158,7 @@ data class ActiveWorkout(
         if (set.isCompleted) set.copy(reps = reps) else set.copy(reps = reps, targetReps = reps)
     }
 
-    /**
-     * Sets this set's reps and carries them to later open sets that were blank or matched it,
-     * so picking 5 once fills a 5x5 without touching a set already planned differently.
-     */
+    /** Also fills later open sets that were blank or matched this one, so picking 5 once fills a 5x5. */
     fun setRepsFromHere(ref: SetRef, reps: Int?): ActiveWorkout {
         val before = setAt(ref) ?: return this
         val previousReps = before.reps
@@ -210,10 +204,7 @@ data class ActiveWorkout(
         return copy(workout = workout.copy(exercises = exercises + added), focus = focusAfter, lastActivityAt = now)
     }
 
-    /**
-     * Swaps an exercise, e.g. overhead press when the bench is taken. Completed sets stay with the
-     * original exercise, so history remains true to what was lifted.
-     */
+    /** Completed sets stay with the original exercise, so history shows what was actually lifted. */
     fun replaceExercise(index: Int, exerciseId: String, sets: List<WorkoutSet>): ActiveWorkout {
         val current = exercises.getOrNull(index) ?: return this
         val done = current.sets.filter { it.isCompleted }

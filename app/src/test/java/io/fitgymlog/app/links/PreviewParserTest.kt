@@ -129,4 +129,11 @@ class PreviewParserTest {
         assertEquals("벤치 프레스", PreviewParser.page(PreviewParser.decode(body, "text/html")).title)
         assertEquals("벤치", PreviewParser.decode("<meta charset=\"utf-8\">벤치".toByteArray(), null).substringAfter('>'))
     }
+
+    @Test
+    fun `a meta charset past the first 1024 bytes is not a declaration`() {
+        val body = ("<!--" + " ".repeat(1024) + "--><meta charset=\"euc-kr\"><title>데드리프트</title>").toByteArray()
+
+        assertEquals("데드리프트", PreviewParser.page(PreviewParser.decode(body, "text/html")).title)
+    }
 }

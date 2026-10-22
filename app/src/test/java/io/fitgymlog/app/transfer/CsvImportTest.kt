@@ -1,6 +1,7 @@
 package io.fitgymlog.app.transfer
 
 import io.fitgymlog.app.model.ExerciseKind
+import io.fitgymlog.app.model.NewExercise
 import io.fitgymlog.app.model.WorkoutSet
 import io.fitgymlog.app.model.WorkoutSource
 import java.time.LocalDateTime
@@ -30,7 +31,7 @@ class CsvImportTest {
     )
 
     private class Recorder {
-        val created = mutableListOf<NewCustomExercise>()
+        val created = mutableListOf<NewExercise>()
         var saved: Map<String, String> = emptyMap()
     }
 
@@ -63,7 +64,7 @@ class CsvImportTest {
 
         val (summary, recorder) = runImport(file)
 
-        assertEquals(listOf(NewCustomExercise("Bench press", ExerciseKind.WEIGHT_REPS, emptyList())), recorder.created)
+        assertEquals(listOf(NewExercise("Bench press", ExerciseKind.WEIGHT_REPS)), recorder.created)
         assertEquals(setOf("custom-1"), recorder.saved.values.toSet())
         assertEquals(1, summary.newExercises)
     }
@@ -101,12 +102,12 @@ class CsvImportTest {
     @Test
     fun `the name, kind and link entered in the dialog win over the imported ones`() = runTest {
         val file = pending(workout("Day A", "Hollow Hold" to timed), unmatched = listOf("Hollow Hold"))
-        val choice = ExerciseChoice.Create("Hollow Body Hold", ExerciseKind.WEIGHT_REPS, "https://example.com/hollow")
+        val choice = ExerciseChoice.Create(NewExercise("Hollow Body Hold", ExerciseKind.WEIGHT_REPS, listOf("https://example.com/hollow")))
 
         val (_, recorder) = runImport(file, choices = mapOf("Hollow Hold" to choice))
 
         assertEquals(
-            listOf(NewCustomExercise("Hollow Body Hold", ExerciseKind.WEIGHT_REPS, listOf("https://example.com/hollow"))),
+            listOf(NewExercise("Hollow Body Hold", ExerciseKind.WEIGHT_REPS, listOf("https://example.com/hollow"))),
             recorder.created,
         )
     }
@@ -117,7 +118,7 @@ class CsvImportTest {
 
         val (summary, recorder) = runImport(file, choices = mapOf("Bench press" to ExerciseChoice.Existing("bench_press_barbell")))
 
-        assertEquals(emptyList<NewCustomExercise>(), recorder.created)
+        assertEquals(emptyList<NewExercise>(), recorder.created)
         assertEquals(mapOf("Bench press" to "bench_press_barbell", "Bench Press" to "bench_press_barbell"), recorder.saved)
         assertEquals(0, summary.newExercises)
     }

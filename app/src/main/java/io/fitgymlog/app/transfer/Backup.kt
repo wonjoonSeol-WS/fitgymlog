@@ -29,7 +29,6 @@ data class BackupFile(
     companion object {
         const val FORMAT = "fitgymlog-backup"
         const val VERSION = 1
-        private const val BOM = "\uFEFF"
         private val json = Json { ignoreUnknownKeys = true; prettyPrint = true; encodeDefaults = true }
 
         fun looksLike(text: String): Boolean = text.removePrefix(BOM).trimStart().let { it.startsWith("{") && FORMAT in it.take(200) }
