@@ -45,7 +45,7 @@ object StrongCsv {
             endedAt = duration?.let { startedAt.plusSeconds(it) },
             notes = record["workout notes"].orEmpty(),
             exerciseName = requireNotNull(record["exercise name"]) { "Exercise Name is empty" },
-            exerciseNotes = "",
+            exerciseNotes = record["notes"].orEmpty(),
             set = WorkoutSet(
                 type = type,
                 weightKg = weightKg(record),
@@ -95,14 +95,14 @@ object StrongCsv {
         val rows = workouts.flatMapIndexed { workoutIndex, workout ->
             val duration = workout.endedAt?.let { Duration.between(workout.startedAt, it).seconds }
             workout.exercises.flatMap { exercise ->
-                exercise.sets.mapIndexed { setIndex, set ->
+                exercise.sets.zip(setOrders(exercise.sets)) { set, order ->
                     listOf(
                         (workoutIndex + 1).toString(),
                         workout.startedAt.format(dateFormat),
                         workout.title,
                         duration?.toString().orEmpty(),
                         exercise.name,
-                        (setIndex + 1).toString(),
+                        order,
                         set.weightKg.plain(),
                         set.reps?.toString().orEmpty(),
                         set.rpe.plain(),
@@ -115,5 +115,17 @@ object StrongCsv {
             }
         }
         return Csv.write(listOf(header) + rows, delimiter = ';', quoteAll = true)
+    }
+
+    private fun setOrders(sets: List<WorkoutSet>): List<String> {
+        var normal = 0
+        return sets.map { set ->
+            when (set.type) {
+                SetType.NORMAL -> (++normal).toString()
+                SetType.WARMUP -> "W"
+                SetType.DROP -> "D"
+                SetType.FAILURE -> "F"
+            }
+        }
     }
 }

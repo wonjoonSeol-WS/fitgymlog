@@ -53,11 +53,9 @@
     <string name="health_permission_denied">Permission was not granted, so nothing is written to Health Connect.</string>
     <string name="health_unavailable">Health Connect is not available on this phone.</string>
     <string name="import_action">Import</string>
-    <string name="import_backup_text">%1$d workouts, %2$d routines and %3$d custom exercises. Workouts you already have are skipped.</string>
     <string name="import_backup_title">Restore backup?</string>
     <string name="import_data">Import</string>
     <string name="import_data_help">Hevy or Strong CSV, or a FitGymLog backup</string>
-    <string name="import_done_text">Added %1$d workouts, skipped %2$d already here, created %3$d new exercises.</string>
     <string name="import_done_title">Import finished</string>
     <string name="import_maps_to">Matched to %1$s</string>
     <string name="import_new_custom">Added as a new custom exercise</string>
@@ -128,7 +126,6 @@
     <string name="skip">Skip</string>
     <string name="start_empty_workout">Start empty workout</string>
     <string name="start_routine">Start</string>
-    <string name="transfer_failed">Something went wrong: %1$s</string>
     <string name="unit_kg">kg</string>
     <string name="unit_kg_long">Kilograms (kg)</string>
     <string name="unit_lb">lb</string>

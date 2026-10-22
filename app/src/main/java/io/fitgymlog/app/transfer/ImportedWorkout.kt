@@ -28,19 +28,22 @@ data class ParseResult(
 internal const val KG_PER_LB = 0.45359237
 internal const val METERS_PER_MILE = 1609.344
 
-/** Groups set rows into workouts and, within each workout, consecutive rows of one exercise into one entry. */
+/**
+ * Groups set rows into workouts and, within each workout, consecutive rows of one exercise into one entry.
+ * Notes sit on every set row and can differ between rows, so an entry keeps each distinct one.
+ */
 internal fun <K> groupRows(rows: List<ParsedRow<K>>): List<ImportedWorkout> = rows
     .groupBy { it.workoutKey }
     .values
     .map { workoutRows ->
-        val exercises = mutableListOf<ImportedExercise>()
+        val runs = mutableListOf<MutableList<ParsedRow<K>>>()
         for (row in workoutRows) {
-            val last = exercises.lastOrNull()
-            if (last != null && last.name == row.exerciseName) {
-                exercises[exercises.lastIndex] = last.copy(sets = last.sets + row.set)
-            } else {
-                exercises += ImportedExercise(row.exerciseName, row.exerciseNotes, listOf(row.set))
-            }
+            val run = runs.lastOrNull()
+            if (run != null && run.last().exerciseName == row.exerciseName) run += row else runs += mutableListOf(row)
+        }
+        val exercises = runs.map { run ->
+            val notes = run.map { it.exerciseNotes }.filter { it.isNotEmpty() }.distinct().joinToString("\n")
+            ImportedExercise(run.first().exerciseName, notes, run.map { it.set })
         }
         val first = workoutRows.first()
         ImportedWorkout(first.title, first.startedAt, first.endedAt, first.notes, exercises)

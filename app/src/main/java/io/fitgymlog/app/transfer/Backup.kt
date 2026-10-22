@@ -11,6 +11,9 @@ import io.fitgymlog.app.model.WorkoutSource
 import java.time.Instant
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.intOrNull
 
 /** Everything the app stores, in one versioned JSON file, for moving phones or keeping a copy. */
 @Serializable
@@ -26,16 +29,29 @@ data class BackupFile(
     companion object {
         const val FORMAT = "fitgymlog-backup"
         const val VERSION = 1
+        private const val BOM = "\uFEFF"
         private val json = Json { ignoreUnknownKeys = true; prettyPrint = true; encodeDefaults = true }
 
-        fun looksLike(text: String): Boolean = text.trimStart().startsWith("{") && FORMAT in text.take(200)
+        fun looksLike(text: String): Boolean = text.removePrefix(BOM).trimStart().let { it.startsWith("{") && FORMAT in it.take(200) }
 
-        fun decode(text: String): BackupFile = json.decodeFromString(serializer(), text).also {
-            require(it.format == FORMAT) { "not a FitGymLog backup" }
-            require(it.version <= VERSION) { "backup version ${it.version} is newer than this app" }
+        fun decode(text: String): BackupFile {
+            val root = malformedOnError { json.parseToJsonElement(text.removePrefix(BOM)) }
+            val version = ((root as? JsonObject)?.get("version") as? JsonPrimitive)?.intOrNull
+            if (version != null && version > VERSION) {
+                throw TransferException(TransferFailure.NEWER_BACKUP, "backup version $version is newer than $VERSION")
+            }
+            val backup = malformedOnError { json.decodeFromJsonElement(serializer(), root) }
+            if (backup.format != FORMAT) throw TransferException(TransferFailure.MALFORMED_BACKUP, "format is ${backup.format}")
+            return backup
         }
 
         fun encode(backup: BackupFile): String = json.encodeToString(serializer(), backup)
+
+        private inline fun <T> malformedOnError(block: () -> T): T = try {
+            block()
+        } catch (e: IllegalArgumentException) {
+            throw TransferException(TransferFailure.MALFORMED_BACKUP, e.message.orEmpty(), e)
+        }
     }
 }
 

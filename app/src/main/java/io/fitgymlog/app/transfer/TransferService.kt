@@ -2,16 +2,17 @@ package io.fitgymlog.app.transfer
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import io.fitgymlog.app.data.ExerciseRepository
 import io.fitgymlog.app.data.RoutineRepository
 import io.fitgymlog.app.data.SettingsRepository
 import io.fitgymlog.app.data.WorkoutRepository
-import io.fitgymlog.app.model.ExerciseKind
 import io.fitgymlog.app.model.Workout
 import io.fitgymlog.app.model.WorkoutExercise
 import io.fitgymlog.app.model.WorkoutSource
 import java.time.Instant
 import java.time.ZoneId
+import java.time.format.DateTimeParseException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -28,11 +29,9 @@ sealed interface PendingImport {
     data class Backup(val backup: BackupFile) : PendingImport
 }
 
-data class ImportSummary(val added: Int, val skipped: Int, val newExercises: Int, val errors: List<RowError>)
+data class ImportSummary(val added: Int, val skipped: Int, val newExercises: Int)
 
 enum class ExportFormat { BACKUP, HEVY, STRONG }
-
-class UnrecognizedFileException : IllegalArgumentException("not a Hevy, Strong or FitGymLog file")
 
 class TransferService(
     private val context: Context,
@@ -42,22 +41,22 @@ class TransferService(
     private val settings: SettingsRepository,
 ) {
     suspend fun read(uri: Uri): PendingImport = withContext(Dispatchers.IO) {
-        val text = context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() }.orEmpty()
+        val input = context.contentResolver.openInputStream(uri) ?: throw TransferException(TransferFailure.IO, "no input stream for $uri")
+        val text = input.use { it.readAtMost(MAX_IMPORT_BYTES) }.decodeToString()
         when {
             BackupFile.looksLike(text) -> PendingImport.Backup(BackupFile.decode(text))
-            HevyCsv.looksLike(text) -> matched(WorkoutSource.HEVY, HevyCsv.parse(text))
-            StrongCsv.looksLike(text) -> matched(WorkoutSource.STRONG, StrongCsv.parse(text))
-            else -> throw UnrecognizedFileException()
+            HevyCsv.looksLike(text) -> csv(WorkoutSource.HEVY, HevyCsv.parse(text))
+            StrongCsv.looksLike(text) -> csv(WorkoutSource.STRONG, StrongCsv.parse(text))
+            else -> throw TransferException(TransferFailure.UNRECOGNIZED, "not a Hevy, Strong or FitGymLog file")
         }
     }
 
-    /**
-     * Adds the workouts. [choices] maps each unrecognized name to one of our exercise ids, or to null
-     * to create a custom exercise with that name.
-     */
-    suspend fun apply(pending: PendingImport, choices: Map<String, String?> = emptyMap()): ImportSummary = when (pending) {
-        is PendingImport.Backup -> restore(pending.backup)
-        is PendingImport.Csv -> importCsv(pending, choices)
+    /** Names in [choices] follow the user's pick; the other unrecognized names become custom exercises. */
+    suspend fun apply(pending: PendingImport, choices: Map<String, ExerciseChoice> = emptyMap()): ImportSummary = withContext(Dispatchers.IO) {
+        when (pending) {
+            is PendingImport.Backup -> restore(pending.backup)
+            is PendingImport.Csv -> importCsv(pending, choices)
+        }
     }
 
     suspend fun export(uri: Uri, format: ExportFormat) = withContext(Dispatchers.IO) {
@@ -79,42 +78,47 @@ class TransferService(
             ExportFormat.HEVY -> HevyCsv.write(finished.map { it.toExport() })
             ExportFormat.STRONG -> StrongCsv.write(finished.map { it.toExport() })
         }
-        context.contentResolver.openOutputStream(uri, "wt")?.use { it.write(text.toByteArray()) }
+        val output = context.contentResolver.openOutputStream(uri, "wt") ?: throw TransferException(TransferFailure.IO, "no output stream for $uri")
+        output.use { it.write(text.toByteArray()) }
     }
 
-    private suspend fun matched(source: WorkoutSource, result: ParseResult): PendingImport.Csv {
-        val matcher = exercises.matcher()
-        val names = result.workouts.flatMap { workout -> workout.exercises.map { it.name } }.distinct()
-        val matched = names.mapNotNull { name -> matcher.match(name)?.let { name to it } }.toMap()
-        return PendingImport.Csv(source, result.workouts, result.errors, matched, names - matched.keys)
+    private suspend fun csv(source: WorkoutSource, result: ParseResult): PendingImport.Csv {
+        result.errors.firstOrNull()?.let { Log.w(TAG, "${result.errors.size} unreadable rows, first at row ${it.rowNumber}: ${it.message}") }
+        return pendingCsv(source, result, exercises.matcher())
     }
 
-    private suspend fun importCsv(pending: PendingImport.Csv, choices: Map<String, String?>): ImportSummary {
-        val ids = pending.matched.toMutableMap()
-        var created = 0
-        pending.unmatched.forEach { name ->
-            ids[name] = choices[name] ?: exercises.createCustom(name, ExerciseKind.WEIGHT_REPS).id.also { created++ }
-        }
+    private suspend fun importCsv(pending: PendingImport.Csv, choices: Map<String, ExerciseChoice>): ImportSummary {
         val zone = ZoneId.systemDefault()
         val rest = settings.settings.value.defaultRestSeconds
-        val converted = pending.workouts.map { imported ->
-            val startedAt = imported.startedAt.atZone(zone).toInstant()
-            Workout(
-                title = imported.title,
-                startedAt = startedAt,
-                endedAt = imported.endedAt?.atZone(zone)?.toInstant() ?: startedAt,
-                notes = imported.notes,
-                source = pending.source,
-                exercises = imported.exercises.mapIndexed { index, exercise ->
-                    WorkoutExercise(index + 1L, ids.getValue(exercise.name), rest, exercise.notes, exercise.sets)
-                },
-            )
-        }
-        val added = workouts.importFinished(converted)
-        return ImportSummary(added, converted.size - added, created, pending.errors)
+        return importWorkouts(
+            pending,
+            choices,
+            keepNew = { candidates -> workouts.notYetImported(candidates, { it.startedAt.atZone(zone).toInstant() }, { it.title }) },
+            createCustom = { exercises.createCustom(it.name, it.kind, it.links).id },
+            save = { fresh, ids -> workouts.importFinished(fresh.map { it.toWorkout(pending.source, zone, rest, ids) }) },
+        )
+    }
+
+    private fun ImportedWorkout.toWorkout(source: WorkoutSource, zone: ZoneId, restSeconds: Int, exerciseIds: Map<String, String>): Workout {
+        val start = startedAt.atZone(zone).toInstant()
+        return Workout(
+            title = title,
+            startedAt = start,
+            endedAt = endedAt?.atZone(zone)?.toInstant() ?: start,
+            notes = notes,
+            source = source,
+            exercises = exercises.mapIndexed { index, exercise ->
+                WorkoutExercise(index + 1L, exerciseIds.getValue(exercise.name), restSeconds, exercise.notes, exercise.sets)
+            },
+        )
     }
 
     private suspend fun restore(backup: BackupFile): ImportSummary {
+        val converted = try {
+            backup.workouts.map { it.toWorkout() }
+        } catch (e: DateTimeParseException) {
+            throw TransferException(TransferFailure.MALFORMED_BACKUP, e.message.orEmpty(), e)
+        }
         val known = exercises.exercises.value.map { it.id }.toSet()
         val newCustom = backup.customExercises.filter { it.id !in known }
         newCustom.forEach { custom ->
@@ -124,9 +128,8 @@ class TransferService(
         backup.exerciseLinks.forEach { exercises.addLink(it.exerciseId, it.url) }
         val existingRoutines = routines.all().map { it.name }.toSet()
         backup.routines.filter { it.name !in existingRoutines }.forEach { routines.save(it.toRoutine()) }
-        val converted = backup.workouts.map { it.toWorkout() }
         val added = workouts.importFinished(converted)
-        return ImportSummary(added, converted.size - added, newCustom.size, emptyList())
+        return ImportSummary(added, converted.size - added, newCustom.size)
     }
 
     private fun Workout.toExport(): ExportWorkout {
@@ -140,5 +143,9 @@ class TransferService(
                 ImportedExercise(this@TransferService.exercises.find(exercise.exerciseId).englishName, exercise.notes, exercise.sets)
             },
         )
+    }
+
+    private companion object {
+        const val TAG = "TransferService"
     }
 }

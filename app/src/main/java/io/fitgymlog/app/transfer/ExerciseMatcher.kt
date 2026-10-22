@@ -6,7 +6,9 @@ package io.fitgymlog.app.transfer
  */
 class ExerciseMatcher(namesById: Map<String, Collection<String>>) {
     private val idByName: Map<String, String> = buildMap {
-        namesById.forEach { (id, names) -> names.forEach { name -> putIfAbsent(normalize(name), id) } }
+        namesById.forEach { (id, names) ->
+            names.map(::normalize).filter { it.isNotEmpty() }.forEach { putIfAbsent(it, id) }
+        }
     }
 
     fun match(name: String): String? = idByName[normalize(name)]

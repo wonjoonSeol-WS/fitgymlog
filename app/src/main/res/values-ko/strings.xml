@@ -53,11 +53,9 @@
     <string name="health_permission_denied">권한이 없어서 Health Connect에 기록하지 않습니다.</string>
     <string name="health_unavailable">이 휴대폰에서는 Health Connect를 쓸 수 없습니다.</string>
     <string name="import_action">가져오기</string>
-    <string name="import_backup_text">운동 %1$d개, 루틴 %2$d개, 커스텀 운동 %3$d개입니다. 이미 있는 운동은 건너뜁니다.</string>
     <string name="import_backup_title">백업을 복원할까요?</string>
     <string name="import_data">가져오기</string>
     <string name="import_data_help">Hevy 또는 Strong CSV, FitGymLog 백업</string>
-    <string name="import_done_text">운동 %1$d개를 추가했고, 이미 있는 %2$d개는 건너뛰었고, 새 운동 %3$d개를 만들었습니다.</string>
     <string name="import_done_title">가져오기 완료</string>
     <string name="import_maps_to">%1$s 운동으로 연결</string>
     <string name="import_new_custom">새 커스텀 운동으로 추가</string>
@@ -128,7 +126,6 @@
     <string name="skip">건너뛰기</string>
     <string name="start_empty_workout">빈 운동 시작</string>
     <string name="start_routine">시작</string>
-    <string name="transfer_failed">문제가 생겼습니다: %1$s</string>
     <string name="unit_kg">kg</string>
     <string name="unit_kg_long">킬로그램 (kg)</string>
     <string name="unit_lb">lb</string>

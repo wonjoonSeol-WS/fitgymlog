@@ -44,8 +44,45 @@ class HevyCsvTest {
     }
 
     @Test
-    fun `reads set types`() {
-        assertEquals(SetType.WARMUP, HevyCsv.parse(koreanKg).workouts[1].exercises[0].sets[0].type)
+    fun `reads every set type`() {
+        val sets = """
+            $header
+            "Day A","19 Oct 2026, 19:38","19 Oct 2026, 21:05","","Squat (Barbell)",,"",0,"normal",60,5,,,
+            "Day A","19 Oct 2026, 19:38","19 Oct 2026, 21:05","","Squat (Barbell)",,"",1,"warmup",40,8,,,
+            "Day A","19 Oct 2026, 19:38","19 Oct 2026, 21:05","","Squat (Barbell)",,"",2,"dropset",50,8,,,
+            "Day A","19 Oct 2026, 19:38","19 Oct 2026, 21:05","","Squat (Barbell)",,"",3,"failure",50,4,,,
+        """.trimIndent()
+
+        val types = HevyCsv.parse(sets).workouts.single().exercises.single().sets.map { it.type }
+
+        assertEquals(listOf(SetType.NORMAL, SetType.WARMUP, SetType.DROP, SetType.FAILURE), types)
+    }
+
+    @Test
+    fun `workouts that start together but have different titles stay apart`() {
+        val twoWorkouts = """
+            $header
+            "Morning","19 Oct 2026, 19:38","19 Oct 2026, 21:05","","Squat (Barbell)",,"",0,"normal",60,5,,,
+            "Evening","19 Oct 2026, 19:38","19 Oct 2026, 21:05","","Squat (Barbell)",,"",0,"normal",70,5,,,
+        """.trimIndent()
+
+        val workouts = HevyCsv.parse(twoWorkouts).workouts
+
+        assertEquals(listOf("Morning", "Evening"), workouts.map { it.title })
+    }
+
+    @Test
+    fun `treats NaN and infinite numbers as not recorded`() {
+        val odd = """
+            $header
+            "Day A","19 Oct 2026, 19:38","19 Oct 2026, 21:05","","Squat (Barbell)",,"",0,"normal",NaN,5,,,Infinity
+        """.trimIndent()
+
+        val set = HevyCsv.parse(odd).workouts.single().exercises.single().sets.single()
+
+        assertNull(set.weightKg)
+        assertNull(set.rpe)
+        assertEquals(5, set.reps)
     }
 
     @Test

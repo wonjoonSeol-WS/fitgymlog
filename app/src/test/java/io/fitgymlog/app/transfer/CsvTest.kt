@@ -19,10 +19,17 @@ class CsvTest {
     }
 
     @Test
-    fun `detects semicolons from the header`() {
-        val rows = Csv.read("\"Date\";\"Reps\"\n\"2026-10-19 19:38:00\";\"8\"")
+    fun `detects semicolons from the header even when data rows hold more commas`() {
+        val rows = Csv.read("\"Date\";\"Notes\"\n\"2026-10-19 19:38:00\";\"slow, paused, belt, straps\"")
 
-        assertEquals(listOf("2026-10-19 19:38:00", "8"), rows[1])
+        assertEquals(listOf("2026-10-19 19:38:00", "slow, paused, belt, straps"), rows[1])
+    }
+
+    @Test
+    fun `a quote inside an unquoted field is kept as text`() {
+        val rows = Csv.read("Bench 5'11\" grip,8\nSquat,5")
+
+        assertEquals(listOf(listOf("Bench 5'11\" grip", "8"), listOf("Squat", "5")), rows)
     }
 
     @Test

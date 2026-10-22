@@ -1,7 +1,8 @@
 package io.fitgymlog.app.transfer
 
-import java.text.DateFormatSymbols
 import java.time.LocalDateTime
+import java.time.Month
+import java.time.format.TextStyle
 import java.util.Locale
 
 /**
@@ -15,69 +16,68 @@ object LocalizedDateTime {
     private val monthSuffix = Regex("""(\d+)\s?(?:월|月)""")
     private val morning = setOf("am", "a.m.", "오전", "午前", "上午")
     private val afternoon = setOf("pm", "p.m.", "오후", "午後", "下午")
-    private val priorityLocales = listOf(
+    private val hevyLocales = listOf(
         Locale.ENGLISH, Locale.KOREAN, Locale.JAPANESE, Locale.CHINESE, Locale.GERMAN, Locale.FRENCH,
         Locale.ITALIAN, Locale.forLanguageTag("es"), Locale.forLanguageTag("pt"), Locale.forLanguageTag("nl"),
         Locale.forLanguageTag("pl"), Locale.forLanguageTag("tr"), Locale.forLanguageTag("ru"),
     )
+    private val monthStyles = listOf(TextStyle.FULL, TextStyle.SHORT, TextStyle.FULL_STANDALONE, TextStyle.SHORT_STANDALONE)
 
     private val monthsByName: Map<String, Int> by lazy {
-        val names = mutableMapOf<String, Int>()
-        (priorityLocales + Locale.getAvailableLocales()).forEach { locale ->
-            val symbols = DateFormatSymbols.getInstance(locale)
-            listOf(symbols.months, symbols.shortMonths).forEach { monthNames ->
-                monthNames.take(12).forEachIndexed { index, name ->
-                    val key = normalize(name)
-                    if (key.isNotEmpty()) names.putIfAbsent(key, index + 1)
+        buildMap {
+            hevyLocales.forEach { locale ->
+                Month.entries.forEach { month ->
+                    monthStyles.forEach { style -> putIfAbsent(normalize(month.getDisplayName(style, locale)), month.value) }
                 }
             }
         }
-        names
     }
 
     fun parse(text: String): LocalDateTime? {
         var year: Int? = null
         var yearFirst = false
-        var month: Int? = null
+        val months = mutableSetOf<Int>()
         val plainNumbers = mutableListOf<Int>()
-        var hour: Int? = null
-        var minute: Int? = null
-        var second = 0
+        var time: List<Int>? = null
         var meridiem: Boolean? = null
 
         for (match in token.findAll(text.lowercase())) {
             val value = match.value
             val suffixedMonth = monthSuffix.matchEntire(value)
             when {
-                suffixedMonth != null -> month = suffixedMonth.groupValues[1].toInt()
-                ':' in value -> {
-                    val parts = value.split(':').map(String::toInt)
-                    hour = parts[0]
-                    minute = parts[1]
-                    second = parts.getOrElse(2) { 0 }
-                }
+                suffixedMonth != null -> months += suffixedMonth.groupValues[1].toIntOrNull() ?: return null
+                ':' in value -> if (time == null) time = value.split(':').map(String::toInt)
                 value.all(Char::isDigit) && value.length == 4 -> {
                     year = value.toInt()
-                    yearFirst = plainNumbers.isEmpty() && month == null
+                    yearFirst = plainNumbers.isEmpty() && months.isEmpty()
                 }
-                value.all(Char::isDigit) -> plainNumbers += value.toInt()
+                value.all(Char::isDigit) -> plainNumbers += value.toIntOrNull() ?: return null
                 value in morning -> meridiem = false
                 value in afternoon -> meridiem = true
-                else -> monthsByName[normalize(value)]?.let { if (month == null) month = it }
+                else -> monthNamed(value)?.let(months::add)
             }
         }
 
-        if (month == null && yearFirst && plainNumbers.size == 2) {
-            month = plainNumbers.removeAt(0)
+        val month = when {
+            months.isNotEmpty() -> months.singleOrNull() ?: return null
+            yearFirst && plainNumbers.size == 2 -> plainNumbers.removeAt(0)
+            else -> return null
         }
         val day = plainNumbers.singleOrNull() ?: return null
-        val h = hour ?: return null
+        val clock = time ?: return null
         val hour24 = when (meridiem) {
-            null -> h
-            true -> if (h == 12) 12 else h + 12
-            false -> if (h == 12) 0 else h
+            null -> clock[0]
+            true -> if (clock[0] == 12) 12 else clock[0] + 12
+            false -> if (clock[0] == 12) 0 else clock[0]
         }
-        return runCatching { LocalDateTime.of(year ?: return null, month ?: return null, day, hour24, minute ?: 0, second) }.getOrNull()
+        return runCatching { LocalDateTime.of(year ?: return null, month, day, hour24, clock[1], clock.getOrElse(2) { 0 }) }.getOrNull()
+    }
+
+    /** Words under three letters, such as "de" or "di", are too often something else to count as a month without 월/月. */
+    private fun monthNamed(word: String): Int? {
+        val key = normalize(word)
+        val counts = key.length >= 3 || key.endsWith('월') || key.endsWith('月')
+        return if (counts) monthsByName[key] else null
     }
 
     private fun normalize(name: String): String = name.lowercase().trim().trimEnd('.')

@@ -108,11 +108,16 @@ class WorkoutRepository(private val dao: WorkoutDao, private val tombstones: Tom
 
     /** Adds workouts from another app or a backup, skipping any that start in the same minute with the same title. */
     suspend fun importFinished(workouts: List<Workout>): Int {
-        val existing = dao.finishedKeys().map { minuteKey(Instant.ofEpochMilli(it.startedAt), it.title) }.toMutableSet()
-        val fresh = workouts.filter { existing.add(minuteKey(it.startedAt, it.title)) }
+        val fresh = notYetImported(workouts, { it.startedAt }, { it.title })
         val now = Instant.now()
         dao.saveAll(fresh.map { it.copy(id = 0, uuid = UUID.randomUUID().toString(), updatedAt = now).toGraph() })
         return fresh.size
+    }
+
+    /** The items [importFinished] would add, for an import that has to know before it builds its workouts. */
+    suspend fun <T> notYetImported(items: List<T>, startedAt: (T) -> Instant, title: (T) -> String): List<T> {
+        val existing = dao.finishedKeys().map { minuteKey(Instant.ofEpochMilli(it.startedAt), it.title) }.toMutableSet()
+        return items.filter { existing.add(minuteKey(startedAt(it), title(it))) }
     }
 
     suspend fun replaceExerciseId(from: String, to: String) = dao.replaceExerciseId(from, to)
