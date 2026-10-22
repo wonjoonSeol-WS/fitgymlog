@@ -6,15 +6,15 @@ plugins {
 }
 
 android {
-    namespace = "io.gymlog.app"
+    namespace = "io.fitgymlog.app"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "io.gymlog.app"
+        applicationId = "io.fitgymlog.app"
         minSdk = 33
         targetSdk = 37
         versionCode = 1
-        versionName = "0.1.0"
+        versionName = "0.1.1"
     }
 
     androidResources {

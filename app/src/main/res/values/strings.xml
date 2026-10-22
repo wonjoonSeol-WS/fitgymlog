@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">GymLog</string>
+    <string name="app_name">FitGymLog</string>
     <string name="tab_workout">Workout</string>
     <string name="tab_history">History</string>
     <string name="tab_settings">Settings</string>
@@ -17,7 +17,7 @@
     <string name="band_next_hint">Press next for the next exercise</string>
     <string name="band_set">%1$s %2$d/%3$d</string>
     <string name="band_set_done">%1$s %2$d/%3$d done</string>
-    <string name="band_setup_help">To feel rest alerts on a Galaxy Fit or watch, allow GymLog in Galaxy Wearable &gt; Notifications. If you use QuietBuzz, add GymLog to its allowlist so the phone vibrates too.</string>
+    <string name="band_setup_help">To feel rest alerts on a Galaxy Fit or watch, allow FitGymLog in Galaxy Wearable &gt; Notifications. If you use QuietBuzz, add FitGymLog to its allowlist so the phone vibrates too.</string>
     <string name="cancel">Cancel</string>
     <string name="channel_auto_finished">Auto-saved workouts</string>
     <string name="channel_rest_over">Rest over</string>
@@ -61,14 +61,14 @@
     <string name="import_backup_text">%1$d workouts, %2$d routines and %3$d custom exercises. Workouts you already have are skipped.</string>
     <string name="import_backup_title">Restore backup?</string>
     <string name="import_data">Import</string>
-    <string name="import_data_help">Hevy or Strong CSV, or a GymLog backup</string>
+    <string name="import_data_help">Hevy or Strong CSV, or a FitGymLog backup</string>
     <string name="import_done_text">Added %1$d workouts, skipped %2$d already here, created %3$d new exercises.</string>
     <string name="import_done_title">Import finished</string>
     <string name="import_maps_to">Matched to %1$s</string>
     <string name="import_new_custom">Added as a new custom exercise</string>
     <string name="import_review_title">Review import</string>
     <string name="import_unmatched_help">These exercises were not recognized. Tap one to match it to an existing exercise.</string>
-    <string name="import_unrecognized">This file is not a Hevy or Strong export or a GymLog backup.</string>
+    <string name="import_unrecognized">This file is not a Hevy or Strong export or a FitGymLog backup.</string>
     <string name="imported_from">Imported from %1$s</string>
     <string name="kind_assisted_bodyweight">Assisted bodyweight</string>
     <string name="kind_bodyweight">Bodyweight</string>

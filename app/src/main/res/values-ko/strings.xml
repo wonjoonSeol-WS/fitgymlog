@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">GymLog</string>
+    <string name="app_name">FitGymLog</string>
     <string name="tab_workout">운동</string>
     <string name="tab_history">기록</string>
     <string name="tab_settings">설정</string>
@@ -17,7 +17,7 @@
     <string name="band_next_hint">다음 버튼으로 다음 운동</string>
     <string name="band_set">%1$s %2$d/%3$d</string>
     <string name="band_set_done">%1$s %2$d/%3$d 완료</string>
-    <string name="band_setup_help">Galaxy Fit이나 워치로 휴식 끝 진동을 받으려면 Galaxy Wearable &gt; 알림에서 GymLog를 허용하세요. QuietBuzz를 쓴다면 휴대폰도 진동하도록 허용 목록에 GymLog를 넣으세요.</string>
+    <string name="band_setup_help">Galaxy Fit이나 워치로 휴식 끝 진동을 받으려면 Galaxy Wearable &gt; 알림에서 FitGymLog를 허용하세요. QuietBuzz를 쓴다면 휴대폰도 진동하도록 허용 목록에 FitGymLog를 넣으세요.</string>
     <string name="cancel">취소</string>
     <string name="channel_auto_finished">자동 저장된 운동</string>
     <string name="channel_rest_over">휴식 끝</string>
@@ -61,14 +61,14 @@
     <string name="import_backup_text">운동 %1$d개, 루틴 %2$d개, 커스텀 운동 %3$d개입니다. 이미 있는 운동은 건너뜁니다.</string>
     <string name="import_backup_title">백업을 복원할까요?</string>
     <string name="import_data">가져오기</string>
-    <string name="import_data_help">Hevy 또는 Strong CSV, GymLog 백업</string>
+    <string name="import_data_help">Hevy 또는 Strong CSV, FitGymLog 백업</string>
     <string name="import_done_text">운동 %1$d개를 추가했고, 이미 있는 %2$d개는 건너뛰었고, 새 운동 %3$d개를 만들었습니다.</string>
     <string name="import_done_title">가져오기 완료</string>
     <string name="import_maps_to">%1$s 운동으로 연결</string>
     <string name="import_new_custom">새 커스텀 운동으로 추가</string>
     <string name="import_review_title">가져오기 확인</string>
     <string name="import_unmatched_help">알아보지 못한 운동입니다. 눌러서 기존 운동과 연결할 수 있습니다.</string>
-    <string name="import_unrecognized">Hevy나 Strong 내보내기 파일, 또는 GymLog 백업이 아닙니다.</string>
+    <string name="import_unrecognized">Hevy나 Strong 내보내기 파일, 또는 FitGymLog 백업이 아닙니다.</string>
     <string name="imported_from">%1$s에서 가져옴</string>
     <string name="kind_assisted_bodyweight">어시스트 맨몸</string>
     <string name="kind_bodyweight">맨몸</string>
