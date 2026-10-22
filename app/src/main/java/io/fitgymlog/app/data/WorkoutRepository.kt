@@ -5,9 +5,11 @@ import io.fitgymlog.app.model.SetType
 import io.fitgymlog.app.model.Workout
 import io.fitgymlog.app.model.WorkoutExercise
 import io.fitgymlog.app.model.WorkoutSet
+import io.fitgymlog.app.sync.TombstoneKind
 import io.fitgymlog.app.workout.ActiveWorkout
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import java.util.UUID
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -23,7 +25,7 @@ import kotlinx.coroutines.sync.withLock
  * Owns the one in-progress workout. It lives in memory for instant UI and band updates and is
  * written through to the database on every change, so it survives the app being killed mid-session.
  */
-class WorkoutRepository(private val dao: WorkoutDao, scope: CoroutineScope) {
+class WorkoutRepository(private val dao: WorkoutDao, private val tombstones: TombstoneDao, scope: CoroutineScope) {
     private val mutex = Mutex()
     private val loaded = CompletableDeferred<Unit>()
     private val _active = MutableStateFlow<ActiveWorkout?>(null)
@@ -46,7 +48,9 @@ class WorkoutRepository(private val dao: WorkoutDao, scope: CoroutineScope) {
         loaded.await()
         return mutex.withLock {
             _active.value?.let { return@withLock it }
-            val draft = ActiveWorkout(Workout(title = title, startedAt = now, routineId = routine?.id, exercises = exercises))
+            val draft = ActiveWorkout(
+                Workout(uuid = UUID.randomUUID().toString(), title = title, startedAt = now, routineId = routine?.id, exercises = exercises),
+            )
             val id = dao.save(draft.toGraph())
             draft.copy(workout = draft.workout.copy(id = id)).also { _active.value = it }
         }
@@ -69,7 +73,7 @@ class WorkoutRepository(private val dao: WorkoutDao, scope: CoroutineScope) {
         return mutex.withLock {
             val current = _active.value ?: return@withLock null
             _active.value = null
-            val finished = current.finish(endedAt)
+            val finished = current.finish(endedAt)?.copy(updatedAt = Instant.now())
             if (finished == null) {
                 dao.delete(current.workout.id)
                 null
@@ -89,10 +93,12 @@ class WorkoutRepository(private val dao: WorkoutDao, scope: CoroutineScope) {
         }
     }
 
-    suspend fun delete(id: Long) = dao.delete(id)
-
-    suspend fun saveFinished(workout: Workout) {
-        dao.save(workout.toGraph())
+    /** Leaves a deletion record so sync removes the workout on other phones too. */
+    suspend fun delete(id: Long) {
+        dao.uuidOf(id)?.takeIf { it.isNotEmpty() }?.let { uuid ->
+            tombstones.put(listOf(TombstoneEntity(TombstoneKind.WORKOUT, uuid, System.currentTimeMillis())))
+        }
+        dao.delete(id)
     }
 
     suspend fun previousSets(exerciseId: String): List<WorkoutSet> =
@@ -104,7 +110,8 @@ class WorkoutRepository(private val dao: WorkoutDao, scope: CoroutineScope) {
     suspend fun importFinished(workouts: List<Workout>): Int {
         val existing = dao.finishedKeys().map { minuteKey(Instant.ofEpochMilli(it.startedAt), it.title) }.toMutableSet()
         val fresh = workouts.filter { existing.add(minuteKey(it.startedAt, it.title)) }
-        dao.saveAll(fresh.map { it.copy(id = 0).toGraph() })
+        val now = Instant.now()
+        dao.saveAll(fresh.map { it.copy(id = 0, uuid = UUID.randomUUID().toString(), updatedAt = now).toGraph() })
         return fresh.size
     }
 

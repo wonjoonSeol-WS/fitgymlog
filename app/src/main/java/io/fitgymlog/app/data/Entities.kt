@@ -7,9 +7,12 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.Relation
 
-@Entity(tableName = "workout", indices = [Index("startedAt"), Index("endedAt")])
+@Entity(tableName = "workout", indices = [Index("startedAt"), Index("endedAt"), Index("uuid")])
 data class WorkoutEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    /** Identity across devices for sync; the row id differs per phone. */
+    val uuid: String,
+    val updatedAt: Long,
     val title: String,
     val startedAt: Long,
     val endedAt: Long?,
@@ -57,9 +60,11 @@ data class WorkoutSetEntity(
     val completedAt: Long?,
 )
 
-@Entity(tableName = "routine")
+@Entity(tableName = "routine", indices = [Index("uuid")])
 data class RoutineEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val uuid: String,
+    val updatedAt: Long,
     val name: String,
     val position: Int,
 )
@@ -85,8 +90,7 @@ data class CustomExerciseEntity(
     @PrimaryKey val id: String,
     val name: String,
     val kind: String,
-    /** Unused since schema 2, when links moved to exercise_link; SQLite cannot drop the column in place. */
-    val links: String = "",
+    val updatedAt: Long,
 )
 
 /** Links the user added to any exercise, built-in or custom: a form video, an article, a coach's clip. */
@@ -95,6 +99,14 @@ data class ExerciseLinkEntity(
     val exerciseId: String,
     val url: String,
     val addedAt: Long,
+)
+
+/** Records a deletion so sync can remove the same item on other devices instead of bringing it back. */
+@Entity(tableName = "tombstone", primaryKeys = ["kind", "key"])
+data class TombstoneEntity(
+    val kind: String,
+    val key: String,
+    val deletedAt: Long,
 )
 
 data class ExerciseWithSets(

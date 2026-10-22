@@ -60,6 +60,8 @@ data class WorkoutExercise(
 
 data class Workout(
     val id: Long = 0,
+    /** Stable across devices; [id] is only this phone's row. */
+    val uuid: String = "",
     val title: String,
     val startedAt: Instant,
     val endedAt: Instant? = null,
@@ -67,6 +69,7 @@ data class Workout(
     val routineId: Long? = null,
     val source: WorkoutSource = WorkoutSource.APP,
     val exercises: List<WorkoutExercise>,
+    val updatedAt: Instant = startedAt,
 )
 
 data class RoutineExercise(
@@ -79,6 +82,8 @@ data class RoutineExercise(
 
 data class Routine(
     val id: Long = 0,
+    val uuid: String = "",
     val name: String,
     val exercises: List<RoutineExercise>,
+    val updatedAt: Instant = Instant.EPOCH,
 )

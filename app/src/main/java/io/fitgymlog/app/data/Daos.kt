@@ -65,6 +65,15 @@ abstract class WorkoutDao {
     @Query("DELETE FROM workout WHERE id = :id")
     abstract suspend fun delete(id: Long)
 
+    @Query("SELECT uuid FROM workout WHERE id = :id")
+    abstract suspend fun uuidOf(id: Long): String?
+
+    @Query("SELECT id FROM workout WHERE uuid = :uuid AND endedAt IS NOT NULL")
+    abstract suspend fun finishedIdOf(uuid: String): Long?
+
+    @Query("DELETE FROM workout WHERE uuid = :uuid AND endedAt IS NOT NULL")
+    abstract suspend fun deleteFinished(uuid: String)
+
     @Query("UPDATE workout_exercise SET exerciseId = :to WHERE exerciseId = :from")
     abstract suspend fun replaceExerciseId(from: String, to: String)
 
@@ -128,6 +137,15 @@ abstract class RoutineDao {
     @Query("DELETE FROM routine WHERE id = :id")
     abstract suspend fun delete(id: Long)
 
+    @Query("SELECT uuid FROM routine WHERE id = :id")
+    abstract suspend fun uuidOf(id: Long): String?
+
+    @Query("SELECT * FROM routine WHERE uuid = :uuid")
+    abstract suspend fun findByUuid(uuid: String): RoutineEntity?
+
+    @Query("DELETE FROM routine WHERE uuid = :uuid")
+    abstract suspend fun deleteByUuid(uuid: String)
+
     @Query("UPDATE routine_exercise SET exerciseId = :to WHERE exerciseId = :from")
     abstract suspend fun replaceExerciseId(from: String, to: String)
 
@@ -173,4 +191,19 @@ interface ExerciseLinkDao {
 
     @Query("DELETE FROM exercise_link WHERE exerciseId = :exerciseId AND url = :url")
     suspend fun delete(exerciseId: String, url: String)
+}
+
+@Dao
+interface TombstoneDao {
+    @Query("SELECT * FROM tombstone")
+    fun all(): Flow<List<TombstoneEntity>>
+
+    @Query("SELECT * FROM tombstone")
+    suspend fun allNow(): List<TombstoneEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun put(tombstones: List<TombstoneEntity>)
+
+    @Query("DELETE FROM tombstone WHERE deletedAt < :cutoff")
+    suspend fun deleteOlderThan(cutoff: Long)
 }

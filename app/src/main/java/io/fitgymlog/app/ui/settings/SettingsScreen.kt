@@ -139,6 +139,9 @@ fun SettingsScreen(onOpenBandGuide: () -> Unit) {
                 )
                 Item(stringResource(R.string.setting_health_type), sessionTypeName(settings.healthSessionType)) { picker = Picker.SESSION_TYPE }
 
+                Section(stringResource(R.string.section_sync))
+                SyncSection()
+
                 Section(stringResource(R.string.section_data))
                 Item(stringResource(R.string.import_data), stringResource(R.string.import_data_help)) { importFile.launch(arrayOf("*/*")) }
                 Item(stringResource(R.string.export_backup), stringResource(R.string.export_backup_help)) { exportBackup.launch("fitgymlog-backup-$today.json") }

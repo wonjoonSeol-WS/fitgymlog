@@ -14,6 +14,8 @@ import java.time.Instant
 
 fun WorkoutWithExercises.toWorkout(): Workout = Workout(
     id = workout.id,
+    uuid = workout.uuid,
+    updatedAt = Instant.ofEpochMilli(workout.updatedAt),
     title = workout.title,
     startedAt = Instant.ofEpochMilli(workout.startedAt),
     endedAt = workout.endedAt?.let(Instant::ofEpochMilli),
@@ -46,6 +48,8 @@ fun WorkoutWithExercises.toActiveWorkout(): ActiveWorkout = ActiveWorkout(
 fun Workout.toGraph(lastActivityAt: Instant = endedAt ?: startedAt): WorkoutGraph = WorkoutGraph(
     workout = WorkoutEntity(
         id = id,
+        uuid = uuid,
+        updatedAt = updatedAt.toEpochMilli(),
         title = title,
         startedAt = startedAt.toEpochMilli(),
         endedAt = endedAt?.toEpochMilli(),
@@ -104,6 +108,8 @@ private fun WorkoutSet.toEntity(position: Int) = WorkoutSetEntity(
 
 fun RoutineWithExercises.toRoutine(): Routine = Routine(
     id = routine.id,
+    uuid = routine.uuid,
+    updatedAt = Instant.ofEpochMilli(routine.updatedAt),
     name = routine.name,
     exercises = exercises.sortedBy { it.position }.map {
         RoutineExercise(it.exerciseId, it.sets, it.reps, it.weightKg, it.restSeconds)

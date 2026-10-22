@@ -6,6 +6,7 @@ import androidx.health.connect.client.records.ExerciseSegment
 import io.fitgymlog.app.catalog.ExerciseCatalog
 import io.fitgymlog.app.model.Exercise
 import io.fitgymlog.app.model.ExerciseKind
+import io.fitgymlog.app.sync.TombstoneKind
 import io.fitgymlog.app.transfer.ExerciseMatcher
 import java.util.Locale
 import java.util.UUID
@@ -19,6 +20,7 @@ class ExerciseRepository(
     private val context: Context,
     private val dao: CustomExerciseDao,
     private val linkDao: ExerciseLinkDao,
+    private val tombstones: TombstoneDao,
     scope: CoroutineScope,
 ) {
     private val builtins: List<Exercise> = ExerciseCatalog.all.map {
@@ -43,21 +45,25 @@ class ExerciseRepository(
     fun find(id: String): Exercise = exercises.value.firstOrNull { it.id == id } ?: unknown(id)
 
     suspend fun createCustom(name: String, kind: ExerciseKind, links: List<String> = emptyList()): Exercise {
-        val entity = CustomExerciseEntity(id = "custom-${UUID.randomUUID()}", name = name.trim(), kind = kind.name)
+        val entity = CustomExerciseEntity(id = "custom-${UUID.randomUUID()}", name = name.trim(), kind = kind.name, updatedAt = System.currentTimeMillis())
         dao.upsert(entity)
         links.forEach { addLink(entity.id, it) }
         return entity.toExercise().copy(userLinks = links)
     }
 
     suspend fun restoreCustom(id: String, name: String, kind: ExerciseKind) {
-        dao.upsert(CustomExerciseEntity(id = id, name = name, kind = kind.name))
+        dao.upsert(CustomExerciseEntity(id = id, name = name, kind = kind.name, updatedAt = System.currentTimeMillis()))
     }
 
     suspend fun addLink(exerciseId: String, url: String) {
         linkDao.insert(ExerciseLinkEntity(exerciseId, url.trim(), System.currentTimeMillis()))
     }
 
-    suspend fun removeLink(exerciseId: String, url: String) = linkDao.delete(exerciseId, url)
+    /** Leaves a deletion record so sync removes the link on other phones too. */
+    suspend fun removeLink(exerciseId: String, url: String) {
+        tombstones.put(listOf(TombstoneEntity(TombstoneKind.LINK, TombstoneKind.linkKey(exerciseId, url), System.currentTimeMillis())))
+        linkDao.delete(exerciseId, url)
+    }
 
     suspend fun allUserLinks(): List<ExerciseLinkEntity> = linkDao.allNow()
 

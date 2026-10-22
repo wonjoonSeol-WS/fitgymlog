@@ -18,6 +18,9 @@ data class Settings(
     val barKg: Double = 20.0,
     val barLb: Double = 45.0,
     val bandGuideDismissed: Boolean = false,
+    val syncEnabled: Boolean = false,
+    val syncAccount: String? = null,
+    val lastSyncAt: Long? = null,
 ) {
     /** Bar weight in the unit the user enters weights in. */
     val bar: Double get() = if (unit == WeightUnit.KG) barKg else barLb
@@ -40,6 +43,9 @@ class SettingsRepository(context: Context) {
             putFloat(BAR_KG, next.barKg.toFloat())
             putFloat(BAR_LB, next.barLb.toFloat())
             putBoolean(BAND_GUIDE_DISMISSED, next.bandGuideDismissed)
+            putBoolean(SYNC_ENABLED, next.syncEnabled)
+            putString(SYNC_ACCOUNT, next.syncAccount)
+            if (next.lastSyncAt == null) remove(LAST_SYNC_AT) else putLong(LAST_SYNC_AT, next.lastSyncAt)
         }
         _settings.value = next
     }
@@ -56,6 +62,9 @@ class SettingsRepository(context: Context) {
             barKg = prefs.getFloat(BAR_KG, defaults.barKg.toFloat()).toDouble(),
             barLb = prefs.getFloat(BAR_LB, defaults.barLb.toFloat()).toDouble(),
             bandGuideDismissed = prefs.getBoolean(BAND_GUIDE_DISMISSED, defaults.bandGuideDismissed),
+            syncEnabled = prefs.getBoolean(SYNC_ENABLED, defaults.syncEnabled),
+            syncAccount = prefs.getString(SYNC_ACCOUNT, null),
+            lastSyncAt = if (prefs.contains(LAST_SYNC_AT)) prefs.getLong(LAST_SYNC_AT, 0) else null,
         )
     }
 
@@ -69,5 +78,8 @@ class SettingsRepository(context: Context) {
         const val BAR_KG = "bar_kg"
         const val BAR_LB = "bar_lb"
         const val BAND_GUIDE_DISMISSED = "band_guide_dismissed"
+        const val SYNC_ENABLED = "sync_enabled"
+        const val SYNC_ACCOUNT = "sync_account"
+        const val LAST_SYNC_AT = "last_sync_at"
     }
 }
