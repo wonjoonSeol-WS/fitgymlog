@@ -138,4 +138,15 @@ class CoachTest {
         assertEquals(listOf(Remember(MemoryTopic.FOOD, "유당불내증")), turn.remember)
         assertEquals("무릎이 아파요", model.calls.single().first.last().content)
     }
+
+    @Test
+    fun `years of notes are cut to the newest that fit the budget`() {
+        val notes = (1..200).map { day -> Memory("m$day", MemoryTopic.HEALTH, "note $day " + "x".repeat(60), LocalDate.parse("2026-01-01").plusDays(day.toLong()).toString()) }
+
+        val sent = Coach.notesOf(profile.copy(memories = notes)).map { it.jsonPrimitive.content }
+
+        assertTrue(sent.sumOf { it.length } <= 2_000)
+        assertTrue(sent.first().contains("note 200 "))
+        assertTrue(sent.none { it.contains("note 1 ") })
+    }
 }
