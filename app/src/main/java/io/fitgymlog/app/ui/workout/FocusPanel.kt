@@ -78,7 +78,7 @@ internal fun FocusPanel(
                 onAdjust = onAdjustRest,
                 onSkip = onSkipRest,
             )
-            !view.isExerciseDone -> CompleteButton { workout.focusedOpenSet()?.let(onComplete) }
+            !view.isExerciseDone -> CompleteButton { workout.focusedNextSet()?.let(onComplete) }
             workout.exercises.size > 1 -> NextExerciseButton(onNextExercise)
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)

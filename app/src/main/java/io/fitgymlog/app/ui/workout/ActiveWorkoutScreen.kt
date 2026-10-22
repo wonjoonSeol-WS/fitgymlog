@@ -206,7 +206,7 @@ fun ActiveWorkoutScreen(onBack: () -> Unit, onFinished: (Long?) -> Unit, onOpenE
                         exerciseOf = ::exerciseOf,
                         unit = settings.unit,
                         bandRemote = settings.bandRemoteEnabled,
-                        onComplete = { _ -> change { it.completeFocusedSet(Instant.now()) } },
+                        onComplete = { expected -> change { it.completeFocusedSet(Instant.now(), expected) } },
                         onNextExercise = { change { it.focusNextExercise() } },
                         onAdjustRest = { seconds -> change { it.adjustRest(Duration.ofSeconds(seconds), Instant.now()) } },
                         onSkipRest = { change { it.restOver() } },

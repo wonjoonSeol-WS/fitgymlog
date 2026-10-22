@@ -71,7 +71,7 @@ class SetEditingTest {
             .focusExercise(1)
             .toggleSet(SetRef(1, 0), start)
 
-        assertEquals(SetRef(1, 1), workout.focusedOpenSet())
+        assertEquals(SetRef(1, 1), workout.focusedNextSet())
     }
 
     @Test
@@ -80,7 +80,7 @@ class SetEditingTest {
             .addExercise("plank", listOf(WorkoutSet(durationSeconds = 60)), restSeconds = 0, now = start)
             .toggleSet(SetRef(0, 0), start)
 
-        assertNull(workout.focusedOpenSet())
+        assertNull(workout.focusedNextSet())
     }
 
     @Test

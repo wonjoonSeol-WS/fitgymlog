@@ -3,8 +3,6 @@ package io.fitgymlog.app.ui.workout
 import io.fitgymlog.app.model.ExerciseKind
 import io.fitgymlog.app.model.SetType
 import io.fitgymlog.app.model.WorkoutSet
-import io.fitgymlog.app.workout.ActiveWorkout
-import io.fitgymlog.app.workout.SetRef
 import java.math.BigDecimal
 
 internal val REP_CHOICES = (1..30).toList()
@@ -35,7 +33,3 @@ internal fun normalSetNumbers(sets: List<WorkoutSet>): List<Int?> {
 
 internal fun WorkoutSet.amount(kind: ExerciseKind): Int? = if (kind == ExerciseKind.DURATION) durationSeconds else reps
 
-internal fun ActiveWorkout.focusedOpenSet(): SetRef? {
-    val setIndex = exercises.getOrNull(focus)?.sets?.indexOfFirst { !it.isCompleted } ?: return null
-    return if (setIndex < 0) null else SetRef(focus, setIndex)
-}
