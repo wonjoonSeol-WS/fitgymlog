@@ -6,7 +6,24 @@
     <string name="routine_save_as_new">Save as new routine</string>
     <string name="routine_save_failed">Couldn\'t save the routine.</string>
     <string name="delete_routine_text">%1$s will be deleted. This can\'t be undone.</string>
-    <string name="stronglifts_already_added">StrongLifts A and B are already in your routines.</string>
+    <string name="programs">Programs</string>
+    <string name="add_program">Add a program</string>
+    <string name="program_already_added">These routines are already in your list.</string>
+    <string name="program_stronglifts_summary">Barbell strength. Three days a week, alternating A and B.</string>
+    <string name="program_full_body">Full body</string>
+    <string name="program_full_body_summary">One routine of machines and dumbbells. Three days a week, a good first program.</string>
+    <string name="program_upper_lower">Upper / Lower</string>
+    <string name="program_upper_lower_summary">Upper and lower body on alternate days. Four days a week.</string>
+    <string name="program_push_pull_legs">Push / Pull / Legs</string>
+    <string name="program_push_pull_legs_summary">Chest and shoulders, then back, then legs. Three or six days a week.</string>
+    <string name="routine_stronglifts_a" translatable="false">StrongLifts A</string>
+    <string name="routine_stronglifts_b" translatable="false">StrongLifts B</string>
+    <string name="routine_full_body">Full Body</string>
+    <string name="routine_upper">Upper</string>
+    <string name="routine_lower">Lower</string>
+    <string name="routine_push">Push</string>
+    <string name="routine_pull">Pull</string>
+    <string name="routine_legs">Legs</string>
     <string name="workout_not_found">This workout no longer exists. It may have been deleted on another phone.</string>
     <string name="source_hevy">Hevy</string>
     <string name="source_strong">Strong</string>

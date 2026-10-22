@@ -10,7 +10,7 @@ Download: [latest release](https://github.com/wonjoonSeol-WS/fitgymlog/releases/
 
 - Band remote through the music controls, and a rest-over buzz on the wrist
 - Plate-by-plate weight entry and a reps number pad
-- StrongLifts 5x5 routines, plus your own
+- Ready-made programs (StrongLifts 5x5, full body, upper/lower, push/pull/legs), plus your own routines
 - Form guide videos and articles for the built-in exercises; add any YouTube or web link
 - Two-pane layouts on an unfolded Galaxy Fold
 - Health Connect (Samsung Health), optional Google Drive sync, Hevy and Strong CSV import and export

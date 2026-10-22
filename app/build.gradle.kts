@@ -94,3 +94,8 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
 }
+
+// Some unit tests read the string resources from disk, which Gradle would not otherwise see as an input.
+tasks.withType<Test>().configureEach {
+    inputs.dir("src/main/res").withPropertyName("resources").withPathSensitivity(PathSensitivity.RELATIVE)
+}

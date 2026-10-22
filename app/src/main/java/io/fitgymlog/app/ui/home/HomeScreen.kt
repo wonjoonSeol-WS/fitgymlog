@@ -2,6 +2,7 @@ package io.fitgymlog.app.ui.home
 
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -19,20 +20,26 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,7 +49,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -69,13 +78,15 @@ import kotlinx.coroutines.withContext
 @Composable
 fun HomeScreen(onOpenWorkout: () -> Unit, onEditRoutine: (Long) -> Unit, onOpenBandGuide: () -> Unit) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val app = context.container
     val active by app.workouts.active.collectAsStateWithLifecycle()
     val routines by app.routines.routines.collectAsStateWithLifecycle(emptyList())
     val exercises by app.exercises.exercises.collectAsStateWithLifecycle()
     val settings by app.settings.settings.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
-    var addingStrongLifts by remember { mutableStateOf(false) }
+    var addingProgram by remember { mutableStateOf(false) }
+    var choosingProgram by rememberSaveable { mutableStateOf(false) }
     var confirmDeleteId by rememberSaveable { mutableStateOf<Long?>(null) }
 
     fun start(block: suspend () -> Unit) {
@@ -85,14 +96,17 @@ fun HomeScreen(onOpenWorkout: () -> Unit, onEditRoutine: (Long) -> Unit, onOpenB
         }
     }
 
-    fun addStrongLifts() {
-        addingStrongLifts = true
+    fun addProgram(program: Program) {
+        choosingProgram = false
+        addingProgram = true
         scope.launch {
-            val added = catching { app.inAppScope { StrongLiftsRoutines.addTo(app.routines, settings.defaultRestSeconds) } }.getOrNull()
-            addingStrongLifts = false
+            val added = catching {
+                app.inAppScope { Programs.add(program, app.routines, { resources.getString(it) }, settings.defaultRestSeconds) }
+            }.getOrNull()
+            addingProgram = false
             when (added) {
                 null -> Toast.makeText(context, R.string.routine_save_failed, Toast.LENGTH_SHORT).show()
-                0 -> Toast.makeText(context, R.string.stronglifts_already_added, Toast.LENGTH_SHORT).show()
+                0 -> Toast.makeText(context, R.string.program_already_added, Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -130,7 +144,7 @@ fun HomeScreen(onOpenWorkout: () -> Unit, onEditRoutine: (Long) -> Unit, onOpenB
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 GreyButton(stringResource(R.string.new_routine), Modifier.weight(1f)) { onEditRoutine(0) }
-                GreyButton(stringResource(R.string.stronglifts_5x5), Modifier.weight(1f), enabled = !addingStrongLifts, onClick = ::addStrongLifts)
+                GreyButton(stringResource(R.string.programs), Modifier.weight(1f), enabled = !addingProgram) { choosingProgram = true }
             }
         }
         if (routines.isEmpty()) {
@@ -171,6 +185,8 @@ fun HomeScreen(onOpenWorkout: () -> Unit, onEditRoutine: (Long) -> Unit, onOpenB
         }
     }
 
+    if (choosingProgram) ProgramDialog(onPick = ::addProgram, onDismiss = { choosingProgram = false })
+
     confirmDeleteId?.let { id ->
         routines.firstOrNull { it.id == id }?.let { routine ->
             ConfirmDialog(
@@ -182,6 +198,28 @@ fun HomeScreen(onOpenWorkout: () -> Unit, onEditRoutine: (Long) -> Unit, onOpenB
             )
         }
     }
+}
+
+@Composable
+private fun ProgramDialog(onPick: (Program) -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.add_program)) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                Program.entries.forEach { program ->
+                    ListItem(
+                        headlineContent = { Text(stringResource(program.title)) },
+                        supportingContent = { Text(stringResource(program.summary)) },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        modifier = Modifier.clickable { onPick(program) },
+                    )
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
 }
 
 @Composable
