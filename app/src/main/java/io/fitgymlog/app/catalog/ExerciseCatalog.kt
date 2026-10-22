@@ -2,6 +2,7 @@ package io.fitgymlog.app.catalog
 
 import androidx.health.connect.client.records.ExerciseSegment
 import io.fitgymlog.app.R
+import io.fitgymlog.app.model.Equipment
 import io.fitgymlog.app.model.ExerciseKind
 
 /** Built-in exercises. English names match Hevy's library exactly, so exports import cleanly there. */
@@ -12,6 +13,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_squat_barbell,
             hevyName = "Squat (Barbell)",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.BARBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_SQUAT,
             links = listOf("https://stronglifts.com/squat/", "https://www.youtube.com/watch?v=VnV7vEi7Sz8"),
         ),
@@ -20,6 +22,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_bench_press_barbell,
             hevyName = "Bench Press (Barbell)",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.BARBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_BENCH_PRESS,
             links = listOf("https://stronglifts.com/bench-press/", "https://www.youtube.com/watch?v=uwygcGdazeM"),
         ),
@@ -28,6 +31,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_deadlift_barbell,
             hevyName = "Deadlift (Barbell)",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.BARBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_DEADLIFT,
             links = listOf("https://stronglifts.com/deadlift/", "https://www.youtube.com/watch?v=WP8lEbeY4LM"),
         ),
@@ -36,6 +40,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_overhead_press_barbell,
             hevyName = "Overhead Press (Barbell)",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.BARBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_BARBELL_SHOULDER_PRESS,
             links = listOf("https://stronglifts.com/overhead-press/", "https://www.youtube.com/watch?v=ro3Mh9o7JPU"),
         ),
@@ -44,6 +49,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_bent_over_row_barbell,
             hevyName = "Bent Over Row (Barbell)",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.BARBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_OTHER_WORKOUT,
             links = listOf("https://stronglifts.com/barbell-row/", "https://www.youtube.com/watch?v=gQBSRBgRLVI"),
         ),
@@ -52,6 +58,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_pendlay_row_barbell,
             hevyName = "Pendlay Row (Barbell)",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.BARBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_OTHER_WORKOUT,
         ),
         BuiltinExercise(
@@ -59,6 +66,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_front_squat,
             hevyName = "Front Squat",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.BARBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_SQUAT,
         ),
         BuiltinExercise(
@@ -66,6 +74,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_romanian_deadlift_barbell,
             hevyName = "Romanian Deadlift (Barbell)",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.BARBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_DEADLIFT,
         ),
         BuiltinExercise(
@@ -73,6 +82,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_incline_bench_press_barbell,
             hevyName = "Incline Bench Press (Barbell)",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.BARBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_BENCH_PRESS,
         ),
         BuiltinExercise(
@@ -80,6 +90,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_hip_thrust_barbell,
             hevyName = "Hip Thrust (Barbell)",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.BARBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_HIP_THRUST,
         ),
         BuiltinExercise(
@@ -87,6 +98,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_shrug_barbell,
             hevyName = "Shrug (Barbell)",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.BARBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_OTHER_WORKOUT,
         ),
         BuiltinExercise(
@@ -94,6 +106,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_bench_press_dumbbell,
             hevyName = "Bench Press (Dumbbell)",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.DUMBBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_BENCH_PRESS,
         ),
         BuiltinExercise(
@@ -101,6 +114,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_incline_bench_press_dumbbell,
             hevyName = "Incline Bench Press (Dumbbell)",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.DUMBBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_BENCH_PRESS,
         ),
         BuiltinExercise(
@@ -108,6 +122,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_shoulder_press_dumbbell,
             hevyName = "Shoulder Press (Dumbbell)",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.DUMBBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_SHOULDER_PRESS,
         ),
         BuiltinExercise(
@@ -115,6 +130,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_lateral_raise_dumbbell,
             hevyName = "Lateral Raise (Dumbbell)",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.DUMBBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_DUMBBELL_LATERAL_RAISE,
         ),
         BuiltinExercise(
@@ -122,6 +138,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_bent_over_row_dumbbell,
             hevyName = "Bent Over Row (Dumbbell)",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.DUMBBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_DUMBBELL_ROW,
         ),
         BuiltinExercise(
@@ -129,6 +146,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_chest_supported_incline_row_dumbbell,
             hevyName = "Chest Supported Incline Row (Dumbbell)",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.DUMBBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_DUMBBELL_ROW,
         ),
         BuiltinExercise(
@@ -136,6 +154,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_bicep_curl_dumbbell,
             hevyName = "Bicep Curl (Dumbbell)",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.DUMBBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_ARM_CURL,
         ),
         BuiltinExercise(
@@ -143,6 +162,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_hammer_curl_dumbbell,
             hevyName = "Hammer Curl (Dumbbell)",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.DUMBBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_ARM_CURL,
         ),
         BuiltinExercise(
@@ -150,6 +170,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_romanian_deadlift_dumbbell,
             hevyName = "Romanian Deadlift (Dumbbell)",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.DUMBBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_DEADLIFT,
         ),
         BuiltinExercise(
@@ -157,6 +178,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_lunge_dumbbell,
             hevyName = "Lunge (Dumbbell)",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.DUMBBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_LUNGE,
         ),
         BuiltinExercise(
@@ -164,6 +186,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_bulgarian_split_squat,
             hevyName = "Bulgarian Split Squat",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.DUMBBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_LUNGE,
         ),
         BuiltinExercise(
@@ -171,6 +194,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_lat_pulldown_cable,
             hevyName = "Lat Pulldown (Cable)",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.CABLE,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_LAT_PULL_DOWN,
         ),
         BuiltinExercise(
@@ -178,6 +202,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_seated_cable_row_v_grip,
             hevyName = "Seated Cable Row - V Grip (Cable)",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.CABLE,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_OTHER_WORKOUT,
         ),
         BuiltinExercise(
@@ -185,6 +210,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_triceps_pushdown,
             hevyName = "Triceps Pushdown",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.CABLE,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_DOUBLE_ARM_TRICEPS_EXTENSION,
         ),
         BuiltinExercise(
@@ -192,6 +218,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_face_pull,
             hevyName = "Face Pull",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.CABLE,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_OTHER_WORKOUT,
         ),
         BuiltinExercise(
@@ -199,6 +226,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_leg_press_machine,
             hevyName = "Leg Press (Machine)",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.MACHINE,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_LEG_PRESS,
         ),
         BuiltinExercise(
@@ -206,6 +234,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_leg_extension_machine,
             hevyName = "Leg Extension (Machine)",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.MACHINE,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_LEG_EXTENSION,
         ),
         BuiltinExercise(
@@ -213,6 +242,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_lying_leg_curl_machine,
             hevyName = "Lying Leg Curl (Machine)",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.MACHINE,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_LEG_CURL,
         ),
         BuiltinExercise(
@@ -220,6 +250,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_seated_leg_curl_machine,
             hevyName = "Seated Leg Curl (Machine)",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.MACHINE,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_LEG_CURL,
         ),
         BuiltinExercise(
@@ -227,6 +258,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_chest_fly_machine,
             hevyName = "Chest Fly (Machine)",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.MACHINE,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_OTHER_WORKOUT,
         ),
         BuiltinExercise(
@@ -234,6 +266,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_standing_calf_raise_machine,
             hevyName = "Standing Calf Raise (Machine)",
             kind = ExerciseKind.WEIGHT_REPS,
+            equipment = Equipment.MACHINE,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_OTHER_WORKOUT,
         ),
         BuiltinExercise(
@@ -241,6 +274,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_pull_up,
             hevyName = "Pull Up",
             kind = ExerciseKind.BODYWEIGHT_REPS,
+            equipment = Equipment.BODYWEIGHT,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_PULL_UP,
             links = listOf("https://stronglifts.com/pullups/"),
         ),
@@ -249,6 +283,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_pull_up_weighted,
             hevyName = "Pull Up (Weighted)",
             kind = ExerciseKind.WEIGHTED_BODYWEIGHT,
+            equipment = Equipment.BODYWEIGHT,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_PULL_UP,
             links = listOf("https://stronglifts.com/pullups/"),
         ),
@@ -257,6 +292,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_pull_up_assisted,
             hevyName = "Pull Up (Assisted)",
             kind = ExerciseKind.ASSISTED_BODYWEIGHT,
+            equipment = Equipment.BODYWEIGHT,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_PULL_UP,
         ),
         BuiltinExercise(
@@ -264,6 +300,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_chin_up,
             hevyName = "Chin Up",
             kind = ExerciseKind.BODYWEIGHT_REPS,
+            equipment = Equipment.BODYWEIGHT,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_PULL_UP,
         ),
         BuiltinExercise(
@@ -271,6 +308,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_chest_dip,
             hevyName = "Chest Dip",
             kind = ExerciseKind.BODYWEIGHT_REPS,
+            equipment = Equipment.BODYWEIGHT,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_OTHER_WORKOUT,
         ),
         BuiltinExercise(
@@ -278,6 +316,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_chest_dip_weighted,
             hevyName = "Chest Dip (Weighted)",
             kind = ExerciseKind.WEIGHTED_BODYWEIGHT,
+            equipment = Equipment.BODYWEIGHT,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_OTHER_WORKOUT,
         ),
         BuiltinExercise(
@@ -285,6 +324,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_push_up,
             hevyName = "Push Up",
             kind = ExerciseKind.BODYWEIGHT_REPS,
+            equipment = Equipment.BODYWEIGHT,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_OTHER_WORKOUT,
         ),
         BuiltinExercise(
@@ -292,6 +332,7 @@ object ExerciseCatalog {
             nameRes = R.string.exercise_plank,
             hevyName = "Plank",
             kind = ExerciseKind.DURATION,
+            equipment = Equipment.BODYWEIGHT,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_PLANK,
         ),
     )

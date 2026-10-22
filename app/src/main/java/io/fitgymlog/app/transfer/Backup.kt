@@ -21,6 +21,7 @@ data class BackupFile(
     val customExercises: List<BackupCustomExercise>,
     val routines: List<BackupRoutine>,
     val workouts: List<BackupWorkout>,
+    val exerciseLinks: List<BackupLink> = emptyList(),
 ) {
     companion object {
         const val FORMAT = "fitgymlog-backup"
@@ -40,6 +41,10 @@ data class BackupFile(
 
 @Serializable
 data class BackupCustomExercise(val id: String, val name: String, val kind: String, val links: List<String>)
+
+/** A link the user added to a built-in exercise; custom exercises carry their own links. */
+@Serializable
+data class BackupLink(val exerciseId: String, val url: String)
 
 @Serializable
 data class BackupRoutine(val name: String, val exercises: List<BackupRoutineExercise>)

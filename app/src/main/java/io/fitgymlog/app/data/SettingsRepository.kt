@@ -15,7 +15,13 @@ data class Settings(
     val healthSessionType: Int = ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING,
     val idleFinishMinutes: Int = 30,
     val bandRemoteEnabled: Boolean = true,
-)
+    val barKg: Double = 20.0,
+    val barLb: Double = 45.0,
+    val bandGuideDismissed: Boolean = false,
+) {
+    /** Bar weight in the unit the user enters weights in. */
+    val bar: Double get() = if (unit == WeightUnit.KG) barKg else barLb
+}
 
 class SettingsRepository(context: Context) {
     private val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
@@ -31,6 +37,9 @@ class SettingsRepository(context: Context) {
             putInt(HEALTH_SESSION_TYPE, next.healthSessionType)
             putInt(IDLE_FINISH, next.idleFinishMinutes)
             putBoolean(BAND_REMOTE, next.bandRemoteEnabled)
+            putFloat(BAR_KG, next.barKg.toFloat())
+            putFloat(BAR_LB, next.barLb.toFloat())
+            putBoolean(BAND_GUIDE_DISMISSED, next.bandGuideDismissed)
         }
         _settings.value = next
     }
@@ -44,6 +53,9 @@ class SettingsRepository(context: Context) {
             healthSessionType = prefs.getInt(HEALTH_SESSION_TYPE, defaults.healthSessionType),
             idleFinishMinutes = prefs.getInt(IDLE_FINISH, defaults.idleFinishMinutes),
             bandRemoteEnabled = prefs.getBoolean(BAND_REMOTE, defaults.bandRemoteEnabled),
+            barKg = prefs.getFloat(BAR_KG, defaults.barKg.toFloat()).toDouble(),
+            barLb = prefs.getFloat(BAR_LB, defaults.barLb.toFloat()).toDouble(),
+            bandGuideDismissed = prefs.getBoolean(BAND_GUIDE_DISMISSED, defaults.bandGuideDismissed),
         )
     }
 
@@ -54,5 +66,8 @@ class SettingsRepository(context: Context) {
         const val HEALTH_SESSION_TYPE = "health_session_type"
         const val IDLE_FINISH = "idle_finish_minutes"
         const val BAND_REMOTE = "band_remote_enabled"
+        const val BAR_KG = "bar_kg"
+        const val BAR_LB = "bar_lb"
+        const val BAND_GUIDE_DISMISSED = "band_guide_dismissed"
     }
 }

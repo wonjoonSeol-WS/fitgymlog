@@ -159,3 +159,18 @@ interface CustomExerciseDao {
     @Query("DELETE FROM custom_exercise WHERE id = :id")
     suspend fun delete(id: String)
 }
+
+@Dao
+interface ExerciseLinkDao {
+    @Query("SELECT * FROM exercise_link ORDER BY addedAt")
+    fun all(): Flow<List<ExerciseLinkEntity>>
+
+    @Query("SELECT * FROM exercise_link ORDER BY addedAt")
+    suspend fun allNow(): List<ExerciseLinkEntity>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insert(link: ExerciseLinkEntity)
+
+    @Query("DELETE FROM exercise_link WHERE exerciseId = :exerciseId AND url = :url")
+    suspend fun delete(exerciseId: String, url: String)
+}

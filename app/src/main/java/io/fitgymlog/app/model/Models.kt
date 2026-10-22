@@ -12,6 +12,8 @@ enum class ExerciseKind {
 
 enum class SetType { NORMAL, WARMUP, DROP, FAILURE }
 
+enum class Equipment { BARBELL, DUMBBELL, MACHINE, CABLE, BODYWEIGHT, OTHER }
+
 enum class WorkoutSource { APP, HEVY, STRONG, BACKUP }
 
 enum class WeightUnit { KG, LB }
@@ -25,11 +27,14 @@ data class Exercise(
     val englishName: String,
     val kind: ExerciseKind,
     val segmentType: Int,
+    val equipment: Equipment = Equipment.OTHER,
     val links: List<String> = emptyList(),
+    val userLinks: List<String> = emptyList(),
     val nameRes: Int? = null,
     val customName: String? = null,
 ) {
     val isCustom: Boolean get() = nameRes == null
+    val allLinks: List<String> get() = links + userLinks
 }
 
 data class WorkoutSet(

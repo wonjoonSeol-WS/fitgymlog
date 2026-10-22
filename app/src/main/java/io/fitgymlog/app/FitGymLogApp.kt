@@ -28,7 +28,7 @@ class AppContainer(context: Context) {
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val database = GymDatabase.create(context)
     val settings = SettingsRepository(context)
-    val exercises = ExerciseRepository(context, database.customExercises(), scope)
+    val exercises = ExerciseRepository(context, database.customExercises(), database.exerciseLinks(), scope)
     val routines = RoutineRepository(database.routines())
     val workouts = WorkoutRepository(database.workouts(), scope)
     val health = HealthConnectWriter(context)

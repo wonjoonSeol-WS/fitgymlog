@@ -118,6 +118,47 @@ class ActiveWorkoutTest {
     }
 
     @Test
+    fun `changing weight from a set moves later open sets but not finished or earlier ones`() {
+        val done = workout().completeFocusedSet(start).restOver()
+        val warm = done.setWeight(SetRef(0, 2), 50.0)
+
+        val changed = warm.setWeightFromHere(SetRef(0, 1), 65.0)
+
+        assertEquals(listOf(60.0, 65.0, 65.0), changed.exercises[0].sets.map { it.weightKg })
+        assertEquals(listOf(30.0, 30.0), changed.exercises[1].sets.map { it.weightKg })
+    }
+
+    @Test
+    fun `changing weight from a set skips later sets already done`() {
+        val mixed = workout().toggleSet(SetRef(0, 2), start)
+
+        val changed = mixed.setWeightFromHere(SetRef(0, 0), 70.0)
+
+        assertEquals(listOf(70.0, 70.0, 60.0), changed.exercises[0].sets.map { it.weightKg })
+    }
+
+    @Test
+    fun `picking reps fills later blank or matching sets but keeps sets planned differently`() {
+        val planned = ActiveWorkout(Workout(title = "Day A", startedAt = start, exercises = emptyList()))
+            .addExercise("squat_barbell", listOf(WorkoutSet(reps = 8), WorkoutSet(reps = null), WorkoutSet(reps = 8), WorkoutSet(reps = 3)), 120, start)
+
+        val picked = planned.setRepsFromHere(SetRef(0, 0), 5)
+
+        assertEquals(listOf(5, 5, 5, 3), picked.exercises[0].sets.map { it.reps })
+        assertEquals(5, picked.exercises[0].sets[1].targetReps)
+    }
+
+    @Test
+    fun `correcting a finished set keeps its target and carries to later matching sets`() {
+        val done = workout().completeFocusedSet(start)
+
+        val corrected = done.setRepsFromHere(SetRef(0, 0), 6)
+
+        assertEquals(listOf(6, 6, 6), corrected.exercises[0].sets.map { it.reps })
+        assertEquals(8, corrected.exercises[0].sets[0].targetReps)
+    }
+
+    @Test
     fun `idle is measured from the last completed set`() {
         val done = workout().completeFocusedSet(start.plusSeconds(600))
 

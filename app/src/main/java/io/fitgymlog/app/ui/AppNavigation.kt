@@ -9,7 +9,9 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -17,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -27,6 +30,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import io.fitgymlog.app.R
 import io.fitgymlog.app.ui.exercise.ExerciseDetailScreen
+import io.fitgymlog.app.ui.guide.BandGuideScreen
 import io.fitgymlog.app.ui.history.HistoryScreen
 import io.fitgymlog.app.ui.history.WorkoutDetailScreen
 import io.fitgymlog.app.ui.home.HomeScreen
@@ -42,6 +46,7 @@ private object Routes {
     const val ROUTINE = "routine/{id}"
     const val WORKOUT = "workout/{id}"
     const val EXERCISE = "exercise/{id}"
+    const val BAND_GUIDE = "band-guide"
 
     fun routine(id: Long) = "routine/$id"
     fun workout(id: Long) = "workout/$id"
@@ -63,7 +68,7 @@ fun AppNavigation(openActiveWorkout: Boolean, navController: NavHostController =
     Scaffold(
         bottomBar = {
             if (tabs.any { it.route == currentRoute }) {
-                NavigationBar {
+                NavigationBar(containerColor = MaterialTheme.colorScheme.background, tonalElevation = 0.dp) {
                     tabs.forEach { tab ->
                         NavigationBarItem(
                             selected = currentRoute == tab.route,
@@ -76,6 +81,13 @@ fun AppNavigation(openActiveWorkout: Boolean, navController: NavHostController =
                             },
                             icon = { Icon(tab.icon, null) },
                             label = { Text(stringResource(tab.label)) },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                indicatorColor = MaterialTheme.colorScheme.background,
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            ),
                         )
                     }
                 }
@@ -93,10 +105,12 @@ fun AppNavigation(openActiveWorkout: Boolean, navController: NavHostController =
                 HomeScreen(
                     onOpenWorkout = { navController.navigate(Routes.ACTIVE) { launchSingleTop = true } },
                     onEditRoutine = { navController.navigate(Routes.routine(it)) },
+                    onOpenBandGuide = { navController.navigate(Routes.BAND_GUIDE) },
                 )
             }
             composable(Routes.HISTORY) { HistoryScreen(onOpenWorkout = { navController.navigate(Routes.workout(it)) }) }
-            composable(Routes.SETTINGS) { SettingsScreen() }
+            composable(Routes.SETTINGS) { SettingsScreen(onOpenBandGuide = { navController.navigate(Routes.BAND_GUIDE) }) }
+            composable(Routes.BAND_GUIDE) { BandGuideScreen(onBack = { navController.popBackStack() }) }
             composable(Routes.ACTIVE) {
                 ActiveWorkoutScreen(
                     onBack = { if (!navController.popBackStack()) navController.navigate(Routes.HOME) },

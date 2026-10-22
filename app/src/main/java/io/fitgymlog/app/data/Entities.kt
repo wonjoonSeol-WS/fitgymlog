@@ -85,7 +85,16 @@ data class CustomExerciseEntity(
     @PrimaryKey val id: String,
     val name: String,
     val kind: String,
-    val links: String,
+    /** Unused since schema 2, when links moved to exercise_link; SQLite cannot drop the column in place. */
+    val links: String = "",
+)
+
+/** Links the user added to any exercise, built-in or custom: a form video, an article, a coach's clip. */
+@Entity(tableName = "exercise_link", primaryKeys = ["exerciseId", "url"])
+data class ExerciseLinkEntity(
+    val exerciseId: String,
+    val url: String,
+    val addedAt: Long,
 )
 
 data class ExerciseWithSets(

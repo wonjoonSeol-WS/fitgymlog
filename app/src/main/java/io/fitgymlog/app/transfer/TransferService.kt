@@ -6,7 +6,6 @@ import io.fitgymlog.app.data.ExerciseRepository
 import io.fitgymlog.app.data.RoutineRepository
 import io.fitgymlog.app.data.SettingsRepository
 import io.fitgymlog.app.data.WorkoutRepository
-import io.fitgymlog.app.model.Exercise
 import io.fitgymlog.app.model.ExerciseKind
 import io.fitgymlog.app.model.Workout
 import io.fitgymlog.app.model.WorkoutExercise
@@ -68,10 +67,13 @@ class TransferService(
                 BackupFile(
                     exportedAt = Instant.now().toString(),
                     customExercises = exercises.exercises.value.filter { it.isCustom }.map {
-                        BackupCustomExercise(it.id, it.customName.orEmpty(), it.kind.name, it.links)
+                        BackupCustomExercise(it.id, it.customName.orEmpty(), it.kind.name, it.userLinks)
                     },
                     routines = routines.all().map { it.toBackup() },
                     workouts = finished.map { it.toBackup() },
+                    exerciseLinks = exercises.exercises.value.filter { !it.isCustom }.flatMap { exercise ->
+                        exercise.userLinks.map { BackupLink(exercise.id, it) }
+                    },
                 ),
             )
             ExportFormat.HEVY -> HevyCsv.write(finished.map { it.toExport() })
@@ -116,17 +118,10 @@ class TransferService(
         val known = exercises.exercises.value.map { it.id }.toSet()
         val newCustom = backup.customExercises.filter { it.id !in known }
         newCustom.forEach { custom ->
-            exercises.updateCustom(
-                Exercise(
-                    id = custom.id,
-                    englishName = custom.name,
-                    kind = custom.kindOrDefault(),
-                    segmentType = 0,
-                    links = custom.links,
-                    customName = custom.name,
-                ),
-            )
+            exercises.restoreCustom(custom.id, custom.name, custom.kindOrDefault())
+            custom.links.forEach { exercises.addLink(custom.id, it) }
         }
+        backup.exerciseLinks.forEach { exercises.addLink(it.exerciseId, it.url) }
         val existingRoutines = routines.all().map { it.name }.toSet()
         backup.routines.filter { it.name !in existingRoutines }.forEach { routines.save(it.toRoutine()) }
         val converted = backup.workouts.map { it.toWorkout() }

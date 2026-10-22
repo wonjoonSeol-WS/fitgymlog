@@ -18,6 +18,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -58,7 +59,7 @@ private enum class Picker { UNIT, LANGUAGE, REST, IDLE, SESSION_TYPE }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(onOpenBandGuide: () -> Unit) {
     val context = LocalContext.current
     val resources = LocalResources.current
     val app = context.container
@@ -87,7 +88,14 @@ fun SettingsScreen() {
         uri?.let { importFlow.read(it) }
     }
 
-    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.tab_settings)) }) }) { padding ->
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
+                title = { Text(stringResource(R.string.tab_settings), style = MaterialTheme.typography.headlineMedium) },
+            )
+        },
+    ) { padding ->
         ReadableWidth(Modifier.padding(padding)) {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 Section(stringResource(R.string.section_workout))
@@ -97,18 +105,13 @@ fun SettingsScreen() {
                 Item(stringResource(R.string.setting_auto_finish), stringResource(R.string.minutes_value, settings.idleFinishMinutes)) { picker = Picker.IDLE }
 
                 Section(stringResource(R.string.section_band))
+                Item(stringResource(R.string.band_guide_title), stringResource(R.string.band_guide_card_text), onOpenBandGuide)
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.setting_band_remote)) },
                     supportingContent = { Text(stringResource(R.string.setting_band_remote_help)) },
                     trailingContent = {
                         Switch(checked = settings.bandRemoteEnabled, onCheckedChange = { enabled -> app.settings.update { it.copy(bandRemoteEnabled = enabled) } })
                     },
-                )
-                Text(
-                    stringResource(R.string.band_setup_help),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                 )
 
                 Section(stringResource(R.string.section_samsung_health))

@@ -12,12 +12,13 @@ import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 
 class ExerciseRepository(
     private val context: Context,
     private val dao: CustomExerciseDao,
+    private val linkDao: ExerciseLinkDao,
     scope: CoroutineScope,
 ) {
     private val builtins: List<Exercise> = ExerciseCatalog.all.map {
@@ -26,38 +27,39 @@ class ExerciseRepository(
             englishName = it.hevyName,
             kind = it.kind,
             segmentType = it.segmentType,
+            equipment = it.equipment,
             links = it.links,
             nameRes = it.nameRes,
         )
     }
 
-    val exercises: StateFlow<List<Exercise>> = dao.all()
-        .map { customs -> builtins + customs.map { it.toExercise() } }
-        .stateIn(scope, SharingStarted.Eagerly, builtins)
+    val exercises: StateFlow<List<Exercise>> = combine(dao.all(), linkDao.all()) { customs, links ->
+        val userLinks = links.groupBy({ it.exerciseId }, { it.url })
+        (builtins + customs.map { it.toExercise() }).map { exercise ->
+            userLinks[exercise.id]?.let { exercise.copy(userLinks = it) } ?: exercise
+        }
+    }.stateIn(scope, SharingStarted.Eagerly, builtins)
 
     fun find(id: String): Exercise = exercises.value.firstOrNull { it.id == id } ?: unknown(id)
 
     suspend fun createCustom(name: String, kind: ExerciseKind, links: List<String> = emptyList()): Exercise {
-        val entity = CustomExerciseEntity(
-            id = "custom-${UUID.randomUUID()}",
-            name = name.trim(),
-            kind = kind.name,
-            links = links.joinToString("\n"),
-        )
+        val entity = CustomExerciseEntity(id = "custom-${UUID.randomUUID()}", name = name.trim(), kind = kind.name)
         dao.upsert(entity)
-        return entity.toExercise()
+        links.forEach { addLink(entity.id, it) }
+        return entity.toExercise().copy(userLinks = links)
     }
 
-    suspend fun updateCustom(exercise: Exercise) {
-        dao.upsert(
-            CustomExerciseEntity(
-                id = exercise.id,
-                name = exercise.customName.orEmpty(),
-                kind = exercise.kind.name,
-                links = exercise.links.joinToString("\n"),
-            ),
-        )
+    suspend fun restoreCustom(id: String, name: String, kind: ExerciseKind) {
+        dao.upsert(CustomExerciseEntity(id = id, name = name, kind = kind.name))
     }
+
+    suspend fun addLink(exerciseId: String, url: String) {
+        linkDao.insert(ExerciseLinkEntity(exerciseId, url.trim(), System.currentTimeMillis()))
+    }
+
+    suspend fun removeLink(exerciseId: String, url: String) = linkDao.delete(exerciseId, url)
+
+    suspend fun allUserLinks(): List<ExerciseLinkEntity> = linkDao.allNow()
 
     /** Names in every language we ship plus custom names, so imports match regardless of the source app's language. */
     suspend fun matcher(): ExerciseMatcher {
@@ -74,7 +76,6 @@ class ExerciseRepository(
         englishName = name,
         kind = kindOrDefault(),
         segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_OTHER_WORKOUT,
-        links = links.lines().filter { it.isNotBlank() },
         customName = name,
     )
 

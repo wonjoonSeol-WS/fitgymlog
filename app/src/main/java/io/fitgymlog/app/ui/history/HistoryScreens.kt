@@ -1,6 +1,13 @@
 package io.fitgymlog.app.ui.history
 
 import android.content.Context
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
+import androidx.compose.material3.TopAppBarDefaults
+import io.fitgymlog.app.ui.NumberStyles
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -64,34 +71,49 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(onOpenWorkout: (Long) -> Unit) {
     val app = LocalContext.current.container
     val history by app.workouts.history.collectAsStateWithLifecycle(emptyList())
     val exercises by app.exercises.exercises.collectAsStateWithLifecycle()
     val settings by app.settings.settings.collectAsStateWithLifecycle()
-    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.tab_history)) }) }) { padding ->
-        ReadableWidth(Modifier.padding(padding)) {
-            if (history.isEmpty()) {
-                Text(stringResource(R.string.no_history), modifier = Modifier.padding(16.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+    ReadableWidth(Modifier.statusBarsPadding()) {
+        LazyColumn(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            item {
+                Text(
+                    stringResource(R.string.tab_history),
+                    style = MaterialTheme.typography.headlineMedium,
+                    modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
+                )
             }
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(horizontal = 16.dp)) {
-                items(history, key = { it.id }) { workout ->
-                    Card(onClick = { onOpenWorkout(workout.id) }, modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            if (history.isEmpty()) {
+                item { Text(stringResource(R.string.no_history), color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            }
+            items(history, key = { it.id }) { workout ->
+                Surface(
+                    onClick = { onOpenWorkout(workout.id) },
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Column {
                             Text(workout.title, style = MaterialTheme.typography.titleMedium)
                             Text(dateText(workout), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            WorkoutStats(workout, settings.unit)
-                            workout.exercises.forEach { exercise ->
-                                val info = exercises.firstOrNull { it.id == exercise.exerciseId } ?: app.exercises.find(exercise.exerciseId)
-                                Text(pluralStringResource(R.plurals.sets_of_exercise, exercise.sets.size, exercise.sets.size, info.localizedName()))
-                            }
+                        }
+                        WorkoutStats(workout, settings.unit)
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        workout.exercises.forEach { exercise ->
+                            val info = exercises.firstOrNull { it.id == exercise.exerciseId } ?: app.exercises.find(exercise.exerciseId)
+                            Text(
+                                pluralStringResource(R.plurals.sets_of_exercise, exercise.sets.size, exercise.sets.size, info.localizedName()),
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
                         }
                     }
                 }
-                item { Spacer(Modifier.padding(bottom = 24.dp)) }
             }
+            item { Spacer(Modifier.padding(bottom = 24.dp)) }
         }
     }
 }
@@ -111,7 +133,8 @@ fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (St
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(workout?.title.orEmpty()) },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
+                title = { Text(workout?.title.orEmpty(), style = MaterialTheme.typography.titleMedium) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } },
                 actions = {
                     Box {
@@ -150,7 +173,11 @@ fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (St
                 }
                 items(current.exercises, key = { it.key }) { exercise ->
                     val info = exercises.firstOrNull { it.id == exercise.exerciseId } ?: app.exercises.find(exercise.exerciseId)
-                    Card(onClick = { onOpenExercise(exercise.exerciseId) }) {
+                    Surface(
+                        onClick = { onOpenExercise(exercise.exerciseId) },
+                        shape = RoundedCornerShape(16.dp),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    ) {
                         Column(Modifier.padding(16.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(info.localizedName(), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
                             var normal = 0
@@ -159,10 +186,11 @@ fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (St
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
                                         if (set.type == SetType.NORMAL) normal.toString() else setTypeName(set.type),
-                                        fontWeight = FontWeight.Bold,
+                                        style = NumberStyles.cell,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.width(72.dp),
                                     )
-                                    Text(setLine(context, info.kind, set.weightKg, set.reps, settings.unit))
+                                    Text(setLine(context, info.kind, set.weightKg, set.reps, settings.unit), style = NumberStyles.cell)
                                 }
                             }
                             if (exercise.notes.isNotBlank()) Text(exercise.notes, style = MaterialTheme.typography.bodySmall)

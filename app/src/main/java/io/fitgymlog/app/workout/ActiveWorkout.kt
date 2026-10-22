@@ -98,8 +98,41 @@ data class ActiveWorkout(
 
     fun setWeight(ref: SetRef, weightKg: Double?): ActiveWorkout = updateSet(ref) { it.copy(weightKg = weightKg) }
 
+    /** Also moves every later set that isn't done yet, the usual case when the whole 5x5 goes up. */
+    fun setWeightFromHere(ref: SetRef, weightKg: Double?): ActiveWorkout {
+        if (setAt(ref) == null) return this
+        return updateExercise(ref.exerciseIndex) { exercise ->
+            exercise.copy(
+                sets = exercise.sets.mapIndexed { index, set ->
+                    if (index == ref.setIndex || (index > ref.setIndex && !set.isCompleted)) set.copy(weightKg = weightKg) else set
+                },
+            )
+        }
+    }
+
     fun setReps(ref: SetRef, reps: Int?): ActiveWorkout = updateSet(ref) { set ->
         if (set.isCompleted) set.copy(reps = reps) else set.copy(reps = reps, targetReps = reps)
+    }
+
+    /**
+     * Sets this set's reps and carries them to later open sets that were blank or matched it,
+     * so picking 5 once fills a 5x5 without touching a set already planned differently.
+     */
+    fun setRepsFromHere(ref: SetRef, reps: Int?): ActiveWorkout {
+        val before = setAt(ref) ?: return this
+        val previousReps = before.reps
+        return updateExercise(ref.exerciseIndex) { exercise ->
+            exercise.copy(
+                sets = exercise.sets.mapIndexed { index, set ->
+                    val carries = index > ref.setIndex && !set.isCompleted && (set.reps == null || set.reps == previousReps)
+                    when {
+                        index == ref.setIndex && set.isCompleted -> set.copy(reps = reps)
+                        index == ref.setIndex || carries -> set.copy(reps = reps, targetReps = reps)
+                        else -> set
+                    }
+                },
+            )
+        }
     }
 
     fun setDuration(ref: SetRef, seconds: Int?): ActiveWorkout = updateSet(ref) { it.copy(durationSeconds = seconds) }

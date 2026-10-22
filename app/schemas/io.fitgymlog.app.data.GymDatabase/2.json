@@ -1,8 +1,8 @@
 {
   "formatVersion": 1,
   "database": {
-    "version": 1,
-    "identityHash": "80e4f18a9bc31a25aebf6d13c91ccd98",
+    "version": 2,
+    "identityHash": "9ed0075d414bd50a29d5da7bced304ab",
     "entities": [
       {
         "tableName": "workout",
@@ -432,11 +432,42 @@
             "id"
           ]
         }
+      },
+      {
+        "tableName": "exercise_link",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`exerciseId` TEXT NOT NULL, `url` TEXT NOT NULL, `addedAt` INTEGER NOT NULL, PRIMARY KEY(`exerciseId`, `url`))",
+        "fields": [
+          {
+            "fieldPath": "exerciseId",
+            "columnName": "exerciseId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "url",
+            "columnName": "url",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "addedAt",
+            "columnName": "addedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "exerciseId",
+            "url"
+          ]
+        }
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '80e4f18a9bc31a25aebf6d13c91ccd98')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9ed0075d414bd50a29d5da7bced304ab')"
     ]
   }
 }
