@@ -56,8 +56,8 @@ import io.fitgymlog.app.ui.formatRest
 import io.fitgymlog.app.ui.formatWeightNumber
 import io.fitgymlog.app.ui.fromDisplayWeight
 import io.fitgymlog.app.ui.localizedName
-import io.fitgymlog.app.ui.workout.REST_CHOICES
-import io.fitgymlog.app.ui.workout.usesWeight
+import io.fitgymlog.app.ui.REST_CHOICES
+import io.fitgymlog.app.ui.usesWeight
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

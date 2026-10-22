@@ -65,8 +65,8 @@ import io.fitgymlog.app.ui.TwoPaneMinWidth
 import io.fitgymlog.app.ui.formatClock
 import io.fitgymlog.app.ui.formatWeightNumber
 import io.fitgymlog.app.ui.localizedName
-import io.fitgymlog.app.ui.workout.Stat
-import io.fitgymlog.app.ui.workout.setTypeName
+import io.fitgymlog.app.ui.Stat
+import io.fitgymlog.app.ui.setTypeName
 import io.fitgymlog.app.workout.setLine
 import java.time.Duration
 import java.time.ZoneId

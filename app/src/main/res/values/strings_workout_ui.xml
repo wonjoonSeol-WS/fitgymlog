@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="set_editor_title_typed">%1$s, %2$s</string>
+    <string name="next_exercise">Next exercise</string>
+    <string name="seconds_short">%1$ds</string>
+    <string name="previous_weight_amount">%1$s × %2$s</string>
+</resources>

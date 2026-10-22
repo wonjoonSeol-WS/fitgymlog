@@ -1,35 +1,41 @@
 package io.fitgymlog.app.ui
 
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material3.NavigationRail
-import androidx.compose.material3.NavigationRailItem
-import androidx.compose.material3.NavigationRailItemDefaults
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -60,7 +66,7 @@ private object Routes {
 
     fun routine(id: Long) = "routine/$id"
     fun workout(id: Long) = "workout/$id"
-    fun exercise(id: String) = "exercise/$id"
+    fun exercise(id: String) = "exercise/${Uri.encode(id)}"
 }
 
 private data class Tab(val route: String, val label: Int, val icon: ImageVector)
@@ -86,73 +92,79 @@ fun AppNavigation(openActiveWorkout: Boolean, navController: NavHostController =
     }
 
     BoxWithConstraints(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        if (maxWidth >= NavigationRailMinWidth) {
-            Row(Modifier.fillMaxSize()) {
-                if (showTabs) {
-                    NavigationRail(containerColor = MaterialTheme.colorScheme.background, modifier = Modifier.statusBarsPadding()) {
-                        Spacer(Modifier.height(12.dp))
-                        tabs.forEach { tab ->
-                            NavigationRailItem(
-                                selected = currentRoute == tab.route,
-                                onClick = { open(tab) },
-                                icon = { Icon(tab.icon, null) },
-                                label = { Text(stringResource(tab.label)) },
-                                colors = NavigationRailItemDefaults.colors(
-                                    selectedIconColor = MaterialTheme.colorScheme.primary,
-                                    selectedTextColor = MaterialTheme.colorScheme.primary,
-                                    indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                ),
-                            )
-                        }
-                    }
-                }
+        val rail = maxWidth >= NavigationRailMinWidth
+        Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
+            bottomBar = { if (showTabs && !rail) TabBar(currentRoute, ::open) },
+        ) { padding ->
+            val bottom = padding.calculateBottomPadding()
+            Row(Modifier.fillMaxSize().padding(bottom = bottom).consumeWindowInsets(PaddingValues(bottom = bottom))) {
+                if (showTabs && rail) TabRail(currentRoute, ::open)
                 AppNavHost(navController, openActiveWorkout, Modifier.weight(1f))
-            }
-        } else {
-            Scaffold(
-                bottomBar = {
-                    if (showTabs) {
-                        NavigationBar(containerColor = MaterialTheme.colorScheme.background, tonalElevation = 0.dp) {
-                            tabs.forEach { tab ->
-                                NavigationBarItem(
-                                    selected = currentRoute == tab.route,
-                                    onClick = { open(tab) },
-                                    icon = { Icon(tab.icon, null) },
-                                    label = { Text(stringResource(tab.label)) },
-                                    colors = NavigationBarItemDefaults.colors(
-                                        selectedIconColor = MaterialTheme.colorScheme.primary,
-                                        selectedTextColor = MaterialTheme.colorScheme.primary,
-                                        indicatorColor = MaterialTheme.colorScheme.background,
-                                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    ),
-                                )
-                            }
-                        }
-                    }
-                },
-            ) { padding ->
-                AppNavHost(
-                    navController,
-                    openActiveWorkout,
-                    Modifier
-                        .padding(bottom = padding.calculateBottomPadding())
-                        .consumeWindowInsets(PaddingValues(bottom = padding.calculateBottomPadding())),
-                )
             }
         }
     }
 }
 
 @Composable
+private fun TabBar(currentRoute: String?, onOpen: (Tab) -> Unit) {
+    NavigationBar(containerColor = MaterialTheme.colorScheme.background, tonalElevation = 0.dp) {
+        tabs.forEach { tab ->
+            NavigationBarItem(
+                selected = currentRoute == tab.route,
+                onClick = { onOpen(tab) },
+                icon = { Icon(tab.icon, null) },
+                label = { Text(stringResource(tab.label)) },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                    indicatorColor = MaterialTheme.colorScheme.background,
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
+            )
+        }
+    }
+}
+
+@Composable
+private fun TabRail(currentRoute: String?, onOpen: (Tab) -> Unit) {
+    NavigationRail(containerColor = MaterialTheme.colorScheme.background, modifier = Modifier.statusBarsPadding()) {
+        Spacer(Modifier.height(12.dp))
+        tabs.forEach { tab ->
+            NavigationRailItem(
+                selected = currentRoute == tab.route,
+                onClick = { onOpen(tab) },
+                icon = { Icon(tab.icon, null) },
+                label = { Text(stringResource(tab.label)) },
+                colors = NavigationRailItemDefaults.colors(
+                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                    indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
+            )
+        }
+    }
+}
+
+/** Ignores a second tap that arrives after [entry] has already left, and never leaves the stack empty. */
+private fun NavHostController.popFrom(entry: NavBackStackEntry) {
+    if (currentBackStackEntry?.id != entry.id) return
+    if (!popBackStack()) navigate(Routes.HOME)
+}
+
+private fun NavHostController.leaveWorkout(savedId: Long?) {
+    navigate(savedId?.let(Routes::workout) ?: Routes.HOME) {
+        popUpTo(Routes.HOME)
+        launchSingleTop = true
+    }
+}
+
+@Composable
 private fun AppNavHost(navController: NavHostController, openActiveWorkout: Boolean, modifier: Modifier) {
-    NavHost(
-        navController = navController,
-        startDestination = if (openActiveWorkout) Routes.ACTIVE else Routes.HOME,
-        modifier = modifier,
-    ) {
+    NavHost(navController = navController, startDestination = Routes.HOME, modifier = modifier) {
         composable(Routes.HOME) {
             HomeScreen(
                 onOpenWorkout = { navController.navigate(Routes.ACTIVE) { launchSingleTop = true } },
@@ -167,30 +179,34 @@ private fun AppNavHost(navController: NavHostController, openActiveWorkout: Bool
             )
         }
         composable(Routes.SETTINGS) { SettingsScreen(onOpenBandGuide = { navController.navigate(Routes.BAND_GUIDE) }) }
-        composable(Routes.BAND_GUIDE) { BandGuideScreen(onBack = { navController.popBackStack() }) }
-        composable(Routes.ACTIVE) {
+        composable(Routes.BAND_GUIDE) { entry -> BandGuideScreen(onBack = { navController.popFrom(entry) }) }
+        composable(Routes.ACTIVE) { entry ->
             ActiveWorkoutScreen(
-                onBack = { if (!navController.popBackStack()) navController.navigate(Routes.HOME) },
-                onFinished = { savedId ->
-                    navController.navigate(savedId?.let(Routes::workout) ?: Routes.HOME) {
-                        popUpTo(Routes.ACTIVE) { inclusive = true }
-                    }
-                },
+                onBack = { navController.popFrom(entry) },
+                onFinished = navController::leaveWorkout,
                 onOpenExercise = { navController.navigate(Routes.exercise(it)) },
             )
         }
         composable(Routes.ROUTINE, listOf(navArgument("id") { type = NavType.LongType })) { entry ->
-            RoutineEditorScreen(routineId = entry.arguments?.getLong("id") ?: 0L, onDone = { navController.popBackStack() })
+            RoutineEditorScreen(routineId = entry.arguments?.getLong("id") ?: 0L, onDone = { navController.popFrom(entry) })
         }
         composable(Routes.WORKOUT, listOf(navArgument("id") { type = NavType.LongType })) { entry ->
             WorkoutDetailScreen(
                 workoutId = entry.arguments?.getLong("id") ?: 0L,
-                onBack = { if (!navController.popBackStack()) navController.navigate(Routes.HOME) },
+                onBack = { navController.popFrom(entry) },
                 onOpenExercise = { navController.navigate(Routes.exercise(it)) },
             )
         }
         composable(Routes.EXERCISE, listOf(navArgument("id") { type = NavType.StringType })) { entry ->
-            ExerciseDetailScreen(exerciseId = entry.arguments?.getString("id").orEmpty(), onBack = { navController.popBackStack() })
+            ExerciseDetailScreen(exerciseId = entry.arguments?.getString("id").orEmpty(), onBack = { navController.popFrom(entry) })
         }
+    }
+
+    // MainActivity recomputes openActiveWorkout on every recreation; only the first launch may act on it.
+    var launchHandled by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        if (launchHandled) return@LaunchedEffect
+        launchHandled = true
+        if (openActiveWorkout) navController.navigate(Routes.ACTIVE) { launchSingleTop = true }
     }
 }
