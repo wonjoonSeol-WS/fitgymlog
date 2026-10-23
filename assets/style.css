@@ -107,6 +107,7 @@ p, li { text-wrap: pretty; }
 .stack { position: relative; width: min(400px, 100%); margin: 0 auto; padding: 0 0 40px 120px; }
 .stack .phone { width: 100%; max-width: 280px; }
 .stack .fit3 { position: absolute; left: 0; bottom: 0; width: 50%; max-width: 200px; filter: drop-shadow(0 12px 24px rgba(0, 0, 0, .35)); }
+.stack .hero-watch { position: absolute; right: -24px; bottom: 8px; width: 38%; max-width: 150px; border-width: 7px; }
 
 .fit3 { display: block; overflow: visible; }
 .fit3 .strap { fill: #d8d3c6; }
@@ -336,6 +337,7 @@ code { background: var(--bg-soft); padding: 1px 6px; border-radius: 5px; font-si
   .site-nav { margin-left: 0; order: 3; width: 100%; }
   .languages { margin-left: auto; }
   .stack { padding-left: 90px; }
+  .stack .hero-watch { right: -12px; }
   .barbell .p20, .barbell .p15 { display: none; }
   .sets td { padding: 14px 10px; }
   .sets td:first-child { width: 44px; font-size: 22px; }
