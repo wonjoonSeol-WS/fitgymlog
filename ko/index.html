@@ -142,12 +142,15 @@
     <section class="block band" id="stats">
       <div class="wrap">
         <h2>운동량, 체중, 최고 기록을 한눈에 봐요</h2>
-        <p class="lead">최근 12주의 운동 횟수, 시간, 볼륨을 주별로 보고, 체중은 하루하루 출렁임을 고른 추세로 봐요.</p>
-        <ul class="shots two">
+        <p class="lead">최근 12주의 운동 횟수, 시간, 볼륨을 주별로 보고, 체중은 하루하루 출렁임을 고른 추세로 봐요.
+          한 주의 마지막 날 저녁에는 주간 체크인이 지난주와 비교해 한 주를 정리해 줘요.</p>
+        <ul class="shots">
           <li><figure><div class="phone"><img src="../images/stats-ko.webp" width="540" height="1110" alt="통계 탭: 최근 12주 주별 운동 횟수 막대그래프, 체중 추세 78.2kg와 최근 4주 동안 주당 -0.3kg, 매일 기록 위로 그린 추세선" loading="lazy"></div>
             <figcaption>주별 운동과 체중 추세를 봐요</figcaption></figure></li>
           <li><figure><div class="phone"><img src="../images/records-ko.webp" width="540" height="1110" alt="스쿼트 (바벨) 운동 상세: 최고 무게 125kg, 예상 1RM 145.8kg, 8월 14일부터 꾸준히 오른 기록 추이 그래프" loading="lazy"></div>
             <figcaption>운동마다 최고 기록을 남기고, 새 기록은 기록 탭에도 표시해요</figcaption></figure></li>
+          <li><figure><div class="phone"><img src="../images/checkin-ko.webp" width="540" height="1110" alt="10월 18일부터 10월 24일까지의 주간 체크인: 운동 2회(지난주 3회), 1.9시간(지난주 2.6시간), 볼륨 13,062.5kg(지난주 17,975kg), 스쿼트, 벤치 프레스, 벤트 오버 로우, 오버헤드 프레스, 데드리프트의 새 기록, 목표 반복은 모두 채움, 체중 추세 78.2kg로 이번 주 0.3kg 감소" loading="lazy"></div>
+            <figcaption>주간 체크인으로 한 주를 돌아보고, 다음 주 변경은 코치가 제안해요</figcaption></figure></li>
         </ul>
       </div>
     </section>
@@ -238,14 +241,14 @@
     <section class="block soft" id="cardio">
       <div class="wrap">
         <h2>유산소도 함께 기록해요</h2>
-        <p class="lead">러닝머신, 천국의 계단, 실내 사이클, 로잉 머신을 분 단위로 기록해요. 러닝머신은 속도와 경사, 나머지는 강도도 함께 남겨요. 루틴에 '경사 12로 20분'처럼 넣어 두면 시작할 때 미리 채워 둬요. 유산소는 Samsung Health에 따로 한 세션으로 남아요. 프로그램은 StrongLifts 5x5, 전신, 상체/하체, 푸시/풀/레그 중에 고르거나 직접 만들어요.</p>
+        <p class="lead">러닝머신, 천국의 계단, 실내 사이클, 로잉 머신을 분 단위로 기록해요. 러닝머신은 속도와 경사, 나머지는 강도도 함께 남기고, 로잉 머신은 거리도 남겨요. 루틴에 '경사 12로 20분'처럼 넣어 두면 시작할 때 미리 채워 둬요. 유산소는 Samsung Health에 따로 한 세션으로 남고, 허용하면 러닝머신 속도와 거리도 함께 보내요. 프로그램은 StrongLifts 5x5, 전신, 상체/하체, 푸시/풀/레그 중에 고르거나 직접 만들어요.</p>
       </div>
     </section>
 
     <section class="block" id="coach">
       <div class="wrap">
         <h2>오늘 들 무게, 코치가 알려 줘요</h2>
-        <p class="lead">최근 세 번의 기록을 보고 정하고, 바쁜 날엔 운동도 줄여 줘요. 내가 적용을 눌러야 바뀌어요.</p>
+        <p class="lead">최근 세 번의 기록을 보고 정하고, 바쁜 날엔 운동도 줄여 주고, 얼마나 쉬었는지도 알아요. 내가 적용을 눌러야 바뀌어요.</p>
         <div class="coach-shots">
           <figure>
             <div class="app-screen" role="img" aria-label="오늘의 목표 카드 예시. 스쿼트 (바벨) 80 kg x 5회, 지난번과 같은 무게, 무릎이 뻐근해서 지난번 무게 그대로. 데드리프트 (바벨) 100 kg x 5회, 지난번보다 5kg 더, 지난번 5회 모두 성공. 아래에 모두 적용과 나중에 버튼.">
@@ -301,10 +304,10 @@
         </div>
         <div class="split coach">
           <div class="coach-key">
-            <h3>내 API 키로 써요</h3>
-            <p>켜기 전에는 꺼져 있어요. 켜면 내 키로 내가 고른 제공자에게만 보내고, 개발자에게는 아무것도 오지 않아요.</p>
+            <h3>내 API 키로, 또는 내 컴퓨터로 써요</h3>
+            <p>켜기 전에는 꺼져 있어요. 켜면 내 키로 내가 고른 제공자에게만 보내거나, Ollama, LM Studio처럼 내 네트워크에 있는 모델에 키 없이 보내요. 개발자에게는 아무것도 오지 않아요.</p>
             <ul class="providers" aria-label="연결할 수 있는 제공자">
-              <li>OpenAI</li><li>Gemini</li><li>Anthropic</li><li>OpenRouter</li><li>Groq</li><li>DeepSeek</li><li>OpenAI 호환 주소</li>
+              <li>OpenAI</li><li>Gemini</li><li>Anthropic</li><li>OpenRouter</li><li>Groq</li><li>DeepSeek</li><li>OpenAI 호환 주소</li><li>내 네트워크의 Ollama, LM Studio</li>
             </ul>
             <p><a href="../privacy.html#ko">보내는 내용 자세히 보기</a></p>
           </div>
@@ -313,6 +316,7 @@
             <table class="prices">
               <thead><tr><th scope="col">모델</th><th scope="col">주 3회</th><th scope="col">매일</th></tr></thead>
               <tbody>
+                <tr><td>내 컴퓨터의 모델</td><td>무료</td><td>무료</td></tr>
                 <tr><td>Gemini 3.8 Flash 무료 등급*</td><td>무료</td><td>무료 (하루 한도)</td></tr>
                 <tr><td>GPT-6 Luna</td><td>$0.01</td><td>$0.02</td></tr>
                 <tr><td>Claude Haiku 5.5</td><td>$0.01</td><td>$0.03</td></tr>

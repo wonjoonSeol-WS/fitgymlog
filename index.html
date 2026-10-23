@@ -142,12 +142,15 @@
     <section class="block band" id="stats">
       <div class="wrap">
         <h2>Your weeks, weight and records</h2>
-        <p class="lead">Workouts, time or volume for each of the last 12 weeks, and a weight trend that evens out day-to-day swings.</p>
-        <ul class="shots two">
+        <p class="lead">Workouts, time or volume for each of the last 12 weeks, and a weight trend that evens out day-to-day swings.
+          On the last evening of each week, a check-in sums up the week against the one before.</p>
+        <ul class="shots">
           <li><figure><div class="phone"><img src="images/stats-en.webp" width="540" height="1110" alt="The Stats tab: workouts in each of the last 12 weeks as bars, then a weight trend of 78.2 kg, down 0.3 kg a week over the last 4 weeks, drawn over the daily readings" loading="lazy"></div>
             <figcaption>Each week, and your weight trend</figcaption></figure></li>
           <li><figure><div class="phone"><img src="images/records-en.webp" width="540" height="1110" alt="Squat (Barbell): heaviest set 125 kg and estimated 1RM 145.8 kg, with a progress chart rising steadily since Aug 14" loading="lazy"></div>
             <figcaption>Records for each exercise, with new ones marked in History</figcaption></figure></li>
+          <li><figure><div class="phone"><img src="images/checkin-en.webp" width="540" height="1110" alt="Weekly check-in for Oct 18 to Oct 24: 2 workouts against 3 last week, 1.9 h against 2.6 h, 13,062.5 kg of volume against 17,975 kg, new records on the squat, bench press, row, overhead press and deadlift, every target hit, and a weight trend of 78.2 kg, down 0.3 kg this week" loading="lazy"></div>
+            <figcaption>A weekly check-in, and next week's changes from the coach</figcaption></figure></li>
         </ul>
       </div>
     </section>
@@ -239,14 +242,14 @@
     <section class="block soft" id="cardio">
       <div class="wrap">
         <h2>Cardio and ready-made programs</h2>
-        <p class="lead">Log the treadmill, the stair machine, the bike or the rower in minutes, with the treadmill's speed and incline or the machine's level, and plan them in a routine: 20 minutes at incline 12 is filled in when you start. Each block goes to Samsung Health as its own session. Start from StrongLifts 5x5, full body, upper/lower or push/pull/legs, or build your own.</p>
+        <p class="lead">Log the treadmill, the stair machine, the bike or the rower in minutes, with the treadmill's speed and incline or the machine's level, and the rower's distance, and plan them in a routine: 20 minutes at incline 12 is filled in when you start. Each block goes to Samsung Health as its own session, with the treadmill's speed and the distance if you allow them. Start from StrongLifts 5x5, full body, upper/lower or push/pull/legs, or build your own.</p>
       </div>
     </section>
 
     <section class="block" id="coach">
       <div class="wrap">
         <h2>A coach for what to lift today</h2>
-        <p class="lead">It works from your last three sessions and trims the workout on a busy day. Nothing changes until you tap Apply.</p>
+        <p class="lead">It works from your last three sessions, trims the workout on a busy day and knows how long you've rested. Nothing changes until you tap Apply.</p>
         <div class="coach-shots">
           <figure>
             <div class="app-screen" role="img" aria-label="Example Today's targets card. Squat (Barbell) 80 kg x 5, same as last time, because the knee feels stiff. Deadlift (Barbell) 100 kg x 5, 5 kg more, because all 5 reps were done last time. Apply all and Not now buttons below.">
@@ -302,10 +305,10 @@
         </div>
         <div class="split coach">
           <div class="coach-key">
-            <h3>On your own API key</h3>
-            <p>Off until you turn it on. Then it sends only to the provider you pick, with your own key, and nothing to the developer.</p>
+            <h3>On your own key, or your own computer</h3>
+            <p>Off until you turn it on. Then it sends only to the provider you pick, with your own key, or to a model on your own network, such as Ollama or LM Studio, with no key at all. Nothing goes to the developer.</p>
             <ul class="providers" aria-label="Providers you can connect">
-              <li>OpenAI</li><li>Gemini</li><li>Anthropic</li><li>OpenRouter</li><li>Groq</li><li>DeepSeek</li><li>Any OpenAI-compatible address</li>
+              <li>OpenAI</li><li>Gemini</li><li>Anthropic</li><li>OpenRouter</li><li>Groq</li><li>DeepSeek</li><li>Any OpenAI-compatible address</li><li>Ollama or LM Studio on your network</li>
             </ul>
             <p><a href="privacy.html">What is sent, in detail</a></p>
           </div>
@@ -314,6 +317,7 @@
             <table class="prices">
               <thead><tr><th scope="col">Model</th><th scope="col">3 days a week</th><th scope="col">Every day</th></tr></thead>
               <tbody>
+                <tr><td>A model on your own computer</td><td>Free</td><td>Free</td></tr>
                 <tr><td>Gemini 3.8 Flash, free tier*</td><td>Free</td><td>Free (daily cap)</td></tr>
                 <tr><td>GPT-6 Luna</td><td>$0.01</td><td>$0.02</td></tr>
                 <tr><td>Claude Haiku 5.5</td><td>$0.01</td><td>$0.03</td></tr>
