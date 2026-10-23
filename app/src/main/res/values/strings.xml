@@ -223,6 +223,12 @@
     <string name="load_above">Last 7 days: %1$d%% above your usual week. Good for getting fitter, but watch for fatigue.</string>
     <string name="load_steady">Last 7 days: about your usual week.</string>
     <string name="load_below">Last 7 days: %1$d%% below your usual week.</string>
+    <string name="training_load">Training load</string>
+    <string name="load_last_week">Last 7 days</string>
+    <string name="load_usual_week">Usual week</string>
+    <string name="load_recent">Recent workouts</string>
+    <string name="load_explain">Each rated workout adds its effort times its minutes. The solid line is the total of the 7 days up to each day; the dashed line is the usual week, a quarter of the 28 days up to that day. Unrated workouts add nothing, so rate the ones below to fill it in.</string>
+    <string name="load_chart_description">Training load over 8 weeks. Last 7 days %1$s, usual week %2$s.</string>
     <string name="effort_unrated">Rate</string>
     <string name="effort_rate">Rate how hard it felt</string>
     <string name="effort_question">How hard was this workout?</string>

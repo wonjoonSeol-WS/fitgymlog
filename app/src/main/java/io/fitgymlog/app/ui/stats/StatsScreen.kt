@@ -121,7 +121,7 @@ private val EditingSaver = listSaver<Editing?, Any>(
 )
 
 @Composable
-fun StatsScreen(onOpenExercise: (String) -> Unit, onOpenCheckIn: () -> Unit) {
+fun StatsScreen(onOpenExercise: (String) -> Unit, onOpenCheckIn: () -> Unit, onOpenLoad: () -> Unit) {
     val context = LocalContext.current
     val app = context.container
     val coach = app.coach
@@ -193,6 +193,15 @@ fun StatsScreen(onOpenExercise: (String) -> Unit, onOpenCheckIn: () -> Unit) {
                     headlineContent = { Text(stringResource(R.string.check_in)) },
                     supportingContent = { Text(weekLine(resources, summary)) },
                     modifier = Modifier.clickable(onClick = onOpenCheckIn),
+                )
+            }
+        }
+        history?.takeIf { it.isNotEmpty() }?.let { workouts ->
+            item(key = "load") {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.training_load)) },
+                    supportingContent = { Text(loadHeadline(workouts)) },
+                    modifier = Modifier.clickable(onClick = onOpenLoad),
                 )
             }
         }
@@ -396,20 +405,7 @@ private fun WeeklySection(history: List<Workout>, unit: WeightUnit, measure: Wee
             minStep = if (measure == WeeklyMeasure.TIME) 0.0 else 1.0,
         )
         Text(stringResource(R.string.week_this, label(bars.last().value)), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        if (measure == WeeklyMeasure.LOAD) LoadText(history)
     }
-}
-
-/** Like Apple's training load: the last 7 days against the usual week, or how to get a reading at all. */
-@Composable
-private fun LoadText(history: List<Workout>) {
-    val comparison = remember(history) { loadComparison(history, Instant.now()) }
-    val text = if (comparison == null) stringResource(R.string.load_none) else when (comparison.trend) {
-        LoadTrend.ABOVE -> stringResource(R.string.load_above, comparison.percent)
-        LoadTrend.STEADY -> stringResource(R.string.load_steady)
-        LoadTrend.BELOW -> stringResource(R.string.load_below, -comparison.percent)
-    }
-    Text(text, style = MaterialTheme.typography.bodyMedium)
 }
 
 @StringRes

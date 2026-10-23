@@ -140,6 +140,24 @@ internal fun loadComparison(history: List<Workout>, now: Instant): LoadCompariso
 
 private const val STEADY_BAND = 0.1
 
+/** Each day's rolling 7-day load, and the usual week behind it: the 28 days to that day, a quarter of them. */
+internal data class LoadSeries(val lastWeek: List<ChartPoint>, val usualWeek: List<ChartPoint>)
+
+/** The last [days] days, oldest first, less any empty ones at the start beyond the last two weeks; null while nothing in or just before them is rated. */
+internal fun loadSeries(history: List<Workout>, today: LocalDate, zone: ZoneId, days: Int = LOAD_DAYS): LoadSeries? {
+    val byDay = history.groupBy { it.startedAt.atZone(zone).toLocalDate() }.mapValues { (_, workouts) -> workouts.sumOf(::trainingLoad) }
+    fun loadOver(end: LocalDate, length: Long) = (0 until length).sumOf { byDay[end.minusDays(it)] ?: 0.0 }
+    val dates = (days - 1 downTo 0).map { today.minusDays(it.toLong()) }
+    val usual = dates.map { ChartPoint(it, loadOver(it, 28) / 4) }
+    // A day with no usual load has no 7-day load either, so the empty days are the ones before the first usual load.
+    val first = usual.indexOfFirst { it.value > 0.0 }.takeIf { it >= 0 } ?: return null
+    val start = minOf(first, dates.size - MIN_LOAD_DAYS).coerceAtLeast(0)
+    return LoadSeries(dates.drop(start).map { ChartPoint(it, loadOver(it, 7)) }, usual.drop(start))
+}
+
+private const val LOAD_DAYS = 56
+private const val MIN_LOAD_DAYS = 14
+
 internal data class ExerciseUse(val exerciseId: String, val sessions: Int, val lastDone: Instant)
 
 internal fun exerciseUses(history: List<Workout>): List<ExerciseUse> =

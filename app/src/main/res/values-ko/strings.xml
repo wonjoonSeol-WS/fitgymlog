@@ -221,6 +221,12 @@
     <string name="load_above">최근 7일: 평소 한 주보다 %1$d%% 높아요. 체력을 키우기 좋지만 피로에 주의하세요.</string>
     <string name="load_steady">최근 7일: 평소 한 주와 비슷해요.</string>
     <string name="load_below">최근 7일: 평소 한 주보다 %1$d%% 낮아요.</string>
+    <string name="training_load">훈련 부하</string>
+    <string name="load_last_week">최근 7일</string>
+    <string name="load_usual_week">평소 한 주</string>
+    <string name="load_recent">최근 운동</string>
+    <string name="load_explain">평가한 운동마다 힘든 정도에 운동 시간(분)을 곱해 더해요. 실선은 그날까지 7일의 합, 점선은 평소 한 주로 그날까지 28일 합의 4분의 1이에요. 평가하지 않은 운동은 더해지지 않으니 아래에서 평가해 채워 보세요.</string>
+    <string name="load_chart_description">8주 동안의 훈련 부하. 최근 7일 %1$s, 평소 한 주 %2$s.</string>
     <string name="effort_unrated">평가</string>
     <string name="effort_rate">얼마나 힘들었는지 평가</string>
     <string name="effort_question">이번 운동은 얼마나 힘들었나요?</string>

@@ -12,6 +12,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -28,17 +29,28 @@ import kotlin.math.pow
 
 data class ChartPoint(val date: LocalDate, val value: Double)
 
-/** Points are spaced by date, or evenly when they share one; with a [trend], they become dots under its line. [description] is read out instead. */
+/**
+ * Points are spaced by date, or evenly when they share one; with a [trend], they become dots under its line. A [baseline]
+ * is drawn dashed behind the points, which then go without dots. [description] is read out instead.
+ */
 @Composable
-fun LineChart(points: List<ChartPoint>, label: (Double) -> String, description: String, minStep: Double = 0.0, trend: List<ChartPoint> = emptyList()) {
+fun LineChart(
+    points: List<ChartPoint>,
+    label: (Double) -> String,
+    description: String,
+    minStep: Double = 0.0,
+    trend: List<ChartPoint> = emptyList(),
+    baseline: List<ChartPoint> = emptyList(),
+) {
     if (points.isEmpty()) return
     val measurer = rememberTextMeasurer()
     val line = MaterialTheme.colorScheme.primary
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant
     val grid = MaterialTheme.colorScheme.outlineVariant
     val textStyle = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
     val locale = LocalConfiguration.current.locales[0]
     val dateFormat = remember(locale) { DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "MMMd"), locale) }
-    val ticks = remember(points, trend, minStep) { (points + trend).let { all -> axisTicks(all.minOf { it.value }, all.maxOf { it.value }, minStep) } }
+    val ticks = remember(points, trend, baseline, minStep) { (points + trend + baseline).let { all -> axisTicks(all.minOf { it.value }, all.maxOf { it.value }, minStep) } }
     val top = ticks.first()
     val bottom = ticks.last()
     val sorted = points.sortedBy { it.date }
@@ -78,12 +90,20 @@ fun LineChart(points: List<ChartPoint>, label: (Double) -> String, description: 
             drawPath(path, line, style = stroke)
             drawCircle(line, radius = 5.dp.toPx(), center = Offset(x(trend.maxBy { it.date }.date), y(trend.maxBy { it.date }.value)))
         } else {
+            if (baseline.size > 1 && days > 0) {
+                val dashed = Path()
+                baseline.sortedBy { it.date }.forEachIndexed { index, point ->
+                    if (index == 0) dashed.moveTo(x(point.date), y(point.value)) else dashed.lineTo(x(point.date), y(point.value))
+                }
+                val dash = PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 5.dp.toPx()))
+                drawPath(dashed, muted, style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, pathEffect = dash))
+            }
             val path = Path()
             sorted.forEachIndexed { index, point ->
                 if (index == 0) path.moveTo(x(index), y(point.value)) else path.lineTo(x(index), y(point.value))
             }
             drawPath(path, line, style = stroke)
-            sorted.forEachIndexed { index, point -> drawCircle(line, radius = 3.dp.toPx(), center = Offset(x(index), y(point.value))) }
+            if (baseline.isEmpty()) sorted.forEachIndexed { index, point -> drawCircle(line, radius = 3.dp.toPx(), center = Offset(x(index), y(point.value))) }
             drawCircle(line, radius = 5.dp.toPx(), center = Offset(x(sorted.lastIndex), y(sorted.last().value)))
         }
     }

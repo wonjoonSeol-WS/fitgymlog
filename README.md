@@ -24,7 +24,7 @@ Download: [latest release](https://github.com/wonjoonSeol/fitgymlog/releases/lat
   chart (heaviest set, estimated 1RM, reps or time), with new records marked in History
 - A weekly check-in on the last evening of each week: workouts, time and volume against last week, new records, missed reps
   and the weight trend; with the coach on, it can suggest changes to your routines for next week
-- Rate how hard each workout felt, 1 to 10, right after you finish on the phone or watch, or later in History; Stats turns the ratings into a weekly training load, compared with your usual week as Apple Fitness does, and the coach takes them into account
+- Rate how hard each workout felt, 1 to 10, right after you finish on the phone or watch, or later in History; Stats turns the ratings into a training load screen that charts the last 7 days against your usual week as Apple Fitness does, and lists recent workouts to rate, and the coach takes them into account
 - An optional warm-up set: 5 reps on the empty bar before each barbell lift
 - Fix a finished workout's start and end, for the day you forgot to tap finish
 - Form guide videos and articles for the built-in lifts, with videos playing in the app (or in YouTube, if you prefer); add any YouTube or web link

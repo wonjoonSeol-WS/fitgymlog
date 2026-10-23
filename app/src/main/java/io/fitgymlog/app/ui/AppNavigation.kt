@@ -57,6 +57,7 @@ import io.fitgymlog.app.ui.home.HomeScreen
 import io.fitgymlog.app.ui.routine.RoutineEditorScreen
 import io.fitgymlog.app.ui.settings.SettingsScreen
 import io.fitgymlog.app.ui.stats.StatsScreen
+import io.fitgymlog.app.ui.stats.TrainingLoadScreen
 import io.fitgymlog.app.ui.workout.ActiveWorkoutScreen
 
 private object Routes {
@@ -73,6 +74,7 @@ private object Routes {
     const val COACH_SETTINGS = "coach-settings"
     const val COACH_MEMORY = "coach-memory"
     const val CHECK_IN = "check-in"
+    const val TRAINING_LOAD = "training-load"
 
     fun routine(id: Long) = "routine/$id"
     fun workout(id: Long) = "workout/$id"
@@ -201,6 +203,7 @@ private fun AppNavHost(navController: NavHostController, openActiveWorkout: Bool
             StatsScreen(
                 onOpenExercise = { navController.navigate(Routes.exercise(it, progressFirst = true)) },
                 onOpenCheckIn = { navController.navigate(Routes.CHECK_IN) },
+                onOpenLoad = { navController.navigate(Routes.TRAINING_LOAD) },
             )
         }
         composable(Routes.SETTINGS) {
@@ -225,6 +228,7 @@ private fun AppNavHost(navController: NavHostController, openActiveWorkout: Bool
         }
         composable(Routes.COACH_MEMORY) { entry -> CoachMemoryScreen(onBack = { navController.popFrom(entry) }) }
         composable(Routes.CHECK_IN) { entry -> CheckInScreen(onBack = { navController.popFrom(entry) }) }
+        composable(Routes.TRAINING_LOAD) { entry -> TrainingLoadScreen(onBack = { navController.popFrom(entry) }) }
         composable(Routes.BAND_GUIDE) { entry -> BandGuideScreen(onBack = { navController.popFrom(entry) }) }
         composable(Routes.ACTIVE) { entry ->
             ActiveWorkoutScreen(

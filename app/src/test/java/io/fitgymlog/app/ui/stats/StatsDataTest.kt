@@ -181,4 +181,33 @@ class StatsDataTest {
         // A first week of ratings has no usual week yet, rather than reading as four times above it.
         assertNull(loadComparison(listOf(rated("2026-10-22T10:00:00Z", effort = 8), rated("2026-10-23T10:00:00Z", effort = 6)), now))
     }
+
+    @Test
+    fun `each day's 7-day load and usual week roll forward, and nothing rated gives no series`() {
+        val zone = java.time.ZoneOffset.UTC
+        val today = LocalDate.parse("2026-10-24")
+        val history = listOf(rated("2026-10-10T10:00:00Z", effort = 5), rated("2026-10-22T10:00:00Z", effort = 7))
+
+        val series = loadSeries(history, today, zone, days = 14)!!
+
+        assertEquals(LocalDate.parse("2026-10-11"), series.lastWeek.first().date)
+        // Oct 22 falls in the 7 days to today; Oct 10 has dropped out of them but is still in the usual week.
+        assertEquals(420.0, series.lastWeek.last().value, 0.0)
+        assertEquals((300.0 + 420.0) / 4, series.usualWeek.last().value, 0.0)
+        // Oct 16: the 7 days back to Oct 10 hold its workout.
+        assertEquals(300.0, series.lastWeek.single { it.date == LocalDate.parse("2026-10-16") }.value, 0.0)
+        assertNull(loadSeries(listOf(rated("2026-10-22T10:00:00Z", effort = null)), today, zone))
+    }
+
+    @Test
+    fun `empty weeks before the first rating are left off, down to two weeks`() {
+        val zone = java.time.ZoneOffset.UTC
+        val today = LocalDate.parse("2026-10-24")
+
+        val recent = loadSeries(listOf(rated("2026-10-22T10:00:00Z", effort = 7)), today, zone)!!
+        val older = loadSeries(listOf(rated("2026-09-20T10:00:00Z", effort = 7)), today, zone)!!
+
+        assertEquals(LocalDate.parse("2026-10-11"), recent.lastWeek.first().date)
+        assertEquals(LocalDate.parse("2026-09-20"), older.usualWeek.first().date)
+    }
 }
