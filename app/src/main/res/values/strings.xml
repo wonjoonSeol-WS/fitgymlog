@@ -213,6 +213,10 @@
     <string name="use_on_band">Control with band</string>
     <string name="play_video">Play video</string>
     <string name="open_in_youtube">Open in YouTube</string>
+    <string name="exact_alarm_title">Buzz right when rest ends</string>
+    <string name="exact_alarm_text">Allow alarms and reminders for FitGymLog. Without it the rest buzz still comes, but with the phone still in a bag Android can hold it back a few minutes.</string>
+    <string name="exact_alarm_allow">Allow</string>
+    <string name="exact_alarm_not_now">Not now</string>
     <string name="app_version">FitGymLog %1$s</string>
     <string name="update_check">Check for updates</string>
     <string name="update_download">Get %1$s</string>

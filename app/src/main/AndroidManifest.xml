@@ -5,8 +5,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
-    <!-- Granted at install, unlike SCHEDULE_EXACT_ALARM; a rest timer is the timer case it exists for. -->
-    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <!-- Asked for once, in the workout screen; USE_EXACT_ALARM is for alarm clocks and calendars under Google Play policy. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.health.WRITE_EXERCISE" />
     <uses-permission android:name="android.permission.health.READ_EXERCISE" />
     <uses-permission android:name="android.permission.health.WRITE_SPEED" />
@@ -79,6 +79,15 @@
         <receiver
             android:name=".workout.RestOverReceiver"
             android:exported="false" />
+
+        <receiver
+            android:name=".workout.ExactAlarmPermissionReceiver"
+            android:exported="true">
+            <!-- Only the system sends this action; anything else only re-syncs the rest alarm. -->
+            <intent-filter>
+                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
 
         <receiver
             android:name=".checkin.CheckInReceiver"

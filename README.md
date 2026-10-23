@@ -61,9 +61,10 @@ uses that screen as a remote.
    previous corrects. The title changes in five-second steps timed to the end of the rest, so the band gets few updates.
    The session's duration is the rest length and its position runs at normal speed from 0:00, so the band's progress
    ring around the pause button fills as the rest goes by, like a song, without the app sending it anything per second.
-5. **The buzz.** When rest ends, an exact alarm (`AlarmManager.setExactAndAllowWhileIdle`) fires `RestOverReceiver`,
-   which posts a high-priority notification with vibration. Galaxy Wearable forwards notifications from apps switched
-   on in its Notifications settings, so the band buzzes and shows the next set.
+5. **The buzz.** When rest ends, an alarm fires `RestOverReceiver`, which posts a high-priority notification with
+   vibration. Galaxy Wearable forwards notifications from apps switched on in its Notifications settings, so the band
+   buzzes and shows the next set. The alarm is exact (`setExactAndAllowWhileIdle`) once you allow Alarms & reminders,
+   which the workout screen asks for once; without it, Android may hold it back a few minutes in deep sleep.
 
 **On the phone, by design:** because the workout is a playing media session, the phone treats it like music. On One UI
 the current set shows as a chip at the top left of the status bar, and tapping it opens the media player with previous,

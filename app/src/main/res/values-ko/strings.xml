@@ -212,6 +212,10 @@
     <string name="use_on_band">밴드로 조작하기</string>
     <string name="play_video">영상 재생</string>
     <string name="open_in_youtube">YouTube에서 열기</string>
+    <string name="exact_alarm_title">휴식이 끝나는 순간 진동</string>
+    <string name="exact_alarm_text">FitGymLog에 알람 및 리마인더를 허용하세요. 허용하지 않아도 휴식 끝 진동은 오지만, 휴대폰이 가방 속에 가만히 있으면 Android가 몇 분 늦출 수 있어요.</string>
+    <string name="exact_alarm_allow">허용</string>
+    <string name="exact_alarm_not_now">나중에</string>
     <string name="app_version">FitGymLog %1$s</string>
     <string name="update_check">업데이트 확인</string>
     <string name="update_download">%1$s 받기</string>

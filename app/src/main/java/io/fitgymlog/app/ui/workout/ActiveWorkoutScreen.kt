@@ -144,6 +144,7 @@ fun ActiveWorkoutScreen(onBack: () -> Unit, onFinished: (Long?) -> Unit, onOpenE
     val workoutList: @Composable (gutter: Dp) -> Unit = { gutter ->
         LazyColumn(state = listState, contentPadding = PaddingValues(start = gutter, end = gutter, bottom = 140.dp)) {
             item { WorkoutStats(workout, settings.unit) }
+            item { ExactAlarmCard() }
             item {
                 TargetsCard(workout, ::exerciseOf, settings.unit) { targets ->
                     change { current -> targets.fold(current) { next, target -> next.applyTarget(target.exerciseId, target.weightKg, target.reps) } }
