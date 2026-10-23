@@ -494,3 +494,56 @@ private fun formatStep(step: Double): String = if (step >= 1) step.toInt().toStr
 
 private const val DEFAULT_SPEED_KMH = 6.0
 private const val DEFAULT_DISTANCE_M = 2_000.0
+
+/** How hard the set was, 6 to 10, with what each means, since RPE is easy to misread as effort out of 10. */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+fun RpeSheet(title: String, selected: Double?, onPick: (Double?) -> Unit, onDismiss: () -> Unit) {
+    val haptics = LocalHapticFeedback.current
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = MaterialTheme.colorScheme.surface,
+    ) {
+        Column(
+            Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.rpe_help), style = MaterialTheme.typography.bodyMedium)
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                maxItemsInEachRow = 5,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                RPE_CHOICES.forEach { option ->
+                    val isSelected = option == selected
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.lift.field)
+                            .clickable {
+                                haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                onPick(option)
+                            },
+                    ) {
+                        Text(
+                            rpeText(option),
+                            style = NumberStyles.stat,
+                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                }
+            }
+            Row {
+                TextButton(onClick = { onPick(null) }) { Text(stringResource(R.string.clear)) }
+                Spacer(Modifier.weight(1f))
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) }
+            }
+        }
+    }
+}

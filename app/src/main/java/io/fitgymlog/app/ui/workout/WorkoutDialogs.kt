@@ -50,7 +50,7 @@ internal val PickerTargetSaver = Saver<PickerTarget?, Int>(
     restore = { if (it == ADD_TARGET) PickerTarget.Add else PickerTarget.Replace(it) },
 )
 
-internal enum class SetField { WEIGHT, AMOUNT, LEVEL, SPEED, DISTANCE }
+internal enum class SetField { WEIGHT, AMOUNT, LEVEL, SPEED, DISTANCE, RPE }
 
 internal data class SetEditor(val field: SetField, val ref: SetRef)
 
@@ -128,6 +128,15 @@ internal fun SetEditorSheet(
             initialMeters = set.distanceMeters ?: previousRows(exercise.sets, previous).getOrNull(ref.setIndex)?.distanceMeters,
             onSave = { meters ->
                 onChange { it.setDistance(ref, meters) }
+                onDismiss()
+            },
+            onDismiss = onDismiss,
+        )
+        SetField.RPE -> RpeSheet(
+            title = setTitle,
+            selected = set.rpe,
+            onPick = { rpe ->
+                onChange { it.setRpe(ref, rpe) }
                 onDismiss()
             },
             onDismiss = onDismiss,

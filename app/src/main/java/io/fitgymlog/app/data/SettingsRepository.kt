@@ -31,6 +31,7 @@ data class Settings(
     val bandGuideDismissed: Boolean = false,
     val playVideosInApp: Boolean = true,
     val askEffort: Boolean = true,
+    val logRpe: Boolean = false,
     val syncEnabled: Boolean = false,
     val syncAccount: String? = null,
     val lastSyncAt: Long? = null,
@@ -69,6 +70,7 @@ class SettingsRepository(context: Context) {
             putBoolean(BAND_GUIDE_DISMISSED, next.bandGuideDismissed)
             putBoolean(PLAY_VIDEOS_IN_APP, next.playVideosInApp)
             putBoolean(ASK_EFFORT, next.askEffort)
+            putBoolean(LOG_RPE, next.logRpe)
             putBoolean(SYNC_ENABLED, next.syncEnabled)
             putString(SYNC_ACCOUNT, next.syncAccount)
             if (next.lastSyncAt == null) remove(LAST_SYNC_AT) else putLong(LAST_SYNC_AT, next.lastSyncAt)
@@ -95,6 +97,7 @@ class SettingsRepository(context: Context) {
             bandGuideDismissed = prefs.getBoolean(BAND_GUIDE_DISMISSED, defaults.bandGuideDismissed),
             playVideosInApp = prefs.getBoolean(PLAY_VIDEOS_IN_APP, defaults.playVideosInApp),
             askEffort = prefs.getBoolean(ASK_EFFORT, defaults.askEffort),
+            logRpe = prefs.getBoolean(LOG_RPE, defaults.logRpe),
             syncEnabled = prefs.getBoolean(SYNC_ENABLED, defaults.syncEnabled),
             syncAccount = prefs.getString(SYNC_ACCOUNT, null),
             lastSyncAt = if (prefs.contains(LAST_SYNC_AT)) prefs.getLong(LAST_SYNC_AT, 0) else null,
@@ -118,6 +121,7 @@ class SettingsRepository(context: Context) {
         const val BAND_GUIDE_DISMISSED = "band_guide_dismissed"
         const val PLAY_VIDEOS_IN_APP = "play_videos_in_app"
         const val ASK_EFFORT = "ask_effort"
+        const val LOG_RPE = "log_rpe"
         const val SYNC_ENABLED = "sync_enabled"
         const val SYNC_ACCOUNT = "sync_account"
         const val LAST_SYNC_AT = "last_sync_at"

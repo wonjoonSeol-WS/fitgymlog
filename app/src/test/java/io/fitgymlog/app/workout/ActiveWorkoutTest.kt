@@ -569,4 +569,12 @@ class ActiveWorkoutTest {
         assertEquals(2, once.exercises[0].sets.count { it.isCompleted })
         assertEquals(once.exercises, twice.exercises)
     }
+
+    @Test
+    fun `an RPE stays on the 6 to 10 scale and can be cleared`() {
+        val ref = SetRef(0, 0)
+        assertEquals(8.5, workout().setRpe(ref, 8.5).exercises[0].sets[0].rpe)
+        assertEquals(10.0, workout().setRpe(ref, 12.0).exercises[0].sets[0].rpe)
+        assertNull(workout().setRpe(ref, 8.0).setRpe(ref, null).exercises[0].sets[0].rpe)
+    }
 }

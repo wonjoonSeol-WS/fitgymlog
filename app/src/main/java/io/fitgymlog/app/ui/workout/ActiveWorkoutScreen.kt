@@ -163,6 +163,7 @@ fun ActiveWorkoutScreen(onBack: () -> Unit, onFinished: (Long?) -> Unit, onOpenE
                     isLast = index == workout.exercises.lastIndex,
                     unit = settings.unit,
                     barKg = settings.barInKg,
+                    logRpe = settings.logRpe,
                     onChange = ::change,
                     onEditSet = { setEditor = it },
                     onReplace = { picker = PickerTarget.Replace(index) },

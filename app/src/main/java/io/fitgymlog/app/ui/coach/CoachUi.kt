@@ -51,6 +51,7 @@ fun FailureText(error: Throwable, modifier: Modifier = Modifier) {
 @StringRes
 fun reasonText(reason: TargetReason): Int? = when (reason) {
     TargetReason.ALL_REPS_DONE -> R.string.coach_reason_all_reps
+    TargetReason.HARD_SETS -> R.string.coach_reason_hard_sets
     TargetReason.MISSED_REPS -> R.string.coach_reason_missed
     TargetReason.STALLED -> R.string.coach_reason_stalled
     TargetReason.FIRST_TIME, TargetReason.SAME_AS_LAST -> null

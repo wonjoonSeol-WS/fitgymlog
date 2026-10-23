@@ -12,7 +12,8 @@ import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.roundToLong
 
-enum class TargetReason { FIRST_TIME, ALL_REPS_DONE, MISSED_REPS, STALLED, SAME_AS_LAST }
+/** [HARD_SETS]: every rep was done, but at or near failure by the logged RPE, so the weight holds. */
+enum class TargetReason { FIRST_TIME, ALL_REPS_DONE, HARD_SETS, MISSED_REPS, STALLED, SAME_AS_LAST }
 
 /** What the rules suggest for an exercise today, and how far a coach model may move away from it. */
 data class RuleTarget(
@@ -31,6 +32,7 @@ object Progression {
     /** How many past sessions [target] needs to see a stall. */
     const val HISTORY_SESSIONS = 3
     private const val STALL_SESSIONS = HISTORY_SESSIONS
+    private const val NEAR_FAILURE_RPE = 9.5
     private const val DELOAD = 0.9
     private const val LOWEST_SHARE = 0.8
     private const val HIGHEST_STEPS = 2
@@ -78,6 +80,8 @@ object Progression {
             working.take(STALL_SESSIONS).all { session -> sameWeight(hardest(session, assisted), lastWeight) && !succeeded(topSets(session, assisted)) }
         val forward = if (assisted) -step else step
         val (reason, weight) = when {
+            // Only a logged RPE can say a done set was a grind; without one, done means up, as it always has.
+            succeeded(topSets(last, assisted)) && topSets(last, assisted).any { (it.rpe ?: 0.0) >= NEAR_FAILURE_RPE } -> TargetReason.HARD_SETS to lastWeight
             succeeded(topSets(last, assisted)) -> TargetReason.ALL_REPS_DONE to tidy((lastWeight + forward).coerceAtLeast(0.0))
             stalled -> TargetReason.STALLED to if (assisted) roundUp(lastWeight / DELOAD, step) else roundDown(lastWeight * DELOAD, step)
             else -> TargetReason.MISSED_REPS to lastWeight

@@ -214,6 +214,10 @@
     <string name="play_video">Play video</string>
     <string name="open_in_youtube">Open in YouTube</string>
     <string name="effort">Effort</string>
+    <string name="col_rpe" translatable="false">RPE</string>
+    <string name="rpe_help">How many reps you had left: 10 none, 9 one, 8 two, 7 three, 6 four or more.</string>
+    <string name="setting_log_rpe">Log RPE per set</string>
+    <string name="setting_log_rpe_help">Adds an RPE column for how close each set was to failure. A done set at 9.5 or 10 keeps its weight next time instead of going up.</string>
     <string name="week_load">Load</string>
     <string name="load_none">Rate how hard your workouts felt, after you finish or from History. After a week of ratings, the last 7 days are compared with your usual week.</string>
     <string name="load_above">Last 7 days: %1$d%% above your usual week. Good for getting fitter, but watch for fatigue.</string>

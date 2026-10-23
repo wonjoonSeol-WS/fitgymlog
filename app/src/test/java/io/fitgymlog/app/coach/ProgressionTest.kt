@@ -39,6 +39,17 @@ class ProgressionTest {
     }
 
     @Test
+    fun `every rep done but a top set at RPE 9_5 or more holds the weight, while easier RPE still goes up`() {
+        val grind = fives(100.0, 5, 5, 5, 5, 5).mapIndexed { index, set -> if (index == 4) set.copy(rpe = 9.5) else set.copy(rpe = 8.0) }
+        val comfortable = fives(100.0, 5, 5, 5, 5, 5).map { it.copy(rpe = 8.5) }
+
+        val held = Progression.target(squat, listOf(grind), WeightUnit.KG)
+        assertEquals(TargetReason.HARD_SETS, held.reason)
+        assertEquals(100.0, held.weightKg!!, 0.0)
+        assertEquals(TargetReason.ALL_REPS_DONE, Progression.target(squat, listOf(comfortable), WeightUnit.KG).reason)
+    }
+
+    @Test
     fun `a missed rep repeats the weight`() {
         val target = Progression.target(squat, listOf(fives(60.0, 5, 5, 5, 4, 3)), WeightUnit.KG)
 

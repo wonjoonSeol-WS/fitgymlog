@@ -190,6 +190,9 @@ data class ActiveWorkout(
 
     fun setLevel(ref: SetRef, level: Int?): ActiveWorkout = updateSet(ref) { it.copy(level = level) }
 
+    /** How hard one set was on the 6 to 10 scale, in halves; null clears it. */
+    fun setRpe(ref: SetRef, rpe: Double?): ActiveWorkout = updateSet(ref) { it.copy(rpe = rpe?.coerceIn(RPE_LOWEST, RPE_HIGHEST)) }
+
     fun setSpeed(ref: SetRef, kmh: Double?): ActiveWorkout = updateSet(ref) { it.copy(speedKmh = kmh) }
 
     fun setDistance(ref: SetRef, meters: Double?): ActiveWorkout = updateSet(ref) { it.copy(distanceMeters = meters) }
@@ -378,3 +381,6 @@ private fun WorkoutSet?.nextLikeThis() = WorkoutSet(
     speedKmh = this?.speedKmh,
     distanceMeters = this?.distanceMeters,
 )
+
+const val RPE_LOWEST = 6.0
+const val RPE_HIGHEST = 10.0

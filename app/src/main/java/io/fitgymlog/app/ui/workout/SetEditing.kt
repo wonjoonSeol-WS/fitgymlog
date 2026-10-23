@@ -40,3 +40,9 @@ internal fun ExerciseKind.secondsOf(amount: Int): Int = if (this == ExerciseKind
 
 private const val SECONDS_PER_MINUTE = 60
 
+
+/** The usual RPE scale for lifting: 6 is 4 or more reps left, 10 is none, in halves. */
+internal val RPE_CHOICES = (12..20).map { it / 2.0 }
+
+/** 8.0 shows as "8", 8.5 as "8.5". */
+internal fun rpeText(rpe: Double): String = if (rpe % 1.0 == 0.0) rpe.toInt().toString() else rpe.toString()

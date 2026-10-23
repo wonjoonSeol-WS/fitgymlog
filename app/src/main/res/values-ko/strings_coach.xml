@@ -98,6 +98,7 @@
     <string name="coach_not_now">나중에</string>
     <string name="coach_applied">적용됨</string>
     <string name="coach_reason_all_reps">지난번 모든 횟수 성공</string>
+    <string name="coach_reason_hard_sets">지난번 모든 횟수 성공, 하지만 한계에 가까움</string>
     <string name="coach_reason_missed">횟수 미달, 같은 무게</string>
     <string name="coach_reason_stalled">세 번 연속 정체, 강도 낮춤</string>
 

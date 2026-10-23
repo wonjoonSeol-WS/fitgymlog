@@ -13,6 +13,7 @@ import io.fitgymlog.app.ui.formatRest
 import io.fitgymlog.app.ui.formatKmh
 import io.fitgymlog.app.ui.formatWeightNumber
 import io.fitgymlog.app.ui.fromDisplayWeight
+import io.fitgymlog.app.ui.workout.rpeText
 import java.time.Duration
 import java.time.LocalDate
 import kotlin.math.abs
@@ -521,6 +522,7 @@ object Coach {
             set.speedKmh?.let { "${formatKmh(it)}km/h" },
             set.distanceMeters?.let { "${it.roundToLong()}m" },
             set.level?.let { "level $it" },
+            set.rpe?.let { "@RPE ${rpeText(it)}" },
             set.type.takeIf { it != SetType.NORMAL }?.name?.lowercase(),
         ).joinToString(" ")
 
@@ -633,7 +635,7 @@ object Coach {
 
     private const val TARGETS_TASK = """Set today's target for each exercise in the data. Each has the app's rule target and an allowed range. Keep the rule target unless the history or the notes give a reason, such as pain, repeated misses or reps far above the plan. Weights must stay between minKg and maxKg and move from lastKg in steps of stepKg; reps must stay between minReps and maxReps. For each exercise write a note of at most 12 words saying why."""
 
-    private const val REVIEW_TASK = """Review the workout just finished in 2 to 4 short sentences, as notes: what went well and what to change next time, such as weight, rest or order. Mention rest only if the rest times show something. effortOutOf10, when present, is how hard the lifter felt the whole workout was; weigh it against the numbers, for example a hard rating on easy weights hints at fatigue."""
+    private const val REVIEW_TASK = """Review the workout just finished in 2 to 4 short sentences, as notes: what went well and what to change next time, such as weight, rest or order. Mention rest only if the rest times show something. effortOutOf10, when present, is how hard the lifter felt the whole workout was; weigh it against the numbers, for example a hard rating on easy weights hints at fatigue. A set marked @RPE is how close to failure it was, 10 being no reps left and 8 two; easy sets in a hard workout point to the session as a whole, such as its length, rest or recovery."""
 
     private const val FOOD_TASK = """Also write foodSummary, one sentence about eating today given proteinGramsToday, targetKcal when present, and the goal, and mealIdeas, $MEAL_IDEAS simple meals of at most 6 words each that respect the food notes."""
 

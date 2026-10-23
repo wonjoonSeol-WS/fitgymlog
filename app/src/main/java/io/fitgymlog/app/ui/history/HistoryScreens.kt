@@ -78,6 +78,7 @@ import io.fitgymlog.app.ui.lift
 import io.fitgymlog.app.ui.localizedName
 import io.fitgymlog.app.ui.setTypeName
 import io.fitgymlog.app.ui.unitLabel
+import io.fitgymlog.app.ui.workout.rpeText
 import io.fitgymlog.app.workout.setLine
 import java.time.Duration
 import java.time.ZoneId
@@ -273,7 +274,7 @@ fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (St
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.width(72.dp),
                                     )
-                                    Text(setLine(context, info, set.weightKg, set.reps, settings.unit, set.durationSeconds, set.level, set.speedKmh, set.distanceMeters), style = NumberStyles.cell)
+                                    Text(setLine(context, info, set.weightKg, set.reps, settings.unit, set.durationSeconds, set.level, set.speedKmh, set.distanceMeters) + rpeSuffix(set.rpe), style = NumberStyles.cell)
                                 }
                             }
                             if (exercise.notes.isNotBlank()) Text(exercise.notes, style = MaterialTheme.typography.bodySmall)
@@ -396,10 +397,13 @@ fun SessionLines(context: Context, exercise: Exercise, sessions: List<Pair<Worko
     sessions.forEach { (workout, sets) ->
         Column(Modifier.padding(vertical = 6.dp)) {
             Text(dateText(workout), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(sets.joinToString(", ") { setLine(context, exercise, it.weightKg, it.reps, unit, it.durationSeconds, it.level, it.speedKmh, it.distanceMeters) })
+            Text(sets.joinToString(", ") { setLine(context, exercise, it.weightKg, it.reps, unit, it.durationSeconds, it.level, it.speedKmh, it.distanceMeters) + rpeSuffix(it.rpe) })
         }
         HorizontalDivider()
     }
 }
 
 private enum class RoutineSave { IDLE, SAVING, SAVED, FAILED }
+
+/** " @8" after a set logged with an RPE, nothing otherwise. */
+private fun rpeSuffix(rpe: Double?): String = rpe?.let { " @${rpeText(it)}" }.orEmpty()

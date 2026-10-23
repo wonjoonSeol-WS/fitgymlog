@@ -181,6 +181,12 @@ fun SettingsScreen(onOpenBandGuide: () -> Unit, onOpenCoach: () -> Unit) {
                     onCheckedChange = { on -> app.settings.update { it.copy(askEffort = on) } },
                 )
                 SettingsSwitch(
+                    title = stringResource(R.string.setting_log_rpe),
+                    help = stringResource(R.string.setting_log_rpe_help),
+                    checked = settings.logRpe,
+                    onCheckedChange = { on -> app.settings.update { it.copy(logRpe = on) } },
+                )
+                SettingsSwitch(
                     title = stringResource(R.string.setting_check_in),
                     help = stringResource(R.string.setting_check_in_help),
                     checked = settings.weeklyCheckIn,

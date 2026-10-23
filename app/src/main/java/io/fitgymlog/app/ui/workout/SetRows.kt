@@ -90,6 +90,7 @@ internal fun ExerciseSection(
     isLast: Boolean,
     unit: WeightUnit,
     barKg: Double,
+    logRpe: Boolean,
     onChange: ((ActiveWorkout) -> ActiveWorkout) -> Unit,
     onEditSet: (SetEditor) -> Unit,
     onReplace: () -> Unit,
@@ -146,7 +147,9 @@ internal fun ExerciseSection(
                 onClick = onEditRest,
             )
         }
-        SetHeader(info, unit)
+        // RPE shows when the user logs it, and always where some set has one, such as an imported Hevy workout.
+        val showRpe = !info.kind.isTimed && (logRpe || exercise.sets.any { it.rpe != null })
+        SetHeader(info, unit, showRpe)
         val numbers = normalSetNumbers(exercise.sets)
         val lastTime = previousRows(exercise.sets, previous)
         exercise.sets.forEachIndexed { setIndex, set ->
@@ -157,6 +160,7 @@ internal fun ExerciseSection(
                 info = info,
                 unit = unit,
                 ref = SetRef(index, setIndex),
+                showRpe = showRpe,
                 onChange = onChange,
                 onEditSet = onEditSet,
             )
@@ -185,7 +189,7 @@ private fun setLabel(type: SetType, normalNumber: Int?): String = when (type) {
 }
 
 @Composable
-private fun SetHeader(info: Exercise, unit: WeightUnit) {
+private fun SetHeader(info: Exercise, unit: WeightUnit, showRpe: Boolean) {
     val kind = info.kind
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -199,6 +203,7 @@ private fun SetHeader(info: Exercise, unit: WeightUnit) {
         if (info.hasSpeed) HeaderCell(speedUnitLabel(unit), Modifier.weight(1f), TextAlign.Center)
         if (info.hasDistance) HeaderCell(stringResource(R.string.unit_m), Modifier.weight(1f), TextAlign.Center)
         HeaderCell(stringResource(amountHeader(kind)), Modifier.weight(1f), TextAlign.Center)
+        if (showRpe) HeaderCell(stringResource(R.string.col_rpe), Modifier.weight(RPE_WEIGHT), TextAlign.Center)
         Box(Modifier.width(40.dp), contentAlignment = Alignment.Center) {
             Icon(Icons.Default.Check, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
         }
@@ -241,6 +246,7 @@ private fun SetRow(
     info: Exercise,
     unit: WeightUnit,
     ref: SetRef,
+    showRpe: Boolean,
     onChange: ((ActiveWorkout) -> ActiveWorkout) -> Unit,
     onEditSet: (SetEditor) -> Unit,
 ) {
@@ -322,6 +328,14 @@ private fun SetRow(
             completed = set.isCompleted,
             modifier = Modifier.weight(1f),
         ) { onEditSet(SetEditor(SetField.AMOUNT, ref)) }
+        if (showRpe) {
+            ValueCell(
+                text = set.rpe?.let(::rpeText),
+                placeholder = null,
+                completed = set.isCompleted,
+                modifier = Modifier.weight(RPE_WEIGHT),
+            ) { onEditSet(SetEditor(SetField.RPE, ref)) }
+        }
         DoneToggle(set.isCompleted) {
             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
             val wasDone = set.isCompleted
@@ -381,3 +395,6 @@ private fun previousText(previous: WorkoutSet?, info: Exercise, unit: WeightUnit
 }
 
 private val Exercise.previousWeight: Float get() = if (hasSpeed || hasDistance) 2f else 1.3f
+
+/** RPE is one or two characters, so its column is narrower than weight and reps. */
+private const val RPE_WEIGHT = 0.75f
