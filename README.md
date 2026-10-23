@@ -18,8 +18,8 @@ Download: [latest release](https://github.com/wonjoonSeol/fitgymlog/releases/lat
   StrongLifts rules, notes after each workout, and a chat that remembers what you let it, sees how long you have
   trained and rested, and can change the workout in progress (weights, sets, rest, exercises in or out) once you apply it
 - A Stats tab: workouts, time or volume each week; a weight trend that evens out day-to-day swings, with its weekly
-  pace, from Health Connect or typed in; with the coach on, body composition (body fat, fat mass, lean mass, skeletal
-  muscle, visceral fat) read from a scale or InBody screenshot and compared scan to scan; and each exercise's records and progress
+  pace, from Health Connect or typed in; body composition (body fat, fat mass, lean mass, skeletal muscle, visceral
+  fat) typed in or, with the coach on, read from a scale or InBody screenshot, compared scan to scan; and each exercise's records and progress
   chart (heaviest set, estimated 1RM, reps or time), with new records marked in History
 - A weekly check-in on the last evening of each week: workouts, time and volume against last week, new records, missed reps
   and the weight trend; with the coach on, it can suggest changes to your routines for next week

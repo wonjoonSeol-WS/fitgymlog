@@ -32,7 +32,7 @@
     <string name="coach_sex_unset">선택 안 함</string>
     <string name="coach_birth_date">생년월일</string>
     <string name="coach_body">체성분 기록</string>
-    <string name="coach_body_help">체중계나 인바디에서 잰 체중, 체지방, 골격근량, 내장지방 레벨을 기록해요. 이 휴대폰과 Android 백업에 남고, 코치 데이터를 Drive에 보관하면 Drive에도 남아요. 최근 기록은 코치에게 보내요.</string>
+    <string name="coach_body_help">체중계나 인바디에서 잰 체중, 체지방, 골격근량, 내장지방 레벨을 기록해요. 이 휴대폰과 Android 백업에 남고, 코치 데이터를 Drive에 보관하면 Drive에도 남아요. 코치를 켜면 최근 기록을 코치에게 보내요.</string>
     <string name="coach_body_summary_empty">스크린샷, Health Connect, 직접 입력</string>
     <string name="coach_bodyweight_measured">최근 측정값을 써요: %1$s (%2$s)</string>
     <string name="body_weight">체중</string>
@@ -52,7 +52,7 @@
     <string name="body_nothing_read">측정값을 찾지 못했어요. 숫자가 보이는 스크린샷이나 사진을 골라 주세요.</string>
     <string name="body_picture_failed">사진을 열지 못했어요.</string>
     <string name="body_photo_help">사진은 연결한 AI 제공자의 채팅 모델이 읽어요. 이미지를 읽을 수 있는 모델이어야 해요. 원하면 이름은 잘라내도 돼요. 저장하기 전에 숫자를 직접 확인해요.</string>
-    <string name="body_photo_needs_coach">스크린샷을 읽으려면 코치를 연결해 주세요.</string>
+    <string name="body_photo_needs_coach">스크린샷을 읽으려면 설정에서 코치를 켜고 연결해 주세요.</string>
     <string name="body_health">Health Connect에서 읽기</string>
     <string name="body_health_help">체중계 앱이 Health Connect에 남긴 체중과 체지방도 그래프, 칼로리 목표, 코치에 함께 써요.</string>
     <string name="body_health_on">Health Connect의 체중과 체지방도 그래프, 칼로리 목표, 코치에 써요.</string>
@@ -75,7 +75,7 @@
     <string name="coach_food_guide">식단 안내</string>
     <string name="coach_food_guide_help">운동이 끝나면 하루 단백질과 칼로리, 식사 아이디어를 알려 줘요. 따로 기록하지 않아도 돼요.</string>
     <string name="coach_what_it_sees">코치가 보는 정보</string>
-    <string name="coach_what_it_sees_text">운동과 세트 기록, 오늘의 운동, 체중, 성별, 목표, Health Connect에서 가져온 것을 포함한 최근 체성분 기록, 앱이 계산한 칼로리 목표, 코치에게 보낸 메시지와 앱의 운동 이름, 공유하면 저장한 메모까지 봐요. 읽어 달라고 고른 스크린샷도 보내요. 키와 생년월일은 휴대폰 안에서만 써요. 모두 연결한 제공자에게만 보내요.</string>
+    <string name="coach_what_it_sees_text">운동과 세트 기록, 운동한 시간과 쉰 시간을 포함한 오늘의 운동, 체중, 성별, 목표, Health Connect에서 가져온 것을 포함한 최근 체성분 기록, 앱이 계산한 칼로리 목표, 코치에게 보낸 메시지와 앱의 운동 이름, 주간 체크인에서 물으면 루틴, 공유하면 저장한 메모까지 봐요. 읽어 달라고 고른 스크린샷도 보내요. 키와 생년월일은 휴대폰 안에서만 써요. 모두 연결한 제공자에게만 보내요.</string>
     <string name="coach_share_notes">기억한 내용 공유</string>
     <string name="coach_share_notes_help">저장한 부상, 식단 제한, 일정, 목표.</string>
     <string name="coach_memory">코치가 기억하는 것</string>

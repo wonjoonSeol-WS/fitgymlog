@@ -32,7 +32,7 @@
     <string name="coach_sex_unset">Not set</string>
     <string name="coach_birth_date">Birth date</string>
     <string name="coach_body">Body measurements</string>
-    <string name="coach_body_help">Weight, body fat, skeletal muscle and visceral fat level from your scale or InBody. Kept on this phone and in its Android backup, in Drive if you keep coach data there, and recent ones go to the coach.</string>
+    <string name="coach_body_help">Weight, body fat, skeletal muscle and visceral fat level from your scale or InBody. Kept on this phone and in its Android backup, in Drive if you keep coach data there, and recent ones go to the coach when it is on.</string>
     <string name="coach_body_summary_empty">From a screenshot, Health Connect or typed in</string>
     <string name="coach_bodyweight_measured">Using your measured %1$s from %2$s.</string>
     <string name="body_weight">Weight</string>
@@ -52,7 +52,7 @@
     <string name="body_nothing_read">No measurements found. Pick a screenshot or photo that shows the numbers.</string>
     <string name="body_picture_failed">That picture could not be opened.</string>
     <string name="body_photo_help">The picture goes to the AI provider you connected, read by your chat model, which must read images. Crop out your name if you like. You check the numbers before they are saved.</string>
-    <string name="body_photo_needs_coach">Connect the coach to read screenshots.</string>
+    <string name="body_photo_needs_coach">To read screenshots, turn on and connect the coach in Settings.</string>
     <string name="body_health">Read from Health Connect</string>
     <string name="body_health_help">Also use the weight and body fat your scale app saves in Health Connect, for the chart, your calorie target and the coach.</string>
     <string name="body_health_on">Weight and body fat from Health Connect are used for the chart, your calorie target and the coach.</string>
@@ -75,7 +75,7 @@
     <string name="coach_food_guide">Food guide</string>
     <string name="coach_food_guide_help">Protein and calories for the day and meal ideas after each workout. Nothing to log.</string>
     <string name="coach_what_it_sees">What the coach can see</string>
-    <string name="coach_what_it_sees_text">Your workouts and sets, today\'s workout, bodyweight, sex, goal, recent body measurements including those from Health Connect, and the calorie target the app works out, your messages to the coach with the names of the exercises in the app, and, if you share them, your saved notes. A screenshot you ask it to read goes too. Height and birth date are only used on the phone. All of it goes only to the provider you connect.</string>
+    <string name="coach_what_it_sees_text">Your workouts and sets, today\'s workout with how long you have trained and rested, bodyweight, sex, goal, recent body measurements including those from Health Connect, and the calorie target the app works out, your messages to the coach with the names of the exercises in the app, your routines when you ask about a week in the check-in, and, if you share them, your saved notes. A screenshot you ask it to read goes too. Height and birth date are only used on the phone. All of it goes only to the provider you connect.</string>
     <string name="coach_share_notes">Share what it remembers</string>
     <string name="coach_share_notes_help">Injuries, food limits, schedule and goals you saved.</string>
     <string name="coach_memory">What the coach remembers</string>

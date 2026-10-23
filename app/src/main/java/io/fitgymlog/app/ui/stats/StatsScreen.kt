@@ -159,7 +159,6 @@ fun StatsScreen(onOpenExercise: (String) -> Unit, onOpenCheckIn: () -> Unit) {
     val uses = remember(history, exercises) {
         history?.let { workouts -> exerciseUses(workouts).map { use -> use to exercises.byId(use.exerciseId) } }
     }
-    val showComposition = coachSettings.enabled
     val resources = LocalResources.current
     val locale = LocalConfiguration.current.locales[0]
     val week = remember(history, body, exercises, locale) {
@@ -247,37 +246,35 @@ fun StatsScreen(onOpenExercise: (String) -> Unit, onOpenCheckIn: () -> Unit) {
                 }
             }
         }
-        if (showComposition) {
-            item(key = "composition-title") {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(top = 12.dp)) {
-                    SectionTitle(stringResource(R.string.stats_composition))
-                    Text(stringResource(R.string.coach_body_help), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        item(key = "composition-title") {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(top = 12.dp)) {
+                SectionTitle(stringResource(R.string.stats_composition))
+                Text(stringResource(R.string.coach_body_help), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        item(key = "composition") { CompositionSection(scans(entries), unit, metric) { metric = it } }
+        item(key = "photo") {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    enabled = ready && bodyRead != BodyRead.Reading,
+                    onClick = { pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                ) { Text(stringResource(R.string.body_from_photo)) }
+                OutlinedButton(onClick = { editing = Editing(BodyMeasurement(LocalDate.now().toString()), isNew = true) }) {
+                    Text(stringResource(R.string.body_add))
                 }
             }
-            item(key = "composition") { CompositionSection(scans(entries), unit, metric) { metric = it } }
-            item(key = "photo") {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(
-                        enabled = ready && bodyRead != BodyRead.Reading,
-                        onClick = { pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
-                    ) { Text(stringResource(R.string.body_from_photo)) }
-                    OutlinedButton(onClick = { editing = Editing(BodyMeasurement(LocalDate.now().toString()), isNew = true) }) {
-                        Text(stringResource(R.string.body_add))
-                    }
-                }
-            }
-            item(key = "photo-status") {
-                when (val read = bodyRead) {
-                    BodyRead.Reading -> Text(stringResource(R.string.body_reading), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    BodyRead.NothingFound -> Text(stringResource(R.string.body_nothing_read), color = MaterialTheme.colorScheme.error)
-                    BodyRead.Unreadable -> Text(stringResource(R.string.body_picture_failed), color = MaterialTheme.colorScheme.error)
-                    is BodyRead.Failed -> FailureText(read.error)
-                    else -> Text(
-                        stringResource(if (ready) R.string.body_photo_help else R.string.body_photo_needs_coach),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+        }
+        item(key = "photo-status") {
+            when (val read = bodyRead) {
+                BodyRead.Reading -> Text(stringResource(R.string.body_reading), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                BodyRead.NothingFound -> Text(stringResource(R.string.body_nothing_read), color = MaterialTheme.colorScheme.error)
+                BodyRead.Unreadable -> Text(stringResource(R.string.body_picture_failed), color = MaterialTheme.colorScheme.error)
+                is BodyRead.Failed -> FailureText(read.error)
+                else -> Text(
+                    stringResource(if (ready) R.string.body_photo_help else R.string.body_photo_needs_coach),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
         if (entries.isNotEmpty()) {
@@ -328,7 +325,6 @@ fun StatsScreen(onOpenExercise: (String) -> Unit, onOpenCheckIn: () -> Unit) {
         MeasurementDialog(
             initial = open.entry,
             unit = unit,
-            withComposition = showComposition || open.entry.bodyFatPercent != null || open.entry.skeletalMuscleKg != null || open.entry.visceralFatLevel != null,
             canDelete = !open.isNew,
             onSave = { entry ->
                 app.scope.launch {
@@ -584,7 +580,6 @@ private fun sourceText(source: MeasurementSource): Int = when (source) {
 private fun MeasurementDialog(
     initial: BodyMeasurement,
     unit: WeightUnit,
-    withComposition: Boolean,
     canDelete: Boolean,
     onSave: (BodyMeasurement) -> Unit,
     onDelete: () -> Unit,
@@ -619,11 +614,9 @@ private fun MeasurementDialog(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(onClick = { choosingDate = true }) { Text(dateText(date)) }
                 BodyField(stringResource(R.string.body_weight), weight, unitText) { weight = it }
-                if (withComposition) {
-                    BodyField(stringResource(R.string.body_fat), fat, "%") { fat = it }
-                    BodyField(stringResource(R.string.body_muscle), muscle, unitText) { muscle = it }
-                    BodyField(stringResource(R.string.body_visceral), visceral, suffix = null, whole = true) { visceral = it }
-                }
+                BodyField(stringResource(R.string.body_fat), fat, "%") { fat = it }
+                BodyField(stringResource(R.string.body_muscle), muscle, unitText) { muscle = it }
+                BodyField(stringResource(R.string.body_visceral), visceral, suffix = null, whole = true) { visceral = it }
                 if (!valid && entered) {
                     Text(stringResource(R.string.body_invalid), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 }
