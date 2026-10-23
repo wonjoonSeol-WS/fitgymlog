@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="channel_workout">운동 중</string>
+    <string name="open_phone">휴대폰의 FitGymLog 설정에서 손목 기기를 Wear OS 워치로 바꿔 주세요.</string>
+    <string name="phone_unreachable">휴대폰에 연결할 수 없어요</string>
+    <string name="start_workout">운동 시작</string>
+    <string name="no_routines">휴대폰에서 루틴을 만든 뒤 여기서 시작하세요.</string>
+    <string name="duration">운동 시간</string>
+    <plurals name="sets_done">
+        <item quantity="other">%2$d세트 중 %1$d세트 완료</item>
+    </plurals>
+    <string name="now_doing">지금: %1$s</string>
+    <string name="finish">끝내기</string>
+    <string name="finish_confirm">눌러서 끝내기</string>
+    <string name="exercise_done">모든 세트 완료</string>
+    <string name="log_set">✓  %1$d세트</string>
+    <string name="warmup_short">W</string>
+    <string name="set_title">%1$d세트</string>
+    <string name="reps">회</string>
+    <string name="save">저장</string>
+    <string name="rest_left">휴식 %1$s</string>
+    <string name="up_next">다음: %1$s</string>
+    <string name="skip_rest">건너뛰기</string>
+</resources>

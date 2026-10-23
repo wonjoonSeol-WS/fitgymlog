@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">FitGymLog</string>
+    <string name="channel_workout">Workout in progress</string>
+    <!-- An ongoing activity template; #set# is replaced with the set in progress. -->
+    <string name="ongoing_status" translatable="false">#set#</string>
+    <string name="open_phone">On your phone, open FitGymLog and set Settings, On your wrist, to Wear OS watch.</string>
+    <string name="phone_unreachable">Phone not reachable</string>
+    <string name="start_workout">Start a workout</string>
+    <string name="no_routines">Make a routine on your phone, then start it here.</string>
+    <string name="duration">Duration</string>
+    <plurals name="sets_done">
+        <item quantity="one">%1$d of %2$d set done</item>
+        <item quantity="other">%1$d of %2$d sets done</item>
+    </plurals>
+    <string name="now_doing">Now: %1$s</string>
+    <string name="finish">Finish</string>
+    <string name="finish_confirm">Tap to finish</string>
+    <string name="exercise_done">All sets done</string>
+    <string name="log_set">✓  Set %1$d</string>
+    <string name="warmup_short">W</string>
+    <string name="set_title">Set %1$d</string>
+    <string name="reps">reps</string>
+    <string name="save">Save</string>
+    <string name="rest_left">Rest %1$s</string>
+    <string name="up_next">Next: %1$s</string>
+    <string name="skip_rest">Skip</string>
+</resources>

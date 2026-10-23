@@ -26,7 +26,9 @@ Download: [latest release](https://github.com/wonjoonSeol/fitgymlog/releases/lat
   and the weight trend; with the coach on, it can suggest changes to your routines for next week
 - An optional warm-up set: 5 reps on the empty bar before each barbell lift
 - Fix a finished workout's start and end, for the day you forgot to tap finish
-- Form guide videos and articles for the built-in lifts; add any YouTube or web link
+- Form guide videos and articles for the built-in lifts, with videos playing in the app (or in YouTube, if you prefer); add any YouTube or web link
+- A Wear OS watch app for Galaxy Watch, Pixel Watch and other Wear OS watches: one tap per set, dials for weight and reps on the crown, a full-screen rest timer, and starting and finishing a routine from the wrist; the Galaxy Fit band remote stays as the other mode
+- Check for a new version on GitHub from Settings, with one tap
 - Two-pane layouts on an unfolded Galaxy Fold
 - Health Connect (Samsung Health), optional Google Drive sync, Hevy and Strong CSV import and export
 - English and Korean
@@ -78,12 +80,50 @@ notification, so it always arrives.
 in for the band on an emulator. `adb shell cmd media_session dispatch` sends media key events instead, which do not
 reach a session that plays no audio.
 
+## Wear OS watches
+
+Settings has an **On your wrist** choice: a Galaxy Fit band, a Wear OS watch, or nothing. The band mode is the music
+remote above. A Galaxy Watch, Pixel Watch or any other Wear OS watch instead runs FitGymLog's own watch app (`wear/`),
+and the band's media session stays off, since a watch would show it too, over the app.
+
+<img src="docs/images/watch-exercise.png" width="200" alt="An exercise page on the watch: a button to log set 2 at 60 kg for 5 reps, then the sets"> <img src="docs/images/watch-dials.png" width="200" alt="Dials for 60 kg and 5 reps with a check button"> <img src="docs/images/watch-rest.png" width="200" alt="Rest: 1:56 in a ring with minus 15 and plus 15 either side, the next set and Skip">
+
+On the watch, the first page is the session (time, sets done, finish) and each exercise after it is a page of its sets.
+The button under the exercise name logs the next set as planned in one tap; tapping a set opens dials for weight and
+reps, turned by touch or the crown or bezel. Rest fills the screen: a ring, the time left with 15-second steps either
+side, the next set, and Skip; swiping back shows the workout, where tapping the set just done corrects it. Swiping to an
+exercise moves the phone onto it too. Sizes follow the screen, from a 192 dp watch to a 260 dp one.
+
+**Installing the watch app.** Until FitGymLog is on Google Play, install the watch APK from the same release as the
+phone app over Wi-Fi: on the watch, tap Settings > System > About > Versions > Build number seven times, turn on
+Developer options > Wireless debugging, then on a computer run `adb pair` and `adb connect` with the addresses the
+watch shows, and `adb install fitgymlog-wear-<version>.apk`.
+
+- **Phone to watch:** in Wear OS mode only, `PhoneWatchLink` publishes the workout as one Data Layer item
+  (`/fitgymlog/state`), with names and set lines already written in the phone's language and unit. The Data Layer only
+  sends it on when it changes, and the rest countdown is an end time the watch counts down itself, so nothing is sent
+  per second. Each update carries the phone's clock, so a watch whose clock has drifted still counts rest correctly.
+- **Watch to phone:** each tap is a message (`/fitgymlog/command`) that names the set it is about, so a tap that crosses
+  a change made on the phone lands on that set or does nothing, as with the band. The watch finds the phone by the
+  `fitgymlog_phone` capability, or the nearby connected phone while that is still syncing after an install.
+- **The buzz** is the same rest-over notification, which Wear OS shows on the watch.
+- **Background starts:** Android won't let an app in the background start a foreground service, so a routine started
+  from the watch with the phone in a pocket runs without the workout notification until FitGymLog is opened. The rest
+  alarm follows the workout from the app itself, so it is set anyway.
+- The protocol lives in `watchlink/`, plain Kotlin shared by both apps. Both apps must have the same package name and
+  signing key, or the Data Layer won't connect them, and the release build keeps the capability list from the resource
+  shrinker in `res/raw/fitgymlog_keep.xml`.
+
+**Testing on emulators:** create a phone (with Google Play) and a Wear OS emulator in Android Studio, pair them with
+Pair Wearable in the Device Manager, and install both APKs from one build.
+
 ## Your data
 
 Workouts are stored on the phone. There is no account, no ads and no analytics. Health Connect writes and Google Drive
 sync are optional; sync keeps one file in the app's hidden folder of your own Drive. If you also let it read exercise
 from Health Connect, it skips a cardio block your band already recorded. Hevy and Strong CSV import and
-export mean you can leave at any time.
+export mean you can leave at any time. The app asks GitHub for the latest release only when you tap the version in
+Settings, and in Wear OS mode the workout goes only between your phone and your own watch.
 
 The coach is off until you turn it on and connect a provider with your own API key, or a model on your own phone or
 network, which needs no key. It then sends your recent workouts, today's workout with its rest times, bodyweight, sex, goal,
@@ -123,11 +163,11 @@ improve its products, and DeepSeek costs double at peak hours. See the [website]
 Requires JDK 17 and the Android SDK.
 
 ```sh
-./gradlew testDebugUnitTest lintDebug assembleDebug
+./gradlew testDebugUnitTest :watchlink:test lintDebug assembleDebug
 ```
 
 A release build is signed with the key described in `~/.android/fitgymlog/signing.properties` when that file exists,
-and with the debug key otherwise.
+and with the debug key otherwise. The watch app (`:wear:bundleRelease`) uses the same key.
 
 ## 한국어
 
@@ -138,6 +178,10 @@ FitGymLog는 운동 중에 소리 없이 "재생 중"인 미디어 세션을 열
 Galaxy Wearable이 이 알림을 밴드로 보내 진동합니다. 그래서 휴대폰에서도 음악처럼 보입니다. 상태 표시줄 왼쪽 위에 지금 세트가
 뜨고, 누르면 미디어 플레이어가 열리며 플레이어를 누르면 FitGymLog가 열립니다. 이 플레이어와 잠금 화면 조작도 밴드와 똑같이 동작하는 의도된 설계입니다. 다른 앱이
 음악이나 영상을 재생하면 버튼이 그 앱과 오갈 수 있습니다.
+
+갤럭시 워치, 픽셀 워치 같은 Wear OS 워치에서는 FitGymLog 워치 앱이 직접 돌아갑니다. 설정의 손목 기기에서 Wear OS 워치를 고르면
+운동마다 한 페이지에서 한 번 눌러 세트를 기록하고, 크라운으로 무게와 횟수를 맞추고, 휴식 타이머를 화면 가득 볼 수 있습니다.
+운동 기록은 계속 휴대폰에 있습니다.
 
 ## License
 

@@ -21,8 +21,8 @@ android {
         applicationId = "io.fitgymlog.app"
         minSdk = 33
         targetSdk = 37
-        versionCode = 12
-        versionName = "0.8.1"
+        versionCode = providers.gradleProperty("fitgymlog.versionCode").get().toInt()
+        versionName = providers.gradleProperty("fitgymlog.versionName").get()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -32,6 +32,13 @@ android {
 
     androidResources {
         generateLocaleConfig = true
+    }
+
+    // The in-app language switch needs every language on the phone; Play would otherwise install only the system one.
+    bundle {
+        language {
+            enableSplit = false
+        }
     }
 
     signingConfigs {
@@ -94,6 +101,8 @@ dependencies {
     implementation(libs.androidx.health.connect)
     implementation(libs.play.services.auth)
     implementation(libs.kotlinx.coroutines.play.services)
+    implementation(libs.play.services.wearable)
+    implementation(project(":watchlink"))
     debugImplementation(libs.androidx.ui.tooling)
 
     testImplementation(libs.junit)

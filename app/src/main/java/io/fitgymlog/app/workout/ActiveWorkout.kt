@@ -353,7 +353,7 @@ data class ActiveWorkout(
         return if (shown.exerciseIndex == exerciseIndex && shown.setIndex >= at) copy(shownCompletedSet = shown.copy(setIndex = shown.setIndex + by)) else this
     }
 
-    private fun setAt(ref: SetRef): WorkoutSet? = exercises.getOrNull(ref.exerciseIndex)?.sets?.getOrNull(ref.setIndex)
+    fun setAt(ref: SetRef): WorkoutSet? = exercises.getOrNull(ref.exerciseIndex)?.sets?.getOrNull(ref.setIndex)
 
     private fun updateSet(ref: SetRef, change: (WorkoutSet) -> WorkoutSet): ActiveWorkout {
         if (setAt(ref) == null) return this

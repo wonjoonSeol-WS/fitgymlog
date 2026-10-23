@@ -46,12 +46,16 @@ import io.fitgymlog.app.R
 import io.fitgymlog.app.catching
 import io.fitgymlog.app.checkin.CheckInAlarm
 import io.fitgymlog.app.container
+import io.fitgymlog.app.data.WristDevice
 import io.fitgymlog.app.health.openHealthConnect
 import io.fitgymlog.app.model.WeightUnit
 import io.fitgymlog.app.transfer.ExportFormat
 import io.fitgymlog.app.ui.ChoiceDialog
 import io.fitgymlog.app.ui.ReadableWidth
 import io.fitgymlog.app.ui.formatRest
+import io.fitgymlog.app.ui.exercise.openLink
+import io.fitgymlog.app.update.UpdateCheck
+import io.fitgymlog.app.update.Updates
 import java.time.LocalDate
 import kotlinx.coroutines.launch
 
@@ -66,7 +70,7 @@ private val SESSION_TYPES = listOf(
     ExerciseSessionRecord.EXERCISE_TYPE_OTHER_WORKOUT,
 )
 
-private enum class Picker { UNIT, LANGUAGE, REST, IDLE, SESSION_TYPE }
+private enum class Picker { UNIT, LANGUAGE, REST, IDLE, SESSION_TYPE, WRIST }
 
 private val IMPORT_TYPES = arrayOf("text/*", "text/csv", "text/comma-separated-values", "application/json", "application/octet-stream")
 
@@ -162,6 +166,12 @@ fun SettingsScreen(onOpenBandGuide: () -> Unit, onOpenCoach: () -> Unit) {
                     onCheckedChange = { on -> app.settings.update { it.copy(warmupSet = on) } },
                 )
                 SettingsSwitch(
+                    title = stringResource(R.string.setting_play_videos_in_app),
+                    help = stringResource(R.string.setting_play_videos_in_app_help),
+                    checked = settings.playVideosInApp,
+                    onCheckedChange = { on -> app.settings.update { it.copy(playVideosInApp = on) } },
+                )
+                SettingsSwitch(
                     title = stringResource(R.string.setting_check_in),
                     help = stringResource(R.string.setting_check_in_help),
                     checked = settings.weeklyCheckIn,
@@ -172,13 +182,15 @@ fun SettingsScreen(onOpenBandGuide: () -> Unit, onOpenCoach: () -> Unit) {
                 )
 
                 SettingsSection(stringResource(R.string.section_band))
-                SettingsItem(stringResource(R.string.band_guide_title), stringResource(R.string.band_guide_card_text), onOpenBandGuide)
-                SettingsSwitch(
-                    title = stringResource(R.string.setting_band_remote),
-                    help = stringResource(R.string.setting_band_remote_help),
-                    checked = settings.bandRemoteEnabled,
-                    onCheckedChange = { enabled -> app.settings.update { it.copy(bandRemoteEnabled = enabled) } },
-                )
+                SettingsItem(stringResource(R.string.setting_wrist), wristName(settings.wrist)) { picker = Picker.WRIST }
+                when (settings.wrist) {
+                    WristDevice.FIT_BAND -> {
+                        SettingsHelp(stringResource(R.string.setting_band_remote_help))
+                        SettingsItem(stringResource(R.string.band_guide_title), stringResource(R.string.band_guide_card_text), onOpenBandGuide)
+                    }
+                    WristDevice.WEAR_OS -> SettingsHelp(stringResource(R.string.wrist_wear_help))
+                    WristDevice.OFF -> Unit
+                }
 
                 SettingsSection(stringResource(R.string.section_samsung_health))
                 SettingsSwitch(
@@ -231,7 +243,7 @@ fun SettingsScreen(onOpenBandGuide: () -> Unit, onOpenCoach: () -> Unit) {
                 SettingsItem(stringResource(R.string.export_strong), stringResource(R.string.export_strong_help)) { exportStrong.launch("fitgymlog-strong-$today.csv") }
 
                 SettingsSection(stringResource(R.string.section_about))
-                ListItem(headlineContent = { Text(stringResource(R.string.app_name)) }, supportingContent = { Text(BuildConfig.VERSION_NAME) })
+                UpdateItem()
             }
         }
     }
@@ -239,6 +251,14 @@ fun SettingsScreen(onOpenBandGuide: () -> Unit, onOpenCoach: () -> Unit) {
     importFlow.Dialogs()
 
     when (picker) {
+        Picker.WRIST -> ChoiceDialog(
+            title = stringResource(R.string.setting_wrist),
+            options = WristDevice.entries,
+            selected = settings.wrist,
+            label = { wristName(it) },
+            onSelect = { wrist -> app.settings.update { it.copy(wrist = wrist) } },
+            onDismiss = { picker = null },
+        )
         Picker.UNIT -> ChoiceDialog(
             title = stringResource(R.string.setting_unit),
             options = WeightUnit.entries,
@@ -344,3 +364,51 @@ private fun setLanguage(context: Context, language: Language) {
         if (language == Language.SYSTEM) LocaleList.getEmptyLocaleList() else LocaleList.forLanguageTags(language.tag)
 }
 
+@Composable
+private fun wristName(wrist: WristDevice): String = stringResource(
+    when (wrist) {
+        WristDevice.FIT_BAND -> R.string.wrist_fit_band
+        WristDevice.WEAR_OS -> R.string.wrist_wear_os
+        WristDevice.OFF -> R.string.wrist_off
+    },
+)
+
+@Composable
+private fun SettingsHelp(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+    )
+}
+
+/** The version, and a tap to ask GitHub whether a newer one is out; a second tap on a newer one opens its download page. */
+@Composable
+private fun UpdateItem() {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var check by remember { mutableStateOf<UpdateCheck?>(null) }
+    var checking by remember { mutableStateOf(false) }
+    val current = BuildConfig.VERSION_NAME
+    val result = check
+    val status = when {
+        checking -> stringResource(R.string.update_checking)
+        result == null -> stringResource(R.string.update_tap_to_check, current)
+        result is UpdateCheck.UpToDate -> stringResource(R.string.update_up_to_date, current)
+        result is UpdateCheck.Available -> stringResource(R.string.update_available, result.version)
+        else -> stringResource(R.string.update_failed)
+    }
+    SettingsItem(stringResource(R.string.app_name), status) {
+        when (result) {
+            is UpdateCheck.Available -> openLink(context, result.url)
+            else -> if (!checking) {
+                checking = true
+                scope.launch {
+                    check = Updates.check(current)
+                    checking = false
+                }
+            }
+        }
+    }
+}

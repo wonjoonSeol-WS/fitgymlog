@@ -54,6 +54,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.fitgymlog.app.R
 import io.fitgymlog.app.container
 import io.fitgymlog.app.links.PreviewParser
@@ -94,6 +95,8 @@ fun FormGuide(exercise: Exercise) {
     val context = LocalContext.current
     val app = context.container
     var adding by rememberSaveable { mutableStateOf(false) }
+    var playing by rememberSaveable { mutableStateOf<String?>(null) }
+    val settings by app.settings.settings.collectAsStateWithLifecycle()
     val (videos, pages) = remember(exercise.links, exercise.userLinks) {
         WebLinks.distinct(exercise.allLinks).partition { PreviewParser.youtubeIdOf(it) != null }
     }
@@ -105,7 +108,9 @@ fun FormGuide(exercise: Exercise) {
         }
         videos.forEach { url ->
             key(url) {
-                VideoCard(url, removable = url in exercise.userLinks, onRemove = { remove(url) }) { openLink(context, url) }
+                VideoCard(url, removable = url in exercise.userLinks, onRemove = { remove(url) }) {
+                    if (settings.playVideosInApp) playing = url else openLink(context, url)
+                }
             }
         }
         pages.forEach { url ->
@@ -117,6 +122,10 @@ fun FormGuide(exercise: Exercise) {
             Icon(Icons.Default.Add, null)
             Text(stringResource(R.string.add_link), modifier = Modifier.padding(start = 6.dp))
         }
+    }
+
+    playing?.let { url ->
+        PreviewParser.youtubeIdOf(url)?.let { id -> VideoPlayerDialog(url, id, onDismiss = { playing = null }) }
     }
 
     if (adding) {

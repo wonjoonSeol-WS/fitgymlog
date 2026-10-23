@@ -2,6 +2,7 @@ package io.fitgymlog.app
 
 import android.app.Application
 import android.content.Context
+import android.content.res.Configuration
 import android.util.Log
 import io.fitgymlog.app.checkin.CheckInAlarm
 import io.fitgymlog.app.coach.CoachRepository
@@ -22,12 +23,17 @@ import io.fitgymlog.app.sync.SyncStore
 import io.fitgymlog.app.transfer.TransferService
 import io.fitgymlog.app.ui.exercise.ProgressMetric
 import io.fitgymlog.app.ui.exercise.recordsByWorkout
+import io.fitgymlog.app.watch.PhoneWatchLink
+import io.fitgymlog.app.workout.RestAlarm
 import io.fitgymlog.app.workout.WorkoutActions
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -41,6 +47,17 @@ class FitGymLogApp : Application() {
         super.onCreate()
         container = AppContainer(this)
         CheckInAlarm.sync(this, container.settings.settings.value.weeklyCheckIn)
+        container.watch.start()
+        // Here rather than in the workout service, which Android may refuse to start for a workout begun from the watch.
+        container.scope.launch {
+            container.workouts.awaitLoaded()
+            container.workouts.active.map { it?.restEndsAt }.distinctUntilChanged().collect { RestAlarm.sync(this@FitGymLogApp, it) }
+        }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        container.watch.languageChanged()
     }
 }
 
@@ -58,6 +75,7 @@ class AppContainer(context: Context) {
     val transfer = TransferService(context, exercises, workouts, routines, settings)
     val coach = CoachRepository(context, CoachSettingsRepository(context), CoachStore(context, scope), KeyVault(context), workouts, routines, exercises, settings, HealthConnectBody(context), scope)
     val sync = SyncEngine(context, SyncStore(database), settings, scope, CoachSync(coach.store, coach.settings))
+    val watch = PhoneWatchLink(context, this)
 
     /** By workout id, the exercises each one set a record in; shared, since it reads every workout. */
     val records: StateFlow<Map<Long, Map<String, List<ProgressMetric>>>> = combine(workouts.history, exercises.exercises) { history, known ->

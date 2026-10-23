@@ -14,4 +14,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "FitGymLog"
-include(":app")
+include(":app", ":wear", ":watchlink")

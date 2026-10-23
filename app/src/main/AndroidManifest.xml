@@ -67,6 +67,15 @@
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 
+        <service
+            android:name=".watch.WatchCommandService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+                <data android:scheme="wear" android:host="*" android:path="/fitgymlog/command" />
+            </intent-filter>
+        </service>
+
         <receiver
             android:name=".workout.RestOverReceiver"
             android:exported="false" />

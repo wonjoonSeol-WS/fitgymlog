@@ -9,6 +9,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
+/**
+ * What is on the wrist. A Galaxy Fit can't run apps, so it is driven through its music controls; a Wear OS watch runs
+ * FitGymLog's own watch app.
+ */
+enum class WristDevice { FIT_BAND, WEAR_OS, OFF }
+
 data class Settings(
     val unit: WeightUnit = WeightUnit.KG,
     val defaultRestSeconds: Int = 120,
@@ -19,14 +25,18 @@ data class Settings(
     val warmupSet: Boolean = false,
     val weeklyCheckIn: Boolean = true,
     val idleFinishMinutes: Int = 30,
-    val bandRemoteEnabled: Boolean = true,
+    val wrist: WristDevice = WristDevice.FIT_BAND,
     val barKg: Double = 20.0,
     val barLb: Double = 45.0,
     val bandGuideDismissed: Boolean = false,
+    val playVideosInApp: Boolean = true,
     val syncEnabled: Boolean = false,
     val syncAccount: String? = null,
     val lastSyncAt: Long? = null,
 ) {
+    /** The band remote is a media session, which a Wear OS watch would also show, over its own app. */
+    val bandRemoteEnabled: Boolean get() = wrist == WristDevice.FIT_BAND
+
     /** Bar weight in the unit the user enters weights in. */
     val bar: Double get() = if (unit == WeightUnit.KG) barKg else barLb
 }
@@ -52,10 +62,11 @@ class SettingsRepository(context: Context) {
             putBoolean(WARMUP_SET, next.warmupSet)
             putBoolean(WEEKLY_CHECK_IN, next.weeklyCheckIn)
             putInt(IDLE_FINISH, next.idleFinishMinutes)
-            putBoolean(BAND_REMOTE, next.bandRemoteEnabled)
+            putString(WRIST, next.wrist.name)
             putFloat(BAR_KG, next.barKg.toFloat())
             putFloat(BAR_LB, next.barLb.toFloat())
             putBoolean(BAND_GUIDE_DISMISSED, next.bandGuideDismissed)
+            putBoolean(PLAY_VIDEOS_IN_APP, next.playVideosInApp)
             putBoolean(SYNC_ENABLED, next.syncEnabled)
             putString(SYNC_ACCOUNT, next.syncAccount)
             if (next.lastSyncAt == null) remove(LAST_SYNC_AT) else putLong(LAST_SYNC_AT, next.lastSyncAt)
@@ -74,10 +85,13 @@ class SettingsRepository(context: Context) {
             warmupSet = prefs.getBoolean(WARMUP_SET, defaults.warmupSet),
             weeklyCheckIn = prefs.getBoolean(WEEKLY_CHECK_IN, defaults.weeklyCheckIn),
             idleFinishMinutes = prefs.getInt(IDLE_FINISH, defaults.idleFinishMinutes),
-            bandRemoteEnabled = prefs.getBoolean(BAND_REMOTE, defaults.bandRemoteEnabled),
+            // Before the watch app there was only the band switch, so an install that had it off had nothing on the wrist.
+            wrist = prefs.getString(WRIST, null)?.let { enumValueOrDefault(it, defaults.wrist) }
+                ?: if (prefs.getBoolean(BAND_REMOTE, true)) WristDevice.FIT_BAND else WristDevice.OFF,
             barKg = prefs.getFloat(BAR_KG, defaults.barKg.toFloat()).toDouble(),
             barLb = prefs.getFloat(BAR_LB, defaults.barLb.toFloat()).toDouble(),
             bandGuideDismissed = prefs.getBoolean(BAND_GUIDE_DISMISSED, defaults.bandGuideDismissed),
+            playVideosInApp = prefs.getBoolean(PLAY_VIDEOS_IN_APP, defaults.playVideosInApp),
             syncEnabled = prefs.getBoolean(SYNC_ENABLED, defaults.syncEnabled),
             syncAccount = prefs.getString(SYNC_ACCOUNT, null),
             lastSyncAt = if (prefs.contains(LAST_SYNC_AT)) prefs.getLong(LAST_SYNC_AT, 0) else null,
@@ -95,9 +109,11 @@ class SettingsRepository(context: Context) {
         const val WEEKLY_CHECK_IN = "weekly_check_in"
         const val IDLE_FINISH = "idle_finish_minutes"
         const val BAND_REMOTE = "band_remote_enabled"
+        const val WRIST = "wrist_device"
         const val BAR_KG = "bar_kg"
         const val BAR_LB = "bar_lb"
         const val BAND_GUIDE_DISMISSED = "band_guide_dismissed"
+        const val PLAY_VIDEOS_IN_APP = "play_videos_in_app"
         const val SYNC_ENABLED = "sync_enabled"
         const val SYNC_ACCOUNT = "sync_account"
         const val LAST_SYNC_AT = "last_sync_at"

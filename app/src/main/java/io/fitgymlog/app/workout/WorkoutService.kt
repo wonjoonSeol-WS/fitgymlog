@@ -28,7 +28,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /**
- * Runs for the length of a workout. It keeps the workout notification up, schedules the rest alarm,
+ * Runs for the length of a workout. It keeps the workout notification up,
  * and publishes the current set as a playing media session so a band's music controls drive it:
  * play/pause completes the set, next moves to the next exercise, previous takes one rep off.
  */
@@ -47,9 +47,6 @@ class WorkoutService : Service() {
         val container = container
         scope.launch {
             container.workouts.awaitLoaded()
-            launch {
-                container.workouts.active.map { it?.restEndsAt }.distinctUntilChanged().collect { RestAlarm.sync(this@WorkoutService, it) }
-            }
             val shown = container.settings.settings.map { ShownSettings(it.unit, it.bandRemoteEnabled) }.distinctUntilChanged()
             combine(container.workouts.active, shown, ::Pair).collectLatest { (active, settings) ->
                 render(active, settings)

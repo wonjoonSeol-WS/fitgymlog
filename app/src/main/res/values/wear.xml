@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lets the watch app find the phone that has FitGymLog among its paired devices. Kept from shrinking in raw/fitgymlog_keep.xml. -->
+<resources>
+    <string-array name="android_wear_capabilities" translatable="false">
+        <item>fitgymlog_phone</item>
+    </string-array>
+</resources>
