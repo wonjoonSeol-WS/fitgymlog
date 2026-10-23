@@ -11,10 +11,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -154,6 +156,7 @@ fun SettingsScreen(onOpenBandGuide: () -> Unit, onOpenCoach: () -> Unit) {
     ) { padding ->
         ReadableWidth(Modifier.padding(padding)) { gutter ->
             Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = gutter)) {
+                UpdateItem()
                 SettingsSection(stringResource(R.string.section_workout))
                 SettingsItem(stringResource(R.string.setting_unit), unitName(settings.unit)) { picker = Picker.UNIT }
                 SettingsItem(stringResource(R.string.setting_language), languageName(currentLanguage(context))) { picker = Picker.LANGUAGE }
@@ -241,9 +244,6 @@ fun SettingsScreen(onOpenBandGuide: () -> Unit, onOpenCoach: () -> Unit) {
                 SettingsItem(stringResource(R.string.export_backup), stringResource(R.string.export_backup_help)) { exportBackup.launch("fitgymlog-backup-$today.json") }
                 SettingsItem(stringResource(R.string.export_hevy), stringResource(R.string.export_hevy_help)) { exportHevy.launch("fitgymlog-hevy-$today.csv") }
                 SettingsItem(stringResource(R.string.export_strong), stringResource(R.string.export_strong_help)) { exportStrong.launch("fitgymlog-strong-$today.csv") }
-
-                SettingsSection(stringResource(R.string.section_about))
-                UpdateItem()
             }
         }
     }
@@ -383,7 +383,7 @@ private fun SettingsHelp(text: String) {
     )
 }
 
-/** The version, and a tap to ask GitHub whether a newer one is out; a second tap on a newer one opens its download page. */
+/** The version first, with a button to ask GitHub for a newer one; when there is one, the button opens its download page. */
 @Composable
 private fun UpdateItem() {
     val context = LocalContext.current
@@ -394,21 +394,29 @@ private fun UpdateItem() {
     val result = check
     val status = when {
         checking -> stringResource(R.string.update_checking)
-        result == null -> stringResource(R.string.update_tap_to_check, current)
-        result is UpdateCheck.UpToDate -> stringResource(R.string.update_up_to_date, current)
+        result == null -> stringResource(R.string.update_never_checked)
+        result is UpdateCheck.UpToDate -> stringResource(R.string.update_up_to_date)
         result is UpdateCheck.Available -> stringResource(R.string.update_available, result.version)
         else -> stringResource(R.string.update_failed)
     }
-    SettingsItem(stringResource(R.string.app_name), status) {
-        when (result) {
-            is UpdateCheck.Available -> openLink(context, result.url)
-            else -> if (!checking) {
-                checking = true
-                scope.launch {
-                    check = Updates.check(current)
-                    checking = false
-                }
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.app_version, current)) },
+        supportingContent = { Text(status) },
+        trailingContent = {
+            if (result is UpdateCheck.Available) {
+                Button(onClick = { openLink(context, result.url) }) { Text(stringResource(R.string.update_download, result.version)) }
+            } else {
+                OutlinedButton(
+                    enabled = !checking,
+                    onClick = {
+                        checking = true
+                        scope.launch {
+                            check = Updates.check(current)
+                            checking = false
+                        }
+                    },
+                ) { Text(stringResource(R.string.update_check)) }
             }
-        }
-    }
+        },
+    )
 }

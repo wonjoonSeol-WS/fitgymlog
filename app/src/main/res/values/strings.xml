@@ -130,7 +130,6 @@
     <string name="save_as_routine">Save as routine</string>
     <string name="saved_as_routine">Saved as a routine.</string>
     <string name="search_exercises">Search</string>
-    <string name="section_about">About</string>
     <string name="section_band">Band and watch</string>
     <string name="section_data">Data</string>
     <string name="section_samsung_health">Samsung Health</string>
@@ -214,11 +213,14 @@
     <string name="use_on_band">Control with band</string>
     <string name="play_video">Play video</string>
     <string name="open_in_youtube">Open in YouTube</string>
-    <string name="update_tap_to_check">Version %1$s. Tap to check for a newer one.</string>
+    <string name="app_version">FitGymLog %1$s</string>
+    <string name="update_check">Check for updates</string>
+    <string name="update_download">Get %1$s</string>
+    <string name="update_never_checked">See whether a newer version is on GitHub</string>
     <string name="update_checking">Checking GitHub…</string>
-    <string name="update_up_to_date">Version %1$s is the latest.</string>
-    <string name="update_available">Version %1$s is out. Tap to download it.</string>
-    <string name="update_failed">Couldn\'t reach GitHub. Tap to try again.</string>
+    <string name="update_up_to_date">This is the latest version</string>
+    <string name="update_available">Version %1$s is out</string>
+    <string name="update_failed">Couldn\'t reach GitHub</string>
     <string name="setting_play_videos_in_app">Play form videos in the app</string>
     <string name="setting_play_videos_in_app_help">Watch without leaving your workout. Turn off to open them in YouTube.</string>
     <string name="remove_link">Remove link</string>

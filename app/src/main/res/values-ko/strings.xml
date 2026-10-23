@@ -130,7 +130,6 @@
     <string name="save_as_routine">루틴으로 저장</string>
     <string name="saved_as_routine">루틴으로 저장했어요.</string>
     <string name="search_exercises">검색</string>
-    <string name="section_about">정보</string>
     <string name="section_band">밴드와 워치</string>
     <string name="section_data">데이터</string>
     <string name="section_samsung_health">Samsung Health</string>
@@ -213,11 +212,14 @@
     <string name="use_on_band">밴드로 조작하기</string>
     <string name="play_video">영상 재생</string>
     <string name="open_in_youtube">YouTube에서 열기</string>
-    <string name="update_tap_to_check">버전 %1$s. 눌러서 새 버전을 확인하세요.</string>
+    <string name="app_version">FitGymLog %1$s</string>
+    <string name="update_check">업데이트 확인</string>
+    <string name="update_download">%1$s 받기</string>
+    <string name="update_never_checked">GitHub에 새 버전이 있는지 확인해요</string>
     <string name="update_checking">GitHub 확인 중…</string>
-    <string name="update_up_to_date">%1$s 버전이 최신이에요.</string>
-    <string name="update_available">%1$s 버전이 나왔어요. 눌러서 내려받으세요.</string>
-    <string name="update_failed">GitHub에 연결하지 못했어요. 눌러서 다시 시도하세요.</string>
+    <string name="update_up_to_date">최신 버전이에요</string>
+    <string name="update_available">%1$s 버전이 나왔어요</string>
+    <string name="update_failed">GitHub에 연결하지 못했어요</string>
     <string name="setting_play_videos_in_app">자세 영상을 앱에서 재생</string>
     <string name="setting_play_videos_in_app_help">운동을 벗어나지 않고 봐요. 끄면 YouTube에서 열려요.</string>
     <string name="remove_link">링크 삭제</string>

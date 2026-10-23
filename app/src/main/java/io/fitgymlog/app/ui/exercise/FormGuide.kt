@@ -108,7 +108,7 @@ fun FormGuide(exercise: Exercise) {
         }
         videos.forEach { url ->
             key(url) {
-                VideoCard(url, removable = url in exercise.userLinks, onRemove = { remove(url) }) {
+                VideoCard(url, removable = url in exercise.userLinks, playing = url == playing, onRemove = { remove(url) }) {
                     if (settings.playVideosInApp) playing = url else openLink(context, url)
                 }
             }
@@ -124,10 +124,6 @@ fun FormGuide(exercise: Exercise) {
         }
     }
 
-    playing?.let { url ->
-        PreviewParser.youtubeIdOf(url)?.let { id -> VideoPlayerDialog(url, id, onDismiss = { playing = null }) }
-    }
-
     if (adding) {
         AddLinkDialog(
             existing = exercise.allLinks,
@@ -141,8 +137,9 @@ fun FormGuide(exercise: Exercise) {
 }
 
 @Composable
-private fun VideoCard(url: String, removable: Boolean, onRemove: () -> Unit, onOpen: () -> Unit) {
+private fun VideoCard(url: String, removable: Boolean, playing: Boolean, onRemove: () -> Unit, onPlay: () -> Unit) {
     val id = PreviewParser.youtubeIdOf(url) ?: return
+    val context = LocalContext.current
     val thumbnail by rememberYoutubeStill(id)
     val preview by rememberLinkPreview(url)
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -153,23 +150,31 @@ private fun VideoCard(url: String, removable: Boolean, onRemove: () -> Unit, onO
                 .aspectRatio(16f / 9f)
                 .clip(RoundedCornerShape(16.dp))
                 .background(MaterialTheme.lift.field)
-                .clickable(onClick = onOpen),
+                .then(if (playing) Modifier else Modifier.clickable(onClick = onPlay)),
         ) {
-            thumbnail?.let { Image(it, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize()) }
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.size(64.dp).background(Color.Black.copy(alpha = 0.6f), CircleShape),
-            ) {
-                Icon(Icons.Default.PlayArrow, stringResource(R.string.play_video), tint = Color.White, modifier = Modifier.size(36.dp))
+            if (playing) {
+                InlineVideoPlayer(id, Modifier.fillMaxSize())
+            } else {
+                thumbnail?.let { Image(it, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize()) }
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.size(64.dp).background(Color.Black.copy(alpha = 0.6f), CircleShape),
+                ) {
+                    Icon(Icons.Default.PlayArrow, stringResource(R.string.play_video), tint = Color.White, modifier = Modifier.size(36.dp))
+                }
+                if (removable) RemoveButton(onRemove, Modifier.align(Alignment.TopEnd))
             }
-            if (removable) RemoveButton(onRemove, Modifier.align(Alignment.TopEnd))
         }
-        Text(
-            preview?.title ?: stringResource(R.string.link_video),
-            style = MaterialTheme.typography.titleSmall,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                preview?.title ?: stringResource(R.string.link_video),
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            if (playing) TextButton(onClick = { openLink(context, url) }) { Text(stringResource(R.string.open_in_youtube)) }
+        }
     }
 }
 
