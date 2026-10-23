@@ -13,7 +13,8 @@ Download: [latest release](https://github.com/wonjoonSeol/fitgymlog/releases/lat
 - Cardio in minutes (treadmill with speed and incline, stair machine, bike, rower with distance), planned in routines, each saved to
   Health Connect as its own session, with the treadmill's speed and the distance covered
 - Ready-made programs (StrongLifts 5x5, full body, upper/lower, push/pull/legs), plus your own routines
-- An optional coach on your own API key for an OpenAI-compatible provider over https, or a local model such as Ollama
+- An optional coach on your own API key, with presets for OpenAI, Anthropic (Claude Opus, Sonnet, Haiku), Gemini,
+  OpenRouter, Groq and DeepSeek, any other OpenAI-compatible provider over https, or a local model such as Ollama
   over http on the phone or your network: today's targets checked against
   StrongLifts rules, notes after each workout, and a chat that remembers what you let it, sees how long you have
   trained and rested, and can change the workout in progress (weights, sets, rest, exercises in or out) once you apply it
@@ -93,6 +94,25 @@ do the recent body measurements it reads from Health Connect if you allow that. 
 phone for that calorie target. The key is
 encrypted with the Android Keystore and left out of backups. Coach notes, workout notes and body measurements can also go into Drive, as a second file in the
 same hidden folder. See the [privacy policy](https://wonjoonseol.github.io/fitgymlog/privacy.html).
+
+## What the coach costs
+
+The app is free, and so is the coach on a model on your own computer. With an API key you pay your provider for what
+you use, and nothing goes to the developer. From the app's measured requests, a workout uses about 2,300 tokens in and
+400 out, plus three chat messages a week, or one a day for every-day training:
+
+| Model                          | 3 days a week | Every day         |
+|--------------------------------|---------------|-------------------|
+| A model on your own computer   | Free          | Free              |
+| Gemini 3.8 Flash, free tier    | Free          | Free (daily cap)  |
+| GPT-6 Luna                     | $0.01         | $0.02             |
+| Claude Haiku 5.5               | $0.01         | $0.03             |
+| Gemini 3.8 Flash, paid         | $0.10         | $0.25             |
+| Claude Sonnet 5.5              | $0.20         | $0.45             |
+| GPT-6 Astra                    | $0.90         | $2.10             |
+
+List prices from each provider on October 22, 2026, in US dollars before tax. Google may use free-tier requests to
+improve its products. See the [website](https://wonjoonseol.github.io/fitgymlog/) for details.
 
 ## Building
 
