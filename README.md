@@ -119,3 +119,7 @@ Galaxy Wearable이 이 알림을 밴드로 보내 진동합니다. 그래서 휴
 
 [MIT](LICENSE). The bundled Barlow Semi Condensed font is under the SIL Open Font License 1.1, see
 [third_party/barlow/OFL.txt](third_party/barlow/OFL.txt).
+
+## Try my other projects
+
+Like this? I make other small open source tools too: Android apps, a Claude chat game, Claude add-ons and more. See them all at [wonjoonseol.github.io](https://wonjoonseol.github.io/?from=fitgymlog).
