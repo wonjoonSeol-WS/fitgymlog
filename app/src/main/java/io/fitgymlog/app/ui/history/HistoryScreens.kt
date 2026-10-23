@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -21,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -52,7 +54,6 @@ import io.fitgymlog.app.R
 import io.fitgymlog.app.catching
 import io.fitgymlog.app.container
 import io.fitgymlog.app.data.byId
-import io.fitgymlog.app.ui.coach.ReviewCard
 import io.fitgymlog.app.model.Exercise
 import io.fitgymlog.app.model.ExerciseKind
 import io.fitgymlog.app.model.Routine
@@ -68,8 +69,11 @@ import io.fitgymlog.app.ui.NumberStyles
 import io.fitgymlog.app.ui.ReadableWidth
 import io.fitgymlog.app.ui.Stat
 import io.fitgymlog.app.ui.TwoPaneMinWidth
+import io.fitgymlog.app.ui.coach.ReviewCard
+import io.fitgymlog.app.ui.exercise.metricName
 import io.fitgymlog.app.ui.formatClock
 import io.fitgymlog.app.ui.formatWeightNumber
+import io.fitgymlog.app.ui.lift
 import io.fitgymlog.app.ui.localizedName
 import io.fitgymlog.app.ui.setTypeName
 import io.fitgymlog.app.ui.unitLabel
@@ -112,8 +116,9 @@ private fun HistoryList(history: List<Workout>, selectedId: Long?, onSelect: (Lo
     val app = LocalContext.current.container
     val exercises by app.exercises.exercises.collectAsStateWithLifecycle()
     val settings by app.settings.settings.collectAsStateWithLifecycle()
-    ReadableWidth(Modifier.statusBarsPadding()) {
-        LazyColumn(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    val records by app.records.collectAsStateWithLifecycle()
+    ReadableWidth(Modifier.statusBarsPadding()) { gutter ->
+        LazyColumn(contentPadding = PaddingValues(horizontal = 16.dp + gutter, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item {
                 Text(
                     stringResource(R.string.tab_history),
@@ -138,6 +143,9 @@ private fun HistoryList(history: List<Workout>, selectedId: Long?, onSelect: (Lo
                             Text(dateText(workout), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         WorkoutStats(workout, settings.unit)
+                        records[workout.id]?.let { beaten ->
+                            NewRecord(beaten.keys.map { exercises.byId(it).localizedName() }.joinToString(", "))
+                        }
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                         workout.exercises.forEach { exercise ->
                             val info = exercises.byId(exercise.exerciseId)
@@ -170,6 +178,7 @@ fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (St
     }.collectAsStateWithLifecycle(StoredWorkout.Loading)
     val workout = (stored as? StoredWorkout.Found)?.workout
     val exercises by app.exercises.exercises.collectAsStateWithLifecycle()
+    val records by app.records.collectAsStateWithLifecycle()
     val settings by app.settings.settings.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     var menuOpen by rememberSaveable(workoutId) { mutableStateOf(false) }
@@ -221,8 +230,8 @@ fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (St
             }
         }
         val current = workout ?: return@Scaffold
-        ReadableWidth(Modifier.padding(padding)) {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(horizontal = 16.dp)) {
+        ReadableWidth(Modifier.padding(padding)) { gutter ->
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(horizontal = 16.dp + gutter)) {
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(dateText(current), color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -239,8 +248,10 @@ fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (St
                     }
                 }
                 item { ReviewCard(current) }
+                val firstBlocks = current.exercises.distinctBy { it.exerciseId }.map { it.key }.toSet()
                 items(current.exercises, key = { it.key }) { exercise ->
                     val info = exercises.byId(exercise.exerciseId)
+                    val beaten = records[current.id]?.get(exercise.exerciseId)?.takeIf { exercise.key in firstBlocks }
                     Surface(
                         onClick = { onOpenExercise(exercise.exerciseId) },
                         shape = RoundedCornerShape(16.dp),
@@ -248,6 +259,7 @@ fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (St
                     ) {
                         Column(Modifier.padding(16.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(info.localizedName(), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                            beaten?.let { metrics -> NewRecord(metrics.map { stringResource(metricName(it)) }.joinToString(", ")) }
                             var normal = 0
                             exercise.sets.forEach { set ->
                                 if (set.type == SetType.NORMAL) normal++
@@ -258,7 +270,7 @@ fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (St
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.width(72.dp),
                                     )
-                                    Text(setLine(context, info, set.weightKg, set.reps, settings.unit, set.durationSeconds, set.level), style = NumberStyles.cell)
+                                    Text(setLine(context, info, set.weightKg, set.reps, settings.unit, set.durationSeconds, set.level, set.speedKmh, set.distanceMeters), style = NumberStyles.cell)
                                 }
                             }
                             if (exercise.notes.isNotBlank()) Text(exercise.notes, style = MaterialTheme.typography.bodySmall)
@@ -273,7 +285,7 @@ fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (St
     if (editingTimes && workout != null) {
         EditTimesDialog(
             workout = workout,
-            onSave = { start, end -> app.scope.launch { app.actions.retime(workout, start, end) } },
+            onSave = { start, end -> app.inAppScope { app.actions.retime(workout.id, start, end) } },
             onDismiss = { editingTimes = false },
         )
     }
@@ -291,6 +303,14 @@ fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (St
             },
             onDismiss = { confirmDelete = false },
         )
+    }
+}
+
+@Composable
+private fun NewRecord(what: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Icon(Icons.Default.Star, contentDescription = null, tint = MaterialTheme.lift.doneCheck, modifier = Modifier.size(18.dp))
+        Text(stringResource(R.string.record_new, what), style = MaterialTheme.typography.bodyMedium)
     }
 }
 
@@ -326,12 +346,14 @@ private fun Workout.toRoutine(restSeconds: Int, kindOf: (String) -> ExerciseKind
             reps = working.mapNotNull { it.reps }.maxOrNull(),
             weightKg = working.mapNotNull { it.weightKg }.maxOrNull(),
             restSeconds = if (exercise.restSeconds > 0) exercise.restSeconds else kindOf(exercise.exerciseId).defaultRestSeconds(restSeconds),
+            durationSeconds = working.mapNotNull { it.durationSeconds }.maxOrNull(),
+            level = working.mapNotNull { it.level }.maxOrNull(),
+            speedKmh = working.mapNotNull { it.speedKmh }.maxOrNull(),
         )
     },
 )
 
-/** Used by the exercise screen: the most recent sessions of one exercise, newest first. */
-fun recentSessions(history: List<Workout>, exerciseId: String): List<Pair<Workout, List<WorkoutSet>>> =
+fun exerciseSessions(history: List<Workout>, exerciseId: String): List<Pair<Workout, List<WorkoutSet>>> =
     history.mapNotNull { workout ->
         val sets = workout.exercises.filter { it.exerciseId == exerciseId }.flatMap { it.sets }
         if (sets.isEmpty()) null else workout to sets
@@ -342,7 +364,7 @@ fun SessionLines(context: Context, exercise: Exercise, sessions: List<Pair<Worko
     sessions.forEach { (workout, sets) ->
         Column(Modifier.padding(vertical = 6.dp)) {
             Text(dateText(workout), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(sets.joinToString(", ") { setLine(context, exercise, it.weightKg, it.reps, unit, it.durationSeconds, it.level) })
+            Text(sets.joinToString(", ") { setLine(context, exercise, it.weightKg, it.reps, unit, it.durationSeconds, it.level, it.speedKmh, it.distanceMeters) })
         }
         HorizontalDivider()
     }

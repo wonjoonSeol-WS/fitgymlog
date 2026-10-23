@@ -13,9 +13,11 @@ object Notifications {
     const val ID_WORKOUT = 1
     private const val ID_REST_OVER = 2
     private const val ID_AUTO_FINISHED = 3
+    private const val ID_CHECK_IN = 4
     const val CHANNEL_WORKOUT = "workout"
     private const val CHANNEL_REST_OVER = "rest_over"
     private const val CHANNEL_AUTO_FINISHED = "auto_finished"
+    private const val CHANNEL_CHECK_IN = "check_in"
     private val REST_OVER_VIBRATION = longArrayOf(0, 400, 200, 400)
 
     fun ensureChannels(context: Context) {
@@ -28,6 +30,7 @@ object Notifications {
                     vibrationPattern = REST_OVER_VIBRATION
                 },
                 NotificationChannel(CHANNEL_AUTO_FINISHED, context.getString(R.string.channel_auto_finished), NotificationManager.IMPORTANCE_DEFAULT),
+                NotificationChannel(CHANNEL_CHECK_IN, context.getString(R.string.channel_check_in), NotificationManager.IMPORTANCE_DEFAULT),
             ),
         )
     }
@@ -56,6 +59,24 @@ object Notifications {
             .setAutoCancel(true)
             .build()
         context.getSystemService(NotificationManager::class.java).notify(ID_AUTO_FINISHED, notification)
+    }
+
+    fun postCheckIn(context: Context, text: String) {
+        ensureChannels(context)
+        val open = PendingIntent.getActivity(
+            context,
+            ID_CHECK_IN,
+            Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP).putExtra(MainActivity.EXTRA_CHECK_IN, true),
+            PendingIntent.FLAG_IMMUTABLE,
+        )
+        val notification = Notification.Builder(context, CHANNEL_CHECK_IN)
+            .setSmallIcon(R.drawable.ic_fitgymlog)
+            .setContentTitle(context.getString(R.string.check_in_title))
+            .setContentText(text)
+            .setContentIntent(open)
+            .setAutoCancel(true)
+            .build()
+        context.getSystemService(NotificationManager::class.java).notify(ID_CHECK_IN, notification)
     }
 
     fun openApp(context: Context): PendingIntent = PendingIntent.getActivity(

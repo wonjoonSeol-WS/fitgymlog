@@ -33,6 +33,7 @@ class ExerciseRepository(
             equipment = it.equipment,
             links = it.links,
             nameRes = it.nameRes,
+            largeIncrements = it.largeIncrements,
         )
     }
 

@@ -3,6 +3,26 @@
     <string name="app_name">FitGymLog</string>
     <string name="tab_workout">Workout</string>
     <string name="tab_history">History</string>
+    <string name="tab_stats">Stats</string>
+    <string name="stats_composition">Body composition</string>
+    <string name="stats_measurements">Measurements</string>
+    <string name="range_month">1M</string>
+    <string name="range_quarter">3M</string>
+    <string name="range_year">1Y</string>
+    <string name="range_all">All</string>
+    <string name="weight_trend">Trend %1$s</string>
+    <string name="weight_trend_as_of">Trend %1$s on %2$s</string>
+    <string name="weight_goal_pace">Your goal plans %1$s a week.</string>
+    <string name="weight_trend_help">The line is the trend, which evens out day-to-day water swings. Dots are your readings.</string>
+    <string name="weight_empty">No weight yet. Read it from Health Connect or add it by hand.</string>
+    <string name="composition_empty">No body composition yet. Read an InBody or scale screenshot, or add it by hand.</string>
+    <string name="composition_vs">vs %1$s</string>
+    <string name="stats_weeks">Each week</string>
+    <string name="week_workouts">Workouts</string>
+    <string name="week_time">Time</string>
+    <string name="hours_value">%1$s h</string>
+    <string name="week_this">This week: %1$s</string>
+    <string name="stats_exercises">Exercises</string>
     <string name="tab_settings">Settings</string>
     <string name="add_exercise">Add exercise</string>
     <string name="add_link">Add link</string>
@@ -44,7 +64,7 @@
     <string name="exercise_link">Form video or article link</string>
     <string name="exercise_name">Name</string>
     <string name="export_backup">Export backup</string>
-    <string name="export_backup_help">Everything, including routines and custom exercises. Restore it in this app.</string>
+    <string name="export_backup_help">Workouts, routines and custom exercises; coach notes and body measurements are not included. Restore it in this app.</string>
     <string name="export_done">Export finished.</string>
     <string name="export_hevy">Export as Hevy CSV</string>
     <string name="export_hevy_help">Hevy\'s columns with English exercise names, for spreadsheets and apps that read Hevy files.</string>
@@ -54,6 +74,8 @@
     <string name="finish_workout_title">Finish workout?</string>
     <string name="form_guide">Form guide</string>
     <string name="health_permission_denied">Permission was not granted, so nothing is written to Health Connect.</string>
+    <string name="health_connect_open">Open Health Connect</string>
+    <string name="health_read_denied">Health Connect did not allow reading exercise, so cardio another app recorded is written again. Once it stops asking, open Health Connect, tap FitGymLog and allow Exercise.</string>
     <string name="health_unavailable">Health Connect is not available on this phone.</string>
     <string name="import_action">Import</string>
     <string name="import_backup_title">Restore backup?</string>
@@ -82,6 +104,15 @@
     <string name="no_history">Finished workouts show up here.</string>
     <string name="no_routines">No routines yet.</string>
     <string name="no_sessions_yet">Not done yet.</string>
+    <string name="records">Records</string>
+    <string name="record_new">New record: %1$s</string>
+    <string name="progress">Progress</string>
+    <string name="progress_heaviest">Heaviest set</string>
+    <string name="progress_estimated_max">Estimated 1RM</string>
+    <string name="progress_least_assistance">Least assistance</string>
+    <string name="progress_reps">Most reps</string>
+    <string name="progress_duration">Longest</string>
+    <string name="progress_description">%1$s, from %2$s to %3$s</string>
     <string name="pick_exercise">Choose exercise</string>
     <string name="previous_short">last</string>
     <string name="recent_sessions">Recent sessions</string>
@@ -110,6 +141,7 @@
     <string name="session_strength">Strength training</string>
     <string name="session_weightlifting">Weightlifting</string>
     <string name="set_not_recorded">Not recorded</string>
+    <string name="add_warmup_set">Add warm-up set</string>
     <string name="set_type_drop">Drop set</string>
     <string name="set_type_drop_short">D</string>
     <string name="set_type_failure">Failure</string>
@@ -125,14 +157,23 @@
     <string name="setting_health_connect">Write workouts to Health Connect</string>
     <string name="setting_health_connect_help">Samsung Health picks them up from there, but it doesn\'t show the individual sets.</string>
     <string name="setting_health_type">Exercise type in Samsung Health</string>
+    <string name="setting_warmup">Warm-up set</string>
+    <string name="setting_warmup_help">Before a barbell lift, adds one set of 5 on the empty bar.</string>
+    <string name="setting_health_skip_cardio">Skip cardio already recorded</string>
+    <string name="setting_health_skip_cardio_help">Cardio another app already recorded, such as a run your band detected, is not written again. Uses reading exercise from Health Connect.</string>
     <string name="setting_language">Language</string>
     <string name="setting_unit">Weight unit</string>
     <string name="skip">Skip</string>
     <string name="start_empty_workout">Start empty workout</string>
     <string name="start_routine">Start</string>
+    <string name="unit_kmh">km/h</string>
+    <string name="unit_mph">mph</string>
+    <string name="unit_m" translatable="false">m</string>
     <string name="unit_kg">kg</string>
     <string name="unit_kg_long">Kilograms (kg)</string>
     <string name="unit_lb">lb</string>
+    <string name="unit_cm">cm</string>
+    <string name="unit_in">in</string>
     <string name="unit_lb_long">Pounds (lb)</string>
     <string name="volume">Volume</string>
     <string name="weight_times_reps">%1$s x %2$d</string>
@@ -210,5 +251,50 @@
     <plurals name="sets_of_exercise">
         <item quantity="one">%2$s, %1$d set</item>
         <item quantity="other">%2$s, %1$d sets</item>
+    </plurals>
+    <plurals name="stats_sessions">
+        <item quantity="one">%1$d session, last %2$s</item>
+        <item quantity="other">%1$d sessions, last %2$s</item>
+    </plurals>
+    <plurals name="weight_pace">
+        <item quantity="one">%1$s a week over the last %2$d week</item>
+        <item quantity="other">%1$s a week over the last %2$d weeks</item>
+    </plurals>
+    <string name="channel_check_in">Weekly check-in</string>
+    <string name="check_in">Weekly check-in</string>
+    <string name="check_in_title">Your week</string>
+    <string name="check_in_text_none">No workouts this week.</string>
+    <string name="check_in_text_records">%1$s, %2$s</string>
+    <string name="check_in_range">%1$s to %2$s</string>
+    <string name="check_in_training">Training</string>
+    <string name="check_in_last_week">Last week %1$s</string>
+    <string name="check_in_records">New records</string>
+    <string name="check_in_no_records">No new records this week.</string>
+    <string name="check_in_missed">Missed reps</string>
+    <string name="check_in_no_missed">Every set with a target hit it.</string>
+    <string name="check_in_weight">Trend %1$s, %2$s this week</string>
+    <string name="check_in_weight_first">Trend %1$s</string>
+    <string name="check_in_no_weight">No weigh-ins this week.</string>
+    <string name="check_in_next_week">Next week</string>
+    <string name="check_in_coach_help">The coach looks at this week and can suggest changes to your routines. Weights stay with the app\'s progression rules.</string>
+    <string name="check_in_ask">Ask the coach</string>
+    <string name="check_in_asking">The coach is looking at your week.</string>
+    <string name="check_in_needs_coach">Connect the coach to ask about next week.</string>
+    <string name="check_in_changes">Changes to your routines</string>
+    <string name="check_in_changes_stale">These no longer fit your routines.</string>
+    <string name="check_in_change_in">%1$s: %2$s</string>
+    <string name="setting_check_in">Weekly check-in</string>
+    <string name="setting_check_in_help">On the last evening of each week, a summary of your training and weight. With the coach on, it can suggest next week\'s changes.</string>
+    <plurals name="check_in_missed_value">
+        <item quantity="one">%1$d of %2$d set short</item>
+        <item quantity="other">%1$d of %2$d sets short</item>
+    </plurals>
+    <plurals name="check_in_workouts">
+        <item quantity="one">%d workout</item>
+        <item quantity="other">%d workouts</item>
+    </plurals>
+    <plurals name="check_in_records">
+        <item quantity="one">%d new record</item>
+        <item quantity="other">%d new records</item>
     </plurals>
 </resources>

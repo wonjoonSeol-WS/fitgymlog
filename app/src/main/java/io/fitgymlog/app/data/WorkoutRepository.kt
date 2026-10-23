@@ -102,9 +102,16 @@ class WorkoutRepository(private val dao: WorkoutDao, private val tombstones: Tom
 
     suspend fun allFinished(): List<Workout> = dao.allFinished().map { it.toWorkout() }
 
-    suspend fun recentFinished(limit: Int): List<Workout> = dao.recentFinished(limit).map { it.toWorkout() }
+    suspend fun finishedBefore(before: Instant, limit: Int): List<Workout> = dao.finishedBefore(before.toEpochMilli(), limit).map { it.toWorkout() }
 
-    /** Saves changes to a finished workout, stamped newer than before so sync carries them to other phones. */
+    suspend fun countFinishedSince(from: Instant): Int = dao.countFinishedSince(from.toEpochMilli())
+
+    /** Sync and import treat finished workouts that start in the same minute with the same title as one. */
+    suspend fun clashes(workout: Workout, start: Instant): Boolean {
+        val minute = start.truncatedTo(ChronoUnit.MINUTES)
+        return dao.countFinished(workout.uuid, workout.title, minute.toEpochMilli(), minute.plus(1, ChronoUnit.MINUTES).toEpochMilli()) > 0
+    }
+
     suspend fun saveEdited(workout: Workout): Workout {
         val edited = workout.copy(updatedAt = Instant.ofEpochMilli(stampAfter(workout.updatedAt.toEpochMilli(), System.currentTimeMillis())))
         dao.save(edited.toGraph())

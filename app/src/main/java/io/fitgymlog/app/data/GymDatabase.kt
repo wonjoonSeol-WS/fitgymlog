@@ -17,8 +17,8 @@ import androidx.room.RoomDatabase
         ExerciseLinkEntity::class,
         TombstoneEntity::class,
     ],
-    version = 2,
-    autoMigrations = [AutoMigration(from = 1, to = 2)],
+    version = 4,
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 4)],
 )
 abstract class GymDatabase : RoomDatabase() {
     abstract fun workouts(): WorkoutDao

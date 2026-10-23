@@ -43,4 +43,5 @@
     <string name="exercise_treadmill">Treadmill</string>
     <string name="exercise_stair_machine">Stair Machine (Floors)</string>
     <string name="exercise_stationary_bike">Cycling</string>
+    <string name="exercise_rowing_machine">Rowing Machine</string>
 </resources>

@@ -42,14 +42,15 @@ object SyncMerge {
         val deletedAt = tombstones.associate { (it.kind to it.key) to it.deletedAt }
         fun alive(kind: String, key: String, changedAt: Long) = isNewest(changedAt, storedAt = null, deletedAt[kind to key])
 
-        val workouts = newest(local.workouts, remote.workouts, SyncWorkout.serializer(), { it.uuid }, { it.updatedAt })
+        val localWinsTies = remote.version < SyncSnapshot.VERSION
+        val workouts = newest(local.workouts, remote.workouts, SyncWorkout.serializer(), { it.uuid }, { it.updatedAt }, localWinsTies, ::setsOffTarget)
             .filter { alive(TombstoneKind.WORKOUT, it.uuid, it.updatedAt) }
         val (kept, duplicates) = withoutDuplicates(workouts)
         val duplicateTombstones = duplicates.map { SyncTombstone(TombstoneKind.WORKOUT, it.uuid, maxOf(now.toEpochMilli(), it.updatedAt)) }
 
         return SyncSnapshot(
             workouts = kept,
-            routines = newest(local.routines, remote.routines, SyncRoutine.serializer(), { it.uuid }, { it.updatedAt })
+            routines = newest(local.routines, remote.routines, SyncRoutine.serializer(), { it.uuid }, { it.updatedAt }, localWinsTies)
                 .filter { alive(TombstoneKind.ROUTINE, it.uuid, it.updatedAt) },
             customExercises = newest(local.customExercises, remote.customExercises, SyncCustomExercise.serializer(), { it.id }, { it.updatedAt }),
             links = newest(local.links.filter { WebLinks.isWeb(it.url) }, remote.links.filter { WebLinks.isWeb(it.url) }, SyncLink.serializer(), ::linkKey, { it.addedAt })
@@ -78,13 +79,32 @@ object SyncMerge {
 
     private fun linkKey(link: SyncLink) = TombstoneKind.linkKey(link.exerciseId, link.url)
 
+    /** 0.6 saved synced sets with the target equal to the reps done, so only the phone that recorded a workout knows its misses. */
+    private fun setsOffTarget(workout: SyncWorkout): Int =
+        workout.workout.exercises.sumOf { exercise -> exercise.sets.count { it.targetReps != null && it.targetReps != it.reps } }
+
     private fun latest(tombstones: List<SyncTombstone>): List<SyncTombstone> =
         tombstones.groupBy { it.kind to it.key }.values.map { versions -> versions.maxBy { it.deletedAt } }
 
-    /** Copies changed at the same moment are settled by their content, so every phone picks the same one. */
-    private fun <T> newest(local: List<T>, remote: List<T>, serializer: KSerializer<T>, key: (T) -> String, updatedAt: (T) -> Long): List<T> {
-        val order = compareBy(updatedAt).thenBy { json.encodeToString(serializer, it) }
-        return (local + remote).groupBy(key).values.map { versions -> versions.distinct().maxWith(order) }
+    /**
+     * Copies changed at the same moment are settled by their content, so every phone picks the same one; against a file
+     * from an older format, which lacks fields this phone has, the phone's own copy wins instead.
+     */
+    private fun <T> newest(
+        local: List<T>,
+        remote: List<T>,
+        serializer: KSerializer<T>,
+        key: (T) -> String,
+        updatedAt: (T) -> Long,
+        localWinsTies: Boolean = false,
+        knownOnlyToRecorder: (T) -> Int = { 0 },
+    ): List<T> {
+        val order = compareBy(updatedAt).thenBy(knownOnlyToRecorder).thenBy { json.encodeToString(serializer, it) }
+        val own = local.associateBy(key)
+        return (local + remote).groupBy(key).map { (id, versions) ->
+            val best = versions.distinct().maxWith(order)
+            own[id]?.takeIf { localWinsTies && updatedAt(it) == updatedAt(best) } ?: best
+        }
     }
 
     /**

@@ -53,6 +53,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -62,22 +63,24 @@ import io.fitgymlog.app.data.byId
 import io.fitgymlog.app.model.Exercise
 import io.fitgymlog.app.model.WeightUnit
 import io.fitgymlog.app.model.WorkoutSet
+import io.fitgymlog.app.ui.ChatIcon
 import io.fitgymlog.app.ui.ChoiceDialog
 import io.fitgymlog.app.ui.ConfirmDialog
 import io.fitgymlog.app.ui.REST_CHOICES
 import io.fitgymlog.app.ui.ReadableWidth
-import io.fitgymlog.app.ui.coach.TargetsCard
 import io.fitgymlog.app.ui.Stat
 import io.fitgymlog.app.ui.TwoPaneMinWidth
+import io.fitgymlog.app.ui.coach.TargetsCard
 import io.fitgymlog.app.ui.exercise.ExercisePickerDialog
 import io.fitgymlog.app.ui.exercise.FormGuideSheet
 import io.fitgymlog.app.ui.formatClock
-import io.fitgymlog.app.ui.formatRest
 import io.fitgymlog.app.ui.formatWeightNumber
 import io.fitgymlog.app.ui.lift
 import io.fitgymlog.app.ui.rememberNow
+import io.fitgymlog.app.ui.restValue
 import io.fitgymlog.app.ui.unitLabel
 import io.fitgymlog.app.workout.ActiveWorkout
+import io.fitgymlog.app.workout.barInKg
 import java.time.Duration
 import java.time.Instant
 import kotlinx.coroutines.Dispatchers
@@ -138,8 +141,8 @@ fun ActiveWorkoutScreen(onBack: () -> Unit, onFinished: (Long?) -> Unit, onOpenE
         value = exerciseIds.associateWith { app.workouts.previousSets(it) }
     }
 
-    val workoutList: @Composable () -> Unit = {
-        LazyColumn(state = listState, contentPadding = PaddingValues(bottom = 140.dp)) {
+    val workoutList: @Composable (gutter: Dp) -> Unit = { gutter ->
+        LazyColumn(state = listState, contentPadding = PaddingValues(start = gutter, end = gutter, bottom = 140.dp)) {
             item { WorkoutStats(workout, settings.unit) }
             item {
                 TargetsCard(workout, ::exerciseOf, settings.unit) { targets ->
@@ -158,6 +161,7 @@ fun ActiveWorkoutScreen(onBack: () -> Unit, onFinished: (Long?) -> Unit, onOpenE
                     bandHint = focused && settings.bandRemoteEnabled,
                     isLast = index == workout.exercises.lastIndex,
                     unit = settings.unit,
+                    barKg = settings.barInKg,
                     onChange = ::change,
                     onEditSet = { setEditor = it },
                     onReplace = { picker = PickerTarget.Replace(index) },
@@ -200,13 +204,14 @@ fun ActiveWorkoutScreen(onBack: () -> Unit, onFinished: (Long?) -> Unit, onOpenE
                     IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) }
                 },
                 actions = {
+                    if (coach.enabled) IconButton(onClick = onOpenCoach) { Icon(ChatIcon, stringResource(R.string.coach_ask)) }
                     Button(
                         onClick = { confirmFinish = true },
                         shape = RoundedCornerShape(10.dp),
                         contentPadding = PaddingValues(horizontal = 18.dp),
                         modifier = Modifier.height(38.dp),
                     ) { Text(stringResource(R.string.finish), fontWeight = FontWeight.SemiBold) }
-                    WorkoutMenu(onRename = { renaming = true }, onDiscard = { confirmDiscard = true }, onCoach = onOpenCoach.takeIf { coach.enabled })
+                    WorkoutMenu(onRename = { renaming = true }, onDiscard = { confirmDiscard = true })
                 },
             )
         },
@@ -227,10 +232,10 @@ fun ActiveWorkoutScreen(onBack: () -> Unit, onFinished: (Long?) -> Unit, onOpenE
                         modifier = Modifier.weight(1f),
                     )
                     VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                    Box(Modifier.weight(1.1f).fillMaxHeight()) { workoutList() }
+                    Box(Modifier.weight(1.1f).fillMaxHeight()) { workoutList(0.dp) }
                 }
             } else {
-                ReadableWidth { workoutList() }
+                ReadableWidth { gutter -> workoutList(gutter) }
                 AnimatedVisibility(
                     visible = workout.restEndsAt != null,
                     enter = slideInVertically { it * 2 },
@@ -302,7 +307,7 @@ fun ActiveWorkoutScreen(onBack: () -> Unit, onFinished: (Long?) -> Unit, onOpenE
             title = stringResource(R.string.rest_timer),
             options = REST_CHOICES,
             selected = workout.exercises.getOrNull(index)?.restSeconds ?: 0,
-            label = { if (it == 0) stringResource(R.string.rest_off) else formatRest(it) },
+            label = { restValue(it) },
             onSelect = { seconds -> change { it.setRestSeconds(index, seconds) } },
             onDismiss = { restEditor = null },
         )

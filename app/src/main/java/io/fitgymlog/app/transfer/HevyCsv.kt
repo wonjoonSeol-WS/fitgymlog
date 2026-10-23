@@ -47,6 +47,7 @@ object HevyCsv {
                 type = setType(record["set_type"]),
                 weightKg = record.number("weight_kg") ?: record.number("weight_lbs")?.times(KG_PER_LB),
                 reps = record.number("reps")?.toInt(),
+                targetReps = null,
                 rpe = record.number("rpe"),
                 distanceMeters = record.number("distance_km")?.times(1000) ?: record.number("distance_miles")?.times(METERS_PER_MILE),
                 durationSeconds = record.number("duration_seconds")?.toInt(),

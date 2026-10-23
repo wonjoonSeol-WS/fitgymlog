@@ -34,6 +34,7 @@ object ExerciseCatalog {
             equipment = Equipment.BARBELL,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_DEADLIFT,
             links = listOf("https://stronglifts.com/deadlift/", "https://www.youtube.com/watch?v=WP8lEbeY4LM"),
+            largeIncrements = true,
         ),
         BuiltinExercise(
             id = "overhead_press_barbell",
@@ -483,6 +484,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.CARDIO,
             equipment = Equipment.MACHINE,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_RUNNING_TREADMILL,
+            links = listOf(
+                "https://www.youtube.com/watch?v=76XnbF5DBFY",
+                "https://www.health.harvard.edu/blog/treadmills-are-versatile-exercise-equipment-if-you-know-how-to-use-them-2017042611642",
+            ),
         ),
         BuiltinExercise(
             id = "stair_machine",
@@ -491,6 +496,10 @@ object ExerciseCatalog {
             kind = ExerciseKind.CARDIO,
             equipment = Equipment.MACHINE,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_STAIR_CLIMBING_MACHINE,
+            links = listOf(
+                "https://www.youtube.com/watch?v=ww3YV_N6U_U",
+                "https://health.clevelandclinic.org/stairmaster-benefits-and-workouts",
+            ),
         ),
         BuiltinExercise(
             id = "stationary_bike",
@@ -499,6 +508,22 @@ object ExerciseCatalog {
             kind = ExerciseKind.CARDIO,
             equipment = Equipment.MACHINE,
             segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_BIKING_STATIONARY,
+            links = listOf(
+                "https://www.youtube.com/watch?v=IesPRDSU0_c",
+                "https://www.hss.edu/health-library/move-better/set-up-exercise-bike",
+            ),
+        ),
+        BuiltinExercise(
+            id = "rowing_machine",
+            nameRes = R.string.exercise_rowing_machine,
+            hevyName = "Rowing Machine",
+            kind = ExerciseKind.CARDIO,
+            equipment = Equipment.MACHINE,
+            segmentType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_ROWING_MACHINE,
+            links = listOf(
+                "https://www.youtube.com/watch?v=4zWu1yuJ0_g",
+                "https://www.concept2.com/training/rowing-technique",
+            ),
         ),
     )
 }

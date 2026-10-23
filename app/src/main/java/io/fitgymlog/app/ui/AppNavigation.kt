@@ -45,6 +45,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import io.fitgymlog.app.R
+import io.fitgymlog.app.ui.checkin.CheckInScreen
 import io.fitgymlog.app.ui.coach.CoachChatScreen
 import io.fitgymlog.app.ui.coach.CoachMemoryScreen
 import io.fitgymlog.app.ui.coach.CoachSettingsScreen
@@ -55,24 +56,27 @@ import io.fitgymlog.app.ui.history.WorkoutDetailScreen
 import io.fitgymlog.app.ui.home.HomeScreen
 import io.fitgymlog.app.ui.routine.RoutineEditorScreen
 import io.fitgymlog.app.ui.settings.SettingsScreen
+import io.fitgymlog.app.ui.stats.StatsScreen
 import io.fitgymlog.app.ui.workout.ActiveWorkoutScreen
 
 private object Routes {
     const val HOME = "home"
     const val HISTORY = "history"
+    const val STATS = "stats"
     const val SETTINGS = "settings"
     const val ACTIVE = "active"
     const val ROUTINE = "routine/{id}"
     const val WORKOUT = "workout/{id}"
-    const val EXERCISE = "exercise/{id}"
+    const val EXERCISE = "exercise/{id}?progress={progress}"
     const val BAND_GUIDE = "band-guide"
     const val COACH = "coach"
     const val COACH_SETTINGS = "coach-settings"
     const val COACH_MEMORY = "coach-memory"
+    const val CHECK_IN = "check-in"
 
     fun routine(id: Long) = "routine/$id"
     fun workout(id: Long) = "workout/$id"
-    fun exercise(id: String) = "exercise/${Uri.encode(id)}"
+    fun exercise(id: String, progressFirst: Boolean = false) = "exercise/${Uri.encode(id)}" + (if (progressFirst) "?progress=true" else "")
 }
 
 private data class Tab(val route: String, val label: Int, val icon: ImageVector)
@@ -80,22 +84,17 @@ private data class Tab(val route: String, val label: Int, val icon: ImageVector)
 private val tabs = listOf(
     Tab(Routes.HOME, R.string.tab_workout, Icons.Default.Home),
     Tab(Routes.HISTORY, R.string.tab_history, Icons.Default.DateRange),
+    Tab(Routes.STATS, R.string.tab_stats, StatsIcon),
     Tab(Routes.SETTINGS, R.string.tab_settings, Icons.Default.Settings),
 )
 
 @Composable
-fun AppNavigation(openActiveWorkout: Boolean, navController: NavHostController = rememberNavController()) {
+fun AppNavigation(openActiveWorkout: Boolean, openCheckIn: Boolean, onCheckInOpened: () -> Unit, navController: NavHostController = rememberNavController()) {
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
     val showTabs = tabs.any { it.route == currentRoute }
 
-    fun open(tab: Tab) {
-        navController.navigate(tab.route) {
-            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-            launchSingleTop = true
-            restoreState = true
-        }
-    }
+    fun open(tab: Tab) = navController.openTab(tab.route)
 
     BoxWithConstraints(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         val rail = maxWidth >= NavigationRailMinWidth
@@ -107,8 +106,21 @@ fun AppNavigation(openActiveWorkout: Boolean, navController: NavHostController =
             Row(Modifier.fillMaxSize().padding(bottom = bottom).consumeWindowInsets(PaddingValues(bottom = bottom))) {
                 if (showTabs && rail) TabRail(currentRoute, ::open)
                 AppNavHost(navController, openActiveWorkout, Modifier.weight(1f))
+                LaunchedEffect(openCheckIn) {
+                    if (!openCheckIn) return@LaunchedEffect
+                    navController.navigate(Routes.CHECK_IN) { launchSingleTop = true }
+                    onCheckInOpened()
+                }
             }
         }
+    }
+}
+
+private fun NavHostController.openTab(route: String) {
+    navigate(route) {
+        popUpTo(graph.findStartDestination().id) { saveState = true }
+        launchSingleTop = true
+        restoreState = true
     }
 }
 
@@ -176,7 +188,7 @@ private fun AppNavHost(navController: NavHostController, openActiveWorkout: Bool
                 onOpenWorkout = { navController.navigate(Routes.ACTIVE) { launchSingleTop = true } },
                 onEditRoutine = { navController.navigate(Routes.routine(it)) },
                 onOpenBandGuide = { navController.navigate(Routes.BAND_GUIDE) },
-                onOpenCoach = { navController.navigate(Routes.COACH) },
+                onOpenCoach = { navController.navigate(Routes.COACH) { launchSingleTop = true } },
             )
         }
         composable(Routes.HISTORY) {
@@ -185,30 +197,41 @@ private fun AppNavHost(navController: NavHostController, openActiveWorkout: Bool
                 onOpenExercise = { navController.navigate(Routes.exercise(it)) },
             )
         }
+        composable(Routes.STATS) {
+            StatsScreen(
+                onOpenExercise = { navController.navigate(Routes.exercise(it, progressFirst = true)) },
+                onOpenCheckIn = { navController.navigate(Routes.CHECK_IN) },
+            )
+        }
         composable(Routes.SETTINGS) {
             SettingsScreen(
                 onOpenBandGuide = { navController.navigate(Routes.BAND_GUIDE) },
-                onOpenCoach = { navController.navigate(Routes.COACH_SETTINGS) },
+                onOpenCoach = { navController.navigate(Routes.COACH_SETTINGS) { launchSingleTop = true } },
             )
         }
         composable(Routes.COACH) { entry ->
             CoachChatScreen(
                 onBack = { navController.popFrom(entry) },
-                onOpenMemory = { navController.navigate(Routes.COACH_MEMORY) },
-                onOpenSettings = { navController.navigate(Routes.COACH_SETTINGS) },
+                onOpenMemory = { navController.navigate(Routes.COACH_MEMORY) { launchSingleTop = true } },
+                onOpenSettings = { navController.navigate(Routes.COACH_SETTINGS) { launchSingleTop = true } },
             )
         }
         composable(Routes.COACH_SETTINGS) { entry ->
-            CoachSettingsScreen(onBack = { navController.popFrom(entry) }, onOpenMemory = { navController.navigate(Routes.COACH_MEMORY) })
+            CoachSettingsScreen(
+                onBack = { navController.popFrom(entry) },
+                onOpenMemory = { navController.navigate(Routes.COACH_MEMORY) { launchSingleTop = true } },
+                onOpenBody = { navController.openTab(Routes.STATS) },
+            )
         }
         composable(Routes.COACH_MEMORY) { entry -> CoachMemoryScreen(onBack = { navController.popFrom(entry) }) }
+        composable(Routes.CHECK_IN) { entry -> CheckInScreen(onBack = { navController.popFrom(entry) }) }
         composable(Routes.BAND_GUIDE) { entry -> BandGuideScreen(onBack = { navController.popFrom(entry) }) }
         composable(Routes.ACTIVE) { entry ->
             ActiveWorkoutScreen(
                 onBack = { navController.popFrom(entry) },
                 onFinished = navController::leaveWorkout,
                 onOpenExercise = { navController.navigate(Routes.exercise(it)) },
-                onOpenCoach = { navController.navigate(Routes.COACH) },
+                onOpenCoach = { navController.navigate(Routes.COACH) { launchSingleTop = true } },
             )
         }
         composable(Routes.ROUTINE, listOf(navArgument("id") { type = NavType.LongType })) { entry ->
@@ -221,8 +244,15 @@ private fun AppNavHost(navController: NavHostController, openActiveWorkout: Bool
                 onOpenExercise = { navController.navigate(Routes.exercise(it)) },
             )
         }
-        composable(Routes.EXERCISE, listOf(navArgument("id") { type = NavType.StringType })) { entry ->
-            ExerciseDetailScreen(exerciseId = entry.arguments?.getString("id").orEmpty(), onBack = { navController.popFrom(entry) })
+        composable(
+            Routes.EXERCISE,
+            listOf(navArgument("id") { type = NavType.StringType }, navArgument("progress") { type = NavType.BoolType; defaultValue = false }),
+        ) { entry ->
+            ExerciseDetailScreen(
+                exerciseId = entry.arguments?.getString("id").orEmpty(),
+                onBack = { navController.popFrom(entry) },
+                progressFirst = entry.arguments?.getBoolean("progress") == true,
+            )
         }
     }
 

@@ -22,6 +22,8 @@ data class BandView(
     val reps: Int?,
     val durationSeconds: Int?,
     val level: Int?,
+    val speedKmh: Double?,
+    val distanceMeters: Double?,
     val isCompleted: Boolean,
     val isExerciseDone: Boolean,
 )
@@ -47,6 +49,8 @@ data class ActiveWorkout(
                 reps = null,
                 durationSeconds = null,
                 level = null,
+                speedKmh = null,
+                distanceMeters = null,
                 isCompleted = true,
                 isExerciseDone = true,
             )
@@ -60,6 +64,8 @@ data class ActiveWorkout(
             reps = set.reps ?: set.targetReps,
             durationSeconds = set.durationSeconds,
             level = set.level,
+            speedKmh = set.speedKmh,
+            distanceMeters = set.distanceMeters,
             isCompleted = set.isCompleted,
             isExerciseDone = false,
         )
@@ -107,14 +113,15 @@ data class ActiveWorkout(
     fun focusExercise(index: Int): ActiveWorkout =
         if (index in exercises.indices) copy(focus = index, shownCompletedSet = null) else this
 
-    fun restOver(): ActiveWorkout {
-        val rested = copy(restEndsAt = null, shownCompletedSet = null)
-        if (rested.nextSetOf(focus) != null) return rested
+    fun restOver(): ActiveWorkout = copy(restEndsAt = null, shownCompletedSet = null).focusedOnWork()
+
+    private fun focusedOnWork(): ActiveWorkout {
+        if (nextSetOf(focus) != null) return this
         val nextWithWork = exercises.indices
             .map { (focus + 1 + it) % exercises.size }
-            .firstOrNull { rested.nextSetOf(it) != null }
-            ?: return rested
-        return rested.copy(focus = nextWithWork)
+            .firstOrNull { nextSetOf(it) != null }
+            ?: return this
+        return copy(focus = nextWithWork)
     }
 
     fun isRestDue(now: Instant): Boolean = restEndsAt?.isAfter(now) == false
@@ -183,17 +190,57 @@ data class ActiveWorkout(
 
     fun setLevel(ref: SetRef, level: Int?): ActiveWorkout = updateSet(ref) { it.copy(level = level) }
 
-    /** Done sets keep what was lifted; the rest of the exercise's working sets take the weight and reps. */
-    fun applyTarget(exerciseId: String, weightKg: Double?, reps: Int?): ActiveWorkout {
-        val index = exercises.indexOfFirst { it.exerciseId == exerciseId }.takeIf { it >= 0 } ?: return this
+    fun setSpeed(ref: SetRef, kmh: Double?): ActiveWorkout = updateSet(ref) { it.copy(speedKmh = kmh) }
+
+    fun setDistance(ref: SetRef, meters: Double?): ActiveWorkout = updateSet(ref) { it.copy(distanceMeters = meters) }
+
+    /** Changes only open working sets, in the first block of [exerciseId] that still has any. */
+    fun applyTarget(exerciseId: String, weightKg: Double?, reps: Int?, durationSeconds: Int? = null): ActiveWorkout {
+        val index = blockOf(exerciseId) ?: return this
         return updateExercise(index) { exercise ->
             exercise.copy(
                 sets = exercise.sets.map { set ->
-                    if (set.isCompleted || set.type != SetType.NORMAL) set
-                    else set.copy(weightKg = weightKg ?: set.weightKg, reps = reps ?: set.reps, targetReps = reps ?: set.targetReps)
+                    if (set.isCompleted || set.type != SetType.NORMAL) {
+                        set
+                    } else {
+                        set.copy(
+                            weightKg = weightKg ?: set.weightKg,
+                            reps = reps ?: set.reps,
+                            targetReps = reps ?: set.targetReps,
+                            durationSeconds = durationSeconds ?: set.durationSeconds,
+                        )
+                    }
                 },
             )
         }
+    }
+
+    /** Sets already done are never dropped, so the count can stay above [count]. */
+    fun withWorkingSets(exerciseId: String, count: Int): ActiveWorkout {
+        val index = blockOf(exerciseId) ?: return this
+        val sets = exercises[index].sets
+        val working = sets.count { it.type == SetType.NORMAL }
+        if (working < count) {
+            val last = sets.indexOfLast { it.type == SetType.NORMAL }
+            val at = if (last >= 0) last + 1 else sets.size
+            val copy = sets.getOrNull(last).nextLikeThis()
+            val grown = sets.toMutableList().apply { addAll(at, List(count - working) { copy }) }
+            return updateExercise(index) { it.copy(sets = grown) }.shiftedShown(index, at, count - working)
+        }
+        val dropped = sets.indices.reversed().filter { sets[it].type == SetType.NORMAL && !sets[it].isCompleted }.take(working - count).toSet()
+        if (dropped.isEmpty()) return this
+        val shown = shownCompletedSet?.let { ref -> if (ref.exerciseIndex == index) ref.copy(setIndex = ref.setIndex - dropped.count { it < ref.setIndex }) else ref }
+        return updateExercise(index) { it.copy(sets = sets.filterIndexed { i, _ -> i !in dropped }) }.copy(shownCompletedSet = shown).focusedOnWork()
+    }
+
+    /** Sets already done stay, so what was lifted is still logged. */
+    fun withoutOpenSets(exerciseId: String): ActiveWorkout {
+        val index = blockOf(exerciseId) ?: return this
+        val sets = exercises[index].sets
+        if (sets.all { it.isCompleted }) return this
+        if (sets.none { it.isCompleted }) return removeExercise(index).focusedOnWork()
+        val trimmed = updateExercise(index) { it.copy(sets = sets.filter { set -> set.isCompleted }) }
+        return trimmed.copy(shownCompletedSet = shownCompletedSet?.takeIf { it.exerciseIndex != index }).focusedOnWork()
     }
 
     fun setType(ref: SetRef, type: SetType): ActiveWorkout = updateSet(ref) { it.copy(type = type) }
@@ -204,14 +251,16 @@ data class ActiveWorkout(
 
     fun addSet(exerciseIndex: Int): ActiveWorkout {
         val exercise = exercises.getOrNull(exerciseIndex) ?: return this
-        val template = exercise.sets.lastOrNull()
-        val newSet = WorkoutSet(
-            weightKg = template?.weightKg,
-            reps = template?.targetReps ?: template?.reps,
-            durationSeconds = template?.durationSeconds,
-            level = template?.level,
-        )
+        val newSet = exercise.sets.lastOrNull().nextLikeThis()
         return updateExercise(exerciseIndex) { it.copy(sets = it.sets + newSet) }
+    }
+
+    /** After any warm-ups already there, before the working sets. */
+    fun addWarmup(exerciseIndex: Int, weightKg: Double?): ActiveWorkout {
+        val exercise = exercises.getOrNull(exerciseIndex) ?: return this
+        val at = exercise.sets.indexOfFirst { it.type != SetType.WARMUP }.takeIf { it >= 0 } ?: exercise.sets.size
+        val sets = exercise.sets.toMutableList().apply { add(at, warmup(weightKg)) }
+        return updateExercise(exerciseIndex) { it.copy(sets = sets) }.shiftedShown(exerciseIndex, at, 1)
     }
 
     fun removeSet(ref: SetRef): ActiveWorkout {
@@ -267,6 +316,10 @@ data class ActiveWorkout(
     fun setRestSeconds(exerciseIndex: Int, seconds: Int): ActiveWorkout =
         updateExercise(exerciseIndex) { it.copy(restSeconds = seconds.coerceAtLeast(0)) }
 
+    fun withRest(exerciseId: String, seconds: Int): ActiveWorkout = blockOf(exerciseId)?.let { setRestSeconds(it, seconds) } ?: this
+
+    fun restSecondsOf(exerciseId: String): Int? = blockOf(exerciseId)?.let { exercises[it].restSeconds }
+
     fun rename(title: String): ActiveWorkout = copy(workout = workout.copy(title = title))
 
     /** A set that takes time, such as 45 minutes on the bike, isn't idleness, so the next one's duration adds to the limit. */
@@ -290,6 +343,16 @@ data class ActiveWorkout(
         return if (setIndex < 0) null else SetRef(exerciseIndex, setIndex)
     }
 
+    private fun blockOf(exerciseId: String): Int? {
+        val blocks = exercises.indices.filter { exercises[it].exerciseId == exerciseId }
+        return blocks.firstOrNull { index -> exercises[index].sets.any { !it.isCompleted } } ?: blocks.firstOrNull()
+    }
+
+    private fun shiftedShown(exerciseIndex: Int, at: Int, by: Int): ActiveWorkout {
+        val shown = shownCompletedSet ?: return this
+        return if (shown.exerciseIndex == exerciseIndex && shown.setIndex >= at) copy(shownCompletedSet = shown.copy(setIndex = shown.setIndex + by)) else this
+    }
+
     private fun setAt(ref: SetRef): WorkoutSet? = exercises.getOrNull(ref.exerciseIndex)?.sets?.getOrNull(ref.setIndex)
 
     private fun updateSet(ref: SetRef, change: (WorkoutSet) -> WorkoutSet): ActiveWorkout {
@@ -306,3 +369,12 @@ data class ActiveWorkout(
 
     private fun nextKey(): Long = (exercises.maxOfOrNull { it.key } ?: 0) + 1
 }
+
+private fun WorkoutSet?.nextLikeThis() = WorkoutSet(
+    weightKg = this?.weightKg,
+    reps = this?.targetReps ?: this?.reps,
+    durationSeconds = this?.durationSeconds,
+    level = this?.level,
+    speedKmh = this?.speedKmh,
+    distanceMeters = this?.distanceMeters,
+)

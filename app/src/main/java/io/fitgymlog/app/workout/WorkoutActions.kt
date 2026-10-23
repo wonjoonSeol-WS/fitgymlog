@@ -6,17 +6,24 @@ import io.fitgymlog.app.LOG_TAG
 import io.fitgymlog.app.R
 import io.fitgymlog.app.catching
 import io.fitgymlog.app.data.ExerciseRepository
+import io.fitgymlog.app.data.Settings
 import io.fitgymlog.app.data.SettingsRepository
 import io.fitgymlog.app.data.WorkoutRepository
 import io.fitgymlog.app.health.HealthConnectWriter
+import io.fitgymlog.app.model.Equipment
+import io.fitgymlog.app.model.Exercise
 import io.fitgymlog.app.model.ExerciseKind
 import io.fitgymlog.app.model.Routine
+import io.fitgymlog.app.model.RoutineExercise
+import io.fitgymlog.app.model.SetType
 import io.fitgymlog.app.model.Workout
 import io.fitgymlog.app.model.WorkoutExercise
 import io.fitgymlog.app.model.WorkoutSet
+import io.fitgymlog.app.model.WorkoutSource
 import io.fitgymlog.app.model.defaultRestSeconds
 import io.fitgymlog.app.model.defaultSets
 import io.fitgymlog.app.model.isTimed
+import io.fitgymlog.app.ui.fromDisplayWeight
 import io.fitgymlog.app.ui.name
 import java.time.Instant
 import kotlinx.coroutines.flow.first
@@ -34,22 +41,14 @@ class WorkoutActions(
             .also { WorkoutService.start(context) }
 
     suspend fun startRoutine(routine: Routine): ActiveWorkout {
+        val current = settings.settings.value
         val planned = routine.exercises.mapIndexed { index, planned ->
-            val previous = workouts.previousSets(planned.exerciseId)
-            val kind = exercises.find(planned.exerciseId).kind
+            val exercise = exercises.find(planned.exerciseId)
             WorkoutExercise(
                 key = index + 1L,
                 exerciseId = planned.exerciseId,
                 restSeconds = planned.restSeconds,
-                sets = List(planned.sets) { setIndex ->
-                    val last = previous.getOrNull(setIndex) ?: previous.lastOrNull()
-                    WorkoutSet(
-                        weightKg = planned.weightKg ?: lastKnownWeight(previous, setIndex),
-                        reps = if (kind.isTimed) null else planned.reps ?: last?.reps,
-                        durationSeconds = last?.durationSeconds?.takeIf { kind.isTimed },
-                        level = last?.level?.takeIf { kind == ExerciseKind.CARDIO },
-                    )
-                },
+                sets = current.warmedUp(exercise, startingSets(planned, exercise.kind, workouts.previousSets(planned.exerciseId))),
             )
         }
         return workouts.start(routine.name, routine, planned, Instant.now()).also { WorkoutService.start(context) }
@@ -57,13 +56,13 @@ class WorkoutActions(
 
     /** [kind] is passed for an exercise created a moment ago, which the exercise list may not hold yet. */
     suspend fun addExercise(exerciseId: String, kind: ExerciseKind = exercises.find(exerciseId).kind) {
-        val sets = prefilledSets(exerciseId, kind)
+        val sets = settings.settings.value.warmedUp(exercises.find(exerciseId), prefilledSets(exerciseId, kind))
         val rest = kind.defaultRestSeconds(settings.settings.value.defaultRestSeconds)
         workouts.update { it.addExercise(exerciseId, sets, rest, Instant.now()) }
     }
 
     suspend fun replaceExercise(index: Int, exerciseId: String, kind: ExerciseKind = exercises.find(exerciseId).kind) {
-        val sets = prefilledSets(exerciseId, kind)
+        val sets = settings.settings.value.warmedUp(exercises.find(exerciseId), prefilledSets(exerciseId, kind))
         val rest = kind.defaultRestSeconds(settings.settings.value.defaultRestSeconds)
         workouts.update { it.replaceExercise(index, exerciseId, sets, rest) }
     }
@@ -75,18 +74,19 @@ class WorkoutActions(
         return finished
     }
 
-    /** Moves a finished workout's start and end, for a workout left open after the last set. False if a ticked set wouldn't fit. */
-    suspend fun retime(workout: Workout, start: Instant, end: Instant): Boolean {
-        val edited = workouts.saveEdited(workout.retimed(start, end) ?: return false)
-        if (settings.settings.value.healthConnectEnabled) {
-            safely {
-                if (health.hasPermissions()) {
-                    health.delete(workout, exercises::find)
-                    health.write(edited, settings.settings.value.healthSessionType, exercises::find) { it.name(context) }
-                }
-            }
+    /** Changes the stored workout rather than the copy on screen, so an edit synced in meanwhile is kept. */
+    suspend fun retime(id: Long, start: Instant, end: Instant): RetimeProblem? {
+        val stored = workouts.observe(id).first()?.takeIf { it.endedAt != null } ?: return null
+        stored.retimeProblem(start, end, Instant.now())?.let { return it }
+        if (workouts.clashes(stored, start)) return RetimeProblem.CLASH
+        val edited = workouts.saveEdited(stored.retimed(start, end))
+        val writtenHere = stored.source == WorkoutSource.APP && settings.settings.value.healthConnectEnabled &&
+            catching { health.wrote(stored, exercises::find) }.getOrDefault(true)
+        if (writtenHere) {
+            safely { health.delete(stored, exercises::find) }
+            writeToHealth(edited)
         }
-        return true
+        return null
     }
 
     suspend fun discard() {
@@ -108,22 +108,19 @@ class WorkoutActions(
             WorkoutSet(
                 type = set.type,
                 weightKg = lastKnownWeight(previous, index),
-                reps = set.reps,
+                reps = set.targetReps ?: set.reps,
                 durationSeconds = set.durationSeconds?.takeIf { kind.isTimed },
                 level = set.level?.takeIf { kind == ExerciseKind.CARDIO },
+                speedKmh = set.speedKmh?.takeIf { kind == ExerciseKind.CARDIO },
             )
         }
     }
-
-    /** A set logged without a weight borrows the closest earlier weight, so one missed entry doesn't blank the next session. */
-    private fun lastKnownWeight(previous: List<WorkoutSet>, setIndex: Int): Double? =
-        previous.take(setIndex + 1).lastOrNull { it.weightKg != null }?.weightKg ?: previous.firstOrNull { it.weightKg != null }?.weightKg
 
     private suspend fun writeToHealth(workout: Workout) {
         val current = settings.settings.value
         if (!current.healthConnectEnabled) return
         safely {
-            if (health.hasPermissions()) health.write(workout, current.healthSessionType, exercises::find) { it.name(context) }
+            if (health.hasPermissions()) health.write(workout, current.healthSessionType, current.skipRecordedCardio, exercises::find) { it.name(context) }
         }
     }
 
@@ -132,3 +129,49 @@ class WorkoutActions(
         catching { call() }.onFailure { Log.w(LOG_TAG, "Health Connect call failed", it) }
     }
 }
+
+/** What the routine plans wins; anything it leaves open comes from the same working set last session. */
+internal fun startingSets(planned: RoutineExercise, kind: ExerciseKind, previous: List<WorkoutSet>): List<WorkoutSet> {
+    val working = previous.filter { it.type == SetType.NORMAL }
+    return List(planned.sets) { setIndex -> startingSet(planned, kind, working, setIndex) }
+}
+
+private fun startingSet(planned: RoutineExercise, kind: ExerciseKind, working: List<WorkoutSet>, setIndex: Int): WorkoutSet {
+    val last = working.getOrNull(setIndex) ?: working.lastOrNull()
+    return WorkoutSet(
+        weightKg = planned.weightKg ?: lastKnownWeight(working, setIndex),
+        reps = if (kind.isTimed) null else planned.reps ?: last?.targetReps ?: last?.reps,
+        durationSeconds = (planned.durationSeconds ?: last?.durationSeconds)?.takeIf { kind.isTimed },
+        level = (planned.level ?: last?.level)?.takeIf { kind == ExerciseKind.CARDIO },
+        speedKmh = (planned.speedKmh ?: last?.speedKmh)?.takeIf { kind == ExerciseKind.CARDIO },
+    )
+}
+
+/** Last session's set for each row: warm-ups against its warm-ups and the rest against the rest, each in order, so an added warm-up shifts nothing. */
+internal fun previousRows(sets: List<WorkoutSet>, previous: List<WorkoutSet>): List<WorkoutSet?> {
+    val (warmups, rest) = previous.partition { it.type == SetType.WARMUP }
+    var warmup = 0
+    var other = 0
+    return sets.map { if (it.type == SetType.WARMUP) warmups.getOrNull(warmup++) else rest.getOrNull(other++) }
+}
+
+val Settings.barInKg: Double get() = fromDisplayWeight(bar, unit)
+
+internal fun Settings.warmedUp(exercise: Exercise, sets: List<WorkoutSet>): List<WorkoutSet> =
+    if (warmupSet && exercise.equipment == Equipment.BARBELL) withWarmup(sets, barInKg) else sets
+
+/** Not when the sets already hold a warm-up, such as one copied from last session, or when the work is the bar itself. */
+internal fun withWarmup(sets: List<WorkoutSet>, barKg: Double): List<WorkoutSet> {
+    if (sets.any { it.type == SetType.WARMUP }) return sets
+    val working = sets.firstOrNull { it.type == SetType.NORMAL }?.weightKg
+    if (working != null && working <= barKg) return sets
+    return listOf(warmup(barKg)) + sets
+}
+
+internal fun warmup(weightKg: Double?) = WorkoutSet(type = SetType.WARMUP, weightKg = weightKg, reps = WARMUP_REPS)
+
+private const val WARMUP_REPS = 5
+
+/** A set logged without a weight borrows the closest earlier weight, so one missed entry doesn't blank the next session. */
+private fun lastKnownWeight(previous: List<WorkoutSet>, setIndex: Int): Double? =
+    previous.take(setIndex + 1).lastOrNull { it.weightKg != null }?.weightKg ?: previous.firstOrNull { it.weightKg != null }?.weightKg

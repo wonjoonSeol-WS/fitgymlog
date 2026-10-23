@@ -12,4 +12,5 @@ data class BuiltinExercise(
     val equipment: Equipment,
     val segmentType: Int,
     val links: List<String> = emptyList(),
+    val largeIncrements: Boolean = false,
 )

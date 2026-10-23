@@ -49,6 +49,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.fitgymlog.app.R
+import io.fitgymlog.app.model.Equipment
 import io.fitgymlog.app.model.Exercise
 import io.fitgymlog.app.model.ExerciseKind
 import io.fitgymlog.app.model.SetType
@@ -59,18 +60,24 @@ import io.fitgymlog.app.model.isTimed
 import io.fitgymlog.app.ui.NumberStyles
 import io.fitgymlog.app.ui.exercise.ExerciseAvatar
 import io.fitgymlog.app.ui.formatDuration
-import io.fitgymlog.app.ui.formatRest
+import io.fitgymlog.app.ui.formatSpeedNumber
 import io.fitgymlog.app.ui.formatWeightNumber
+import io.fitgymlog.app.ui.hasDistance
+import io.fitgymlog.app.ui.hasSpeed
 import io.fitgymlog.app.ui.levelLabel
 import io.fitgymlog.app.ui.lift
 import io.fitgymlog.app.ui.localizedName
+import io.fitgymlog.app.ui.restValue
 import io.fitgymlog.app.ui.setTypeName
+import io.fitgymlog.app.ui.speedUnitLabel
 import io.fitgymlog.app.ui.unitLabel
 import io.fitgymlog.app.ui.usesWeight
-import io.fitgymlog.app.ui.withLevel
+import io.fitgymlog.app.ui.withCardioDetails
 import io.fitgymlog.app.workout.ActiveWorkout
 import io.fitgymlog.app.workout.SetRef
+import io.fitgymlog.app.workout.previousRows
 import java.time.Instant
+import kotlin.math.roundToLong
 
 @Composable
 internal fun ExerciseSection(
@@ -82,6 +89,7 @@ internal fun ExerciseSection(
     bandHint: Boolean,
     isLast: Boolean,
     unit: WeightUnit,
+    barKg: Double,
     onChange: ((ActiveWorkout) -> ActiveWorkout) -> Unit,
     onEditSet: (SetEditor) -> Unit,
     onReplace: () -> Unit,
@@ -113,6 +121,12 @@ internal fun ExerciseSection(
                     if (!focused) {
                         DropdownMenuItem(text = { Text(stringResource(R.string.use_on_band)) }, onClick = { menuOpen = false; onChange { it.focusExercise(index) } })
                     }
+                    if (info.kind.usesWeight()) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.add_warmup_set)) },
+                            onClick = { menuOpen = false; onChange { it.addWarmup(index, barKg.takeIf { info.equipment == Equipment.BARBELL }) } },
+                        )
+                    }
                     DropdownMenuItem(text = { Text(stringResource(R.string.replace_exercise)) }, onClick = { menuOpen = false; onReplace() })
                     if (index > 0) {
                         DropdownMenuItem(text = { Text(stringResource(R.string.move_up)) }, onClick = { menuOpen = false; onChange { it.moveExercise(index, index - 1) } })
@@ -127,18 +141,19 @@ internal fun ExerciseSection(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 6.dp)) {
             Pill(text = stringResource(R.string.form_guide), selected = false, leadingIcon = Icons.Default.PlayArrow, onClick = onGuide)
             Pill(
-                text = stringResource(R.string.rest_label, if (exercise.restSeconds == 0) stringResource(R.string.rest_off) else formatRest(exercise.restSeconds)),
+                text = stringResource(R.string.rest_label, restValue(exercise.restSeconds)),
                 selected = false,
                 onClick = onEditRest,
             )
         }
         SetHeader(info, unit)
         val numbers = normalSetNumbers(exercise.sets)
+        val lastTime = previousRows(exercise.sets, previous)
         exercise.sets.forEachIndexed { setIndex, set ->
             SetRow(
                 label = setLabel(set.type, numbers[setIndex]),
                 set = set,
-                previous = previous.getOrNull(setIndex),
+                previous = lastTime[setIndex],
                 info = info,
                 unit = unit,
                 ref = SetRef(index, setIndex),
@@ -178,9 +193,11 @@ private fun SetHeader(info: Exercise, unit: WeightUnit) {
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
     ) {
         HeaderCell(stringResource(R.string.col_set), Modifier.width(32.dp), TextAlign.Center)
-        HeaderCell(stringResource(R.string.col_previous), Modifier.weight(1.3f))
+        HeaderCell(stringResource(R.string.col_previous), Modifier.weight(info.previousWeight))
         if (kind.usesWeight()) HeaderCell(weightHeader(kind, unit), Modifier.weight(1f), TextAlign.Center)
         if (kind == ExerciseKind.CARDIO) HeaderCell(stringResource(info.levelLabel()), Modifier.weight(1f), TextAlign.Center)
+        if (info.hasSpeed) HeaderCell(speedUnitLabel(unit), Modifier.weight(1f), TextAlign.Center)
+        if (info.hasDistance) HeaderCell(stringResource(R.string.unit_m), Modifier.weight(1f), TextAlign.Center)
         HeaderCell(stringResource(amountHeader(kind)), Modifier.weight(1f), TextAlign.Center)
         Box(Modifier.width(40.dp), contentAlignment = Alignment.Center) {
             Icon(Icons.Default.Check, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
@@ -263,8 +280,9 @@ private fun SetRow(
             previousText(previous, info, unit),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            modifier = Modifier.weight(1.3f),
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(info.previousWeight),
         )
         if (kind.usesWeight()) {
             ValueCell(
@@ -281,6 +299,22 @@ private fun SetRow(
                 completed = set.isCompleted,
                 modifier = Modifier.weight(1f),
             ) { onEditSet(SetEditor(SetField.LEVEL, ref)) }
+        }
+        if (info.hasSpeed) {
+            ValueCell(
+                text = set.speedKmh?.let { formatSpeedNumber(it, unit) },
+                placeholder = previous?.speedKmh?.let { formatSpeedNumber(it, unit) },
+                completed = set.isCompleted,
+                modifier = Modifier.weight(1f),
+            ) { onEditSet(SetEditor(SetField.SPEED, ref)) }
+        }
+        if (info.hasDistance) {
+            ValueCell(
+                text = set.distanceMeters?.roundToLong()?.toString(),
+                placeholder = previous?.distanceMeters?.roundToLong()?.toString(),
+                completed = set.isCompleted,
+                modifier = Modifier.weight(1f),
+            ) { onEditSet(SetEditor(SetField.DISTANCE, ref)) }
         }
         ValueCell(
             text = set.amount(kind)?.toString(),
@@ -342,9 +376,8 @@ private fun previousText(previous: WorkoutSet?, info: Exercise, unit: WeightUnit
     val resources = LocalResources.current
     val weight = previous?.weightKg?.let { formatWeightNumber(it, unit) }
     val amount = if (kind.isTimed) previous?.durationSeconds?.let { formatDuration(resources, it, kind) } else previous?.reps?.toString()
-    val line = when {
-        weight != null && amount != null -> stringResource(R.string.weight_times_amount, weight, amount)
-        else -> weight ?: amount ?: "–"
-    }
-    return previous?.level?.let { stringResource(info.withLevel(), line, it) } ?: line
+    val line = if (weight != null && amount != null) stringResource(R.string.weight_times_amount, weight, amount) else weight ?: amount
+    return withCardioDetails(resources, line, info, unit, previous?.speedKmh, previous?.distanceMeters, previous?.level) ?: "–"
 }
+
+private val Exercise.previousWeight: Float get() = if (hasSpeed || hasDistance) 2f else 1.3f

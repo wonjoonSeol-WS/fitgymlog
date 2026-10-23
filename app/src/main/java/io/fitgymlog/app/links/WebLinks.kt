@@ -3,7 +3,7 @@ package io.fitgymlog.app.links
 import java.net.URI
 
 object WebLinks {
-    /** Null when the input is not a web link; http becomes https because the app blocks cleartext traffic. */
+    /** Null when the input is not a web link; http becomes https so links never travel in cleartext. */
     fun normalize(input: String): String? {
         val text = input.trim()
         if (text.isEmpty() || text.any { it.isWhitespace() }) return null
@@ -28,6 +28,7 @@ object WebLinks {
         }
     }
 
+    /** Links open in an ACTION_VIEW intent, so stored or synced ones must not be intent:, file: or javascript: links. */
     fun isWeb(url: String): Boolean = url.startsWith("https://", ignoreCase = true) || url.startsWith("http://", ignoreCase = true)
 
     fun isDuplicate(link: String, existing: List<String>): Boolean = existing.any { target(it) == target(link) }

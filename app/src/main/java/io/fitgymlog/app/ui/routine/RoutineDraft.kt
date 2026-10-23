@@ -2,6 +2,11 @@ package io.fitgymlog.app.ui.routine
 
 import io.fitgymlog.app.model.Routine
 import io.fitgymlog.app.model.RoutineExercise
+import io.fitgymlog.app.model.WeightUnit
+import io.fitgymlog.app.ui.SPEED_RANGE_KMH
+import io.fitgymlog.app.ui.fromDisplaySpeed
+import io.fitgymlog.app.ui.tenths
+import io.fitgymlog.app.ui.workout.LEVEL_CHOICES
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -9,6 +14,9 @@ private const val MIN_PLANNED_SETS = 1
 private const val MAX_PLANNED_SETS = 20
 
 fun plannedSets(input: String): Int? = input.toIntOrNull()?.coerceIn(MIN_PLANNED_SETS, MAX_PLANNED_SETS)
+
+/** Kept as typed, so the field doesn't jump while it's being edited; the range applies when the routine is saved. */
+fun plannedSpeed(input: String, unit: WeightUnit): Double? = input.toDoubleOrNull()?.let { fromDisplaySpeed(tenths(it), unit) }
 
 /** [key] tells rows apart in the list, since the same exercise can be planned twice. */
 @Serializable
@@ -19,11 +27,32 @@ data class PlannedExercise(
     val reps: Int?,
     val weightKg: Double?,
     val restSeconds: Int,
+    val durationSeconds: Int? = null,
+    val level: Int? = null,
+    val speedKmh: Double? = null,
 ) {
-    constructor(key: Long, exercise: RoutineExercise) :
-        this(key, exercise.exerciseId, exercise.sets, exercise.reps, exercise.weightKg, exercise.restSeconds)
+    constructor(key: Long, exercise: RoutineExercise) : this(
+        key = key,
+        exerciseId = exercise.exerciseId,
+        sets = exercise.sets,
+        reps = exercise.reps,
+        weightKg = exercise.weightKg,
+        restSeconds = exercise.restSeconds,
+        durationSeconds = exercise.durationSeconds,
+        level = exercise.level,
+        speedKmh = exercise.speedKmh,
+    )
 
-    fun toRoutineExercise() = RoutineExercise(exerciseId, sets, reps, weightKg, restSeconds)
+    fun toRoutineExercise() = RoutineExercise(
+        exerciseId = exerciseId,
+        sets = sets,
+        reps = reps,
+        weightKg = weightKg,
+        restSeconds = restSeconds,
+        durationSeconds = durationSeconds,
+        level = level?.coerceIn(LEVEL_CHOICES.first(), LEVEL_CHOICES.last()),
+        speedKmh = speedKmh?.coerceIn(SPEED_RANGE_KMH),
+    )
 }
 
 @Serializable

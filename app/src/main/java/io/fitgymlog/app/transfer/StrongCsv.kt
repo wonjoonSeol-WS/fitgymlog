@@ -50,6 +50,7 @@ object StrongCsv {
                 type = type,
                 weightKg = weightKg(record),
                 reps = record.number("reps")?.toInt()?.takeIf { it > 0 || record.number("seconds") == null },
+                targetReps = null,
                 rpe = record.number("rpe"),
                 distanceMeters = record.number("distance (meters)") ?: record.number("distance (km)")?.times(1000)
                     ?: record.number("distance"),

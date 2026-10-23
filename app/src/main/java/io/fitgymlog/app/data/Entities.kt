@@ -59,6 +59,7 @@ data class WorkoutSetEntity(
     val durationSeconds: Int?,
     val completedAt: Long?,
     val level: Int? = null,
+    val speedKmh: Double? = null,
 )
 
 @Entity(tableName = "routine", indices = [Index("uuid")])
@@ -84,6 +85,9 @@ data class RoutineExerciseEntity(
     val reps: Int?,
     val weightKg: Double?,
     val restSeconds: Int,
+    val durationSeconds: Int? = null,
+    val level: Int? = null,
+    val speedKmh: Double? = null,
 )
 
 @Entity(tableName = "custom_exercise")

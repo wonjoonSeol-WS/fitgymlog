@@ -1,7 +1,10 @@
 package io.fitgymlog.app.health
 
 import androidx.health.connect.client.records.ExerciseSegment
+import androidx.health.connect.client.records.DistanceRecord
 import androidx.health.connect.client.records.ExerciseSessionRecord
+import androidx.health.connect.client.records.Record
+import androidx.health.connect.client.records.SpeedRecord
 import io.fitgymlog.app.catalog.ExerciseCatalog
 import io.fitgymlog.app.model.Exercise
 import io.fitgymlog.app.model.ExerciseKind
@@ -11,6 +14,7 @@ import io.fitgymlog.app.model.WorkoutSet
 import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class HealthConnectWriterTest {
@@ -22,6 +26,7 @@ class HealthConnectWriterTest {
         Exercise("treadmill", "Treadmill", ExerciseKind.CARDIO, ExerciseSegment.EXERCISE_SEGMENT_TYPE_RUNNING_TREADMILL),
         Exercise("stationary_bike", "Cycling", ExerciseKind.CARDIO, ExerciseSegment.EXERCISE_SEGMENT_TYPE_BIKING_STATIONARY),
         Exercise("stair_machine", "Stair Machine (Floors)", ExerciseKind.CARDIO, ExerciseSegment.EXERCISE_SEGMENT_TYPE_STAIR_CLIMBING_MACHINE),
+        Exercise("rowing_machine", "Rowing Machine", ExerciseKind.CARDIO, ExerciseSegment.EXERCISE_SEGMENT_TYPE_ROWING_MACHINE),
         Exercise("squat_barbell", "Squat (Barbell)", ExerciseKind.WEIGHT_REPS, ExerciseSegment.EXERCISE_SEGMENT_TYPE_SQUAT),
         Exercise("bench_press_barbell", "Bench Press (Barbell)", ExerciseKind.WEIGHT_REPS, ExerciseSegment.EXERCISE_SEGMENT_TYPE_BENCH_PRESS),
         Exercise("plank", "Plank", ExerciseKind.DURATION, ExerciseSegment.EXERCISE_SEGMENT_TYPE_PLANK),
@@ -38,6 +43,51 @@ class HealthConnectWriterTest {
     private fun sessions(workout: Workout) = sessionsOf(workout, ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING, exercises::getValue) { it.englishName }
 
     private fun summary(workout: Workout) = sessions(workout).map { listOf(it.exerciseType, it.startTime, it.endTime, it.metadata.clientRecordId) }
+
+    @Test
+    fun `a treadmill block gets its speed and the distance it covers, a logged distance wins, and cardio another app recorded gets neither`() {
+        val day = workout.copy(
+            endedAt = at(60),
+            exercises = listOf(
+                exercise("treadmill", WorkoutSet(durationSeconds = 20 * 60, speedKmh = 9.0, completedAt = at(20))),
+                exercise("rowing_machine", WorkoutSet(durationSeconds = 10 * 60, distanceMeters = 2_150.0, completedAt = at(35))),
+                exercise("treadmill", WorkoutSet(durationSeconds = 10 * 60, speedKmh = 10.0, distanceMeters = 1_550.0, completedAt = at(50))),
+                exercise("stationary_bike", cardio(minutes = 5, tickedAt = 58)),
+            ),
+        )
+        fun describe(records: List<Record>) = records.map { record ->
+            when (record) {
+                is SpeedRecord -> listOf("speed", record.metadata.clientRecordId, record.samples.single().speed.inKilometersPerHour, record.startTime, record.endTime)
+                is DistanceRecord -> listOf("distance", record.metadata.clientRecordId, record.distance.inMeters, record.startTime, record.endTime)
+                else -> listOf(record)
+            }
+        }
+
+        assertEquals(
+            listOf(
+                listOf("speed", "$base-0-0-speed", 9.0, at(0), at(20)),
+                listOf("distance", "$base-0-0-distance", 3_000.0, at(0), at(20)),
+                listOf("distance", "$base-1-0-distance", 2_150.0, at(25), at(35)),
+                listOf("speed", "$base-2-0-speed", 10.0, at(40), at(50)),
+                listOf("distance", "$base-2-0-distance", 1_550.0, at(40), at(50)),
+            ),
+            describe(cardioDetailsOf(day, exercises::getValue)),
+        )
+        assertEquals(listOf("$base-1-0-distance", "$base-2-0-speed", "$base-2-0-distance"), cardioDetailsOf(day, exercises::getValue, listOf(at(0)..at(20))).map { it.metadata.clientRecordId })
+    }
+
+    @Test
+    fun `lifting on both sides of a skipped cardio block keeps the ids that deleting and checking look for`() {
+        val day = workout.copy(
+            endedAt = at(40),
+            exercises = listOf(exercise("squat_barbell", lift(5)), exercise("treadmill", cardio(minutes = 20, tickedAt = 30)), exercise("bench_press_barbell", lift(35))),
+        )
+
+        val written = sessionsOf(day, ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING, exercises::getValue, listOf(at(10)..at(30))) { it.englishName }.map { it.metadata.clientRecordId }
+
+        assertEquals(listOf(base, "$base-lifting-1"), written)
+        assertTrue(clientRecordIdsOf(day, exercises::getValue).containsAll(written))
+    }
 
     @Test
     fun `records are keyed by the workout uuid, not the local row id`() {
@@ -135,6 +185,49 @@ class HealthConnectWriterTest {
     }
 
     @Test
+    fun `a cardio block another app recorded for at least half its time is left out, and lifting is still written`() {
+        val day = workout.copy(
+            endedAt = at(40),
+            exercises = listOf(
+                exercise("squat_barbell", lift(5), lift(10)),
+                exercise("treadmill", cardio(minutes = 20, tickedAt = 30)),
+                exercise("stair_machine", cardio(minutes = 10, tickedAt = 40)),
+            ),
+        )
+        val bandRun = at(20)..at(30)
+        val bandWalk = at(36)..at(40)
+
+        val written = sessionsOf(day, ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING, exercises::getValue, listOf(bandRun, bandWalk)) { it.englishName }
+
+        assertEquals(listOf(base, "$base-2-0"), written.map { it.metadata.clientRecordId })
+    }
+
+    @Test
+    fun `only other apps' cardio sessions count, so a watch's whole-visit workout or this app's own records hide nothing`() {
+        val run = at(10)..at(30)
+        val sessions = listOf(
+            OtherSession("com.watch", ExerciseSessionRecord.EXERCISE_TYPE_RUNNING_TREADMILL, run),
+            OtherSession("com.watch", ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING, at(0)..at(60)),
+            OtherSession("com.watch", ExerciseSessionRecord.EXERCISE_TYPE_OTHER_WORKOUT, at(0)..at(60)),
+            OtherSession("io.fitgymlog.app", ExerciseSessionRecord.EXERCISE_TYPE_WALKING, at(40)..at(50)),
+        )
+
+        assertEquals(listOf(run), cardioElsewhere(sessions, ownPackage = "io.fitgymlog.app"))
+    }
+
+    @Test
+    fun `the span to look for other apps' cardio starts at the first block, before the workout itself, and lifting alone has none`() {
+        val warmUp = workout.copy(
+            endedAt = at(21),
+            exercises = listOf(exercise("treadmill", cardio(minutes = 5, tickedAt = 3)), exercise("squat_barbell", lift(8)), exercise("stair_machine", cardio(minutes = 5, tickedAt = 20))),
+        )
+        val liftingOnly = workout.copy(endedAt = at(21), exercises = listOf(exercise("squat_barbell", lift(8))))
+
+        assertEquals(at(-2)..at(20), cardioSpan(warmUp, exercises::getValue))
+        assertNull(cardioSpan(liftingOnly, exercises::getValue))
+    }
+
+    @Test
     fun `a workout without cardio is one session from start to finish`() {
         val day = workout.copy(endedAt = at(30), exercises = listOf(exercise("squat_barbell", lift(8))))
 
@@ -165,9 +258,11 @@ class HealthConnectWriterTest {
     }
 
     @Test
-    fun `every built-in cardio exercise has a Health Connect session type of its own`() {
-        val unmapped = ExerciseCatalog.all.filter { it.kind == ExerciseKind.CARDIO && it.segmentType !in CARDIO_SESSION_TYPES }
+    fun `every built-in cardio exercise has a Health Connect session type of its own, and the rower writes rowing machine`() {
+        val cardio = ExerciseCatalog.all.filter { it.kind == ExerciseKind.CARDIO }
 
-        assertEquals(emptyList<String>(), unmapped.map { it.id })
+        assertEquals(emptyList<String>(), cardio.filter { it.segmentType !in CARDIO_SESSION_TYPES }.map { it.id })
+        assertEquals(cardio.size, cardio.map { CARDIO_SESSION_TYPES[it.segmentType] }.distinct().size)
+        assertEquals(ExerciseSessionRecord.EXERCISE_TYPE_ROWING_MACHINE, CARDIO_SESSION_TYPES[ExerciseCatalog.all.single { it.id == "rowing_machine" }.segmentType])
     }
 }

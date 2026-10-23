@@ -3,6 +3,7 @@ package io.fitgymlog.app.ui.workout
 import io.fitgymlog.app.model.ExerciseKind
 import io.fitgymlog.app.model.SetType
 import io.fitgymlog.app.model.WorkoutSet
+import io.fitgymlog.app.model.isTimed
 import java.math.BigDecimal
 
 internal val REP_CHOICES = (1..30).toList()
@@ -21,10 +22,12 @@ internal fun normalSetNumbers(sets: List<WorkoutSet>): List<Int?> {
     return sets.map { if (it.type == SetType.NORMAL) ++count else null }
 }
 
-internal fun WorkoutSet.amount(kind: ExerciseKind): Int? = when (kind) {
-    ExerciseKind.CARDIO -> durationSeconds?.let { seconds -> if (seconds == 0) 0 else ((seconds + SECONDS_PER_MINUTE / 2) / SECONDS_PER_MINUTE).coerceAtLeast(1) }
-    ExerciseKind.DURATION -> durationSeconds
-    else -> reps
+internal fun WorkoutSet.amount(kind: ExerciseKind): Int? = if (kind.isTimed) durationSeconds?.let(kind::amountOf) else reps
+
+internal fun ExerciseKind.amountOf(seconds: Int): Int = when {
+    this != ExerciseKind.CARDIO -> seconds
+    seconds == 0 -> 0
+    else -> ((seconds + SECONDS_PER_MINUTE / 2) / SECONDS_PER_MINUTE).coerceAtLeast(1)
 }
 
 internal fun ExerciseKind.amountChoices(): List<Int> = when (this) {

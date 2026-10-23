@@ -28,6 +28,8 @@ class MainActivity : ComponentActivity() {
         container.sync.requestSync()
     }
 
+    private var openCheckIn by mutableStateOf(false)
+
     private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,6 +45,7 @@ class MainActivity : ComponentActivity() {
             notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
 
+        if (savedInstanceState == null) openCheckIn = intent?.getBooleanExtra(EXTRA_CHECK_IN, false) == true
         var ready by mutableStateOf(false)
         var resume by mutableStateOf(false)
         lifecycleScope.launch {
@@ -53,7 +56,7 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             FitGymLogTheme {
-                if (ready) AppNavigation(openActiveWorkout = resume)
+                if (ready) AppNavigation(openActiveWorkout = resume, openCheckIn = openCheckIn, onCheckInOpened = { openCheckIn = false })
             }
         }
     }
@@ -61,6 +64,7 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         if (intent.action in PRIVACY_POLICY_ACTIONS) openPrivacyPolicy()
+        if (intent.getBooleanExtra(EXTRA_CHECK_IN, false)) openCheckIn = true
     }
 
     private fun openPrivacyPolicy() {
@@ -71,10 +75,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private companion object {
-        const val PRIVACY_POLICY_URL = "https://wonjoonseol-ws.github.io/fitgymlog/privacy.html"
+    companion object {
+        const val EXTRA_CHECK_IN = "io.fitgymlog.app.extra.CHECK_IN"
+        private const val PRIVACY_POLICY_URL = "https://wonjoonseol.github.io/fitgymlog/privacy.html"
 
         // Health Connect opens these to show the privacy policy: the first up to Android 13, the second from Android 14.
-        val PRIVACY_POLICY_ACTIONS = setOf("androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE", Intent.ACTION_VIEW_PERMISSION_USAGE)
+        private val PRIVACY_POLICY_ACTIONS = setOf("androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE", Intent.ACTION_VIEW_PERMISSION_USAGE)
     }
 }

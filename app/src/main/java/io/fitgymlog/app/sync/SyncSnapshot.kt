@@ -13,8 +13,6 @@ object TombstoneKind {
     fun linkKey(exerciseId: String, url: String) = "$exerciseId\n$url"
 }
 
-/** Links open in an ACTION_VIEW intent, so a sync file must not bring in intent:, file: or javascript: ones. */
-
 class NewerSyncFormatException(version: Int) : IllegalStateException("sync file version $version is newer than this app")
 
 class CorruptSyncFileException(cause: Throwable? = null) : IllegalStateException("the sync file is not a readable FitGymLog sync file", cause)
@@ -46,14 +44,14 @@ data class SyncSnapshot(
 
     companion object {
         const val FORMAT = "fitgymlog-sync"
-        const val VERSION = 1
+        const val VERSION = 2
         private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
         fun decode(text: String): SyncSnapshot {
             val header = readable { json.decodeFromString(Header.serializer(), text) }
             if (header.format != FORMAT) throw CorruptSyncFileException()
             if (header.version > VERSION) throw NewerSyncFormatException(header.version)
-            return readable { json.decodeFromString(serializer(), text) }.sorted()
+            return readable { json.decodeFromString(serializer(), text) }.copy(version = header.version).sorted()
         }
 
         private inline fun <T> readable(read: () -> T): T = try {

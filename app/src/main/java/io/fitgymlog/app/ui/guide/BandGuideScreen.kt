@@ -91,8 +91,8 @@ fun BandGuideScreen(onBack: () -> Unit) {
             )
         },
     ) { padding ->
-        ReadableWidth(Modifier.padding(padding)) {
-            LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
+        ReadableWidth(Modifier.padding(padding)) { gutter ->
+            LazyColumn(contentPadding = PaddingValues(horizontal = 16.dp + gutter, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
                 item {
                     Step(1, stringResource(R.string.band_step_notifications), stringResource(R.string.band_step_notifications_text), done = notificationsAllowed) {
                         if (!notificationsAllowed) {

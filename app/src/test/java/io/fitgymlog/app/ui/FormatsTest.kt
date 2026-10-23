@@ -22,6 +22,16 @@ class FormatsTest {
     }
 
     @Test
+    fun `speed shows in km per hour, or in miles per hour with pounds, to one decimal`() {
+        assertEquals("8", formatSpeedNumber(8.0, WeightUnit.KG))
+        assertEquals("8.5", formatSpeedNumber(8.46, WeightUnit.KG))
+        assertEquals("6.2", formatSpeedNumber(10.0, WeightUnit.LB))
+        assertEquals(16.09344, fromDisplaySpeed(10.0, WeightUnit.LB), 1e-9)
+        assertEquals(10.0, toDisplaySpeed(fromDisplaySpeed(10.0, WeightUnit.LB), WeightUnit.LB), 1e-9)
+        assertEquals("12.5", formatKmh(12.5))
+    }
+
+    @Test
     fun `pounds are converted and rounded to one decimal`() {
         assertEquals("44.1", formatWeightNumber(20.0, WeightUnit.LB))
         assertEquals("220.5", formatWeightNumber(100.0, WeightUnit.LB))

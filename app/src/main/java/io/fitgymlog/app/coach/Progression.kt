@@ -8,6 +8,7 @@ import io.fitgymlog.app.model.WeightUnit
 import io.fitgymlog.app.model.WorkoutSet
 import io.fitgymlog.app.model.isTimed
 import io.fitgymlog.app.ui.fromDisplayWeight
+import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.roundToLong
 
@@ -20,25 +21,22 @@ data class RuleTarget(
     val weightKg: Double? = null,
     val reps: Int? = null,
     val lastWeightKg: Double? = null,
-    val lastReps: Int? = null,
     val minWeightKg: Double? = null,
     val maxWeightKg: Double? = null,
     val stepKg: Double? = null,
 )
 
-/**
- * Linear progression as StrongLifts runs it: every planned rep at a weight earns one step up, a miss
- * repeats the weight, and three sessions in a row without a success at the same weight drop it by 10%.
- * [sessions] are the exercise's past sets, most recent session first.
- */
+/** StrongLifts linear progression; [target] takes finished sessions, most recent first, whose sets were all done. */
 object Progression {
-    private const val STALL_SESSIONS = 3
+    /** How many past sessions [target] needs to see a stall. */
+    const val HISTORY_SESSIONS = 3
+    private const val STALL_SESSIONS = HISTORY_SESSIONS
     private const val DELOAD = 0.9
     private const val LOWEST_SHARE = 0.8
     private const val HIGHEST_STEPS = 2
 
     fun target(exercise: Exercise, sessions: List<List<WorkoutSet>>, unit: WeightUnit): RuleTarget {
-        val working = sessions.map { sets -> sets.filter { it.type == SetType.NORMAL && it.isCompleted } }.filter { it.isNotEmpty() }
+        val working = sessions.map { sets -> sets.filter { it.type == SetType.NORMAL } }.filter { it.isNotEmpty() }
         val last = working.firstOrNull() ?: return RuleTarget(exercise.id, TargetReason.FIRST_TIME)
         return when {
             exercise.kind.isTimed -> RuleTarget(exercise.id, TargetReason.SAME_AS_LAST)
@@ -48,54 +46,63 @@ object Progression {
     }
 
     fun stepKg(exercise: Exercise, unit: WeightUnit): Double {
-        val deadlift = exercise.id == "deadlift_barbell"
+        val large = exercise.largeIncrements || exercise.equipment == Equipment.MACHINE
         return when (unit) {
             WeightUnit.KG -> when {
-                deadlift -> 5.0
+                large -> 5.0
                 exercise.equipment == Equipment.DUMBBELL -> 2.0
-                exercise.equipment == Equipment.MACHINE -> 5.0
                 else -> 2.5
             }
-            WeightUnit.LB -> fromDisplayWeight(if (deadlift || exercise.equipment == Equipment.MACHINE) 10.0 else 5.0, unit)
+            WeightUnit.LB -> fromDisplayWeight(if (large) 10.0 else 5.0, unit)
         }
     }
 
     private fun bodyweight(exerciseId: String, last: List<WorkoutSet>): RuleTarget {
-        val reps = last.first().reps ?: return RuleTarget(exerciseId, TargetReason.FIRST_TIME)
+        val reps = last.first().let { it.targetReps ?: it.reps } ?: return RuleTarget(exerciseId, TargetReason.FIRST_TIME)
         val done = succeeded(last)
         return RuleTarget(
             exerciseId = exerciseId,
             reason = if (done) TargetReason.ALL_REPS_DONE else TargetReason.MISSED_REPS,
             reps = if (done) reps + 1 else reps,
-            lastReps = reps,
         )
     }
 
+    /** For assisted work the weight is help from the machine, so progress means less of it. */
     private fun weighted(exercise: Exercise, working: List<List<WorkoutSet>>, unit: WeightUnit): RuleTarget {
+        val assisted = exercise.kind == ExerciseKind.ASSISTED_BODYWEIGHT
         val last = working.first()
-        val lastWeight = last.mapNotNull { it.weightKg }.maxOrNull() ?: return RuleTarget(exercise.id, TargetReason.FIRST_TIME)
+        val lastWeight = hardest(last, assisted) ?: return RuleTarget(exercise.id, TargetReason.FIRST_TIME)
         val step = stepKg(exercise, unit)
-        val topSets = last.filter { it.weightKg == lastWeight }
-        val reps = topSets.first().let { it.targetReps ?: it.reps }
+        val reps = topSets(last, assisted).first().let { it.targetReps ?: it.reps }
         val stalled = working.size >= STALL_SESSIONS &&
-            working.take(STALL_SESSIONS).all { session -> session.mapNotNull { it.weightKg }.maxOrNull() == lastWeight && !succeeded(session) }
+            working.take(STALL_SESSIONS).all { session -> sameWeight(hardest(session, assisted), lastWeight) && !succeeded(topSets(session, assisted)) }
+        val forward = if (assisted) -step else step
         val (reason, weight) = when {
-            succeeded(topSets) -> TargetReason.ALL_REPS_DONE to lastWeight + step
-            stalled -> TargetReason.STALLED to roundDown(lastWeight * DELOAD, step)
+            succeeded(topSets(last, assisted)) -> TargetReason.ALL_REPS_DONE to tidy((lastWeight + forward).coerceAtLeast(0.0))
+            stalled -> TargetReason.STALLED to if (assisted) roundUp(lastWeight / DELOAD, step) else roundDown(lastWeight * DELOAD, step)
             else -> TargetReason.MISSED_REPS to lastWeight
         }
+        val easiest = if (assisted) roundUp(lastWeight / LOWEST_SHARE, step) else roundDown(lastWeight * LOWEST_SHARE, step)
+        val furthest = (lastWeight + HIGHEST_STEPS * forward).coerceAtLeast(0.0)
         return RuleTarget(
             exerciseId = exercise.id,
             reason = reason,
             weightKg = weight,
             reps = reps,
             lastWeightKg = lastWeight,
-            lastReps = reps,
-            minWeightKg = roundDown(lastWeight * LOWEST_SHARE, step),
-            maxWeightKg = lastWeight + HIGHEST_STEPS * step,
+            minWeightKg = minOf(easiest, furthest),
+            maxWeightKg = maxOf(easiest, furthest),
             stepKg = step,
         )
     }
+
+    private fun hardest(sets: List<WorkoutSet>, assisted: Boolean): Double? =
+        sets.mapNotNull { it.weightKg }.let { if (assisted) it.minOrNull() else it.maxOrNull() }
+
+    private fun topSets(sets: List<WorkoutSet>, assisted: Boolean): List<WorkoutSet> = hardest(sets, assisted).let { top -> sets.filter { sameWeight(it.weightKg, top) } }
+
+    /** Weights entered in pounds or applied from the coach differ from typed ones in the last bits, so they are compared by the gram. */
+    private fun sameWeight(a: Double?, b: Double?): Boolean = a?.let { (it * 1000).roundToLong() } == b?.let { (it * 1000).roundToLong() }
 
     /** A set without a plan counts its own reps as the plan; within a session the first set's plan is the bar. */
     private fun succeeded(sets: List<WorkoutSet>): Boolean {
@@ -103,5 +110,9 @@ object Progression {
         return sets.all { (it.reps ?: 0) >= (it.targetReps ?: planned) }
     }
 
-    private fun roundDown(kg: Double, step: Double): Double = (floor(kg / step + 1e-9) * step).let { (it * 1000).roundToLong() / 1000.0 }
+    private fun roundDown(kg: Double, step: Double): Double = tidy(floor(kg / step + 1e-9) * step)
+
+    private fun roundUp(kg: Double, step: Double): Double = tidy(ceil(kg / step - 1e-9) * step)
+
+    private fun tidy(kg: Double): Double = (kg * 1000).roundToLong() / 1000.0
 }

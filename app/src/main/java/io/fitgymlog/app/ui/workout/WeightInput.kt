@@ -36,6 +36,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -57,6 +58,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.input.ImeAction
@@ -69,14 +71,23 @@ import io.fitgymlog.app.model.Equipment
 import io.fitgymlog.app.model.WeightUnit
 import io.fitgymlog.app.ui.NumberStyles
 import io.fitgymlog.app.ui.Numerals
+import io.fitgymlog.app.ui.DISTANCE_RANGE_M
+import io.fitgymlog.app.ui.SPEED_RANGE_KMH
 import io.fitgymlog.app.ui.formatWeightNumber
+import io.fitgymlog.app.ui.fromDisplaySpeed
+import io.fitgymlog.app.ui.oneDecimal
 import io.fitgymlog.app.ui.fromDisplayWeight
 import io.fitgymlog.app.ui.isDecimalInput
 import io.fitgymlog.app.ui.lift
 import io.fitgymlog.app.ui.parseDecimal
+import io.fitgymlog.app.ui.speedUnitLabel
+import io.fitgymlog.app.ui.tenths
+import io.fitgymlog.app.ui.toDisplaySpeed
 import io.fitgymlog.app.ui.toDisplayWeight
 import io.fitgymlog.app.ui.unitLabel
 import io.fitgymlog.app.workout.Plates
+import kotlin.math.ceil
+import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.roundToLong
 
@@ -391,3 +402,95 @@ fun NumberPadSheet(
         }
     }
 }
+
+@Composable
+fun SpeedSheet(title: String, initialKmh: Double?, unit: WeightUnit, onSave: (Double?) -> Unit, onDismiss: () -> Unit) {
+    val label = speedUnitLabel(unit)
+    val range = ceil(toDisplaySpeed(SPEED_RANGE_KMH.start, unit) * 10) / 10..floor(toDisplaySpeed(SPEED_RANGE_KMH.endInclusive, unit) * 10) / 10
+    val initial = tenths(toDisplaySpeed(initialKmh ?: DEFAULT_SPEED_KMH, unit).coerceIn(range))
+    StepSheet(
+        title = title,
+        initial = initial,
+        range = range,
+        steps = listOf(-1.0, -0.1, 0.1, 1.0),
+        round = ::tenths,
+        valueText = { "${oneDecimal(it)} $label" },
+        onSave = { shown ->
+            onSave(if (shown == initial && initialKmh != null) initialKmh else shown?.let { fromDisplaySpeed(it, unit).coerceIn(SPEED_RANGE_KMH) })
+        },
+        onDismiss = onDismiss,
+    )
+}
+
+@Composable
+fun DistanceSheet(title: String, initialMeters: Double?, onSave: (Double?) -> Unit, onDismiss: () -> Unit) {
+    val label = stringResource(R.string.unit_m)
+    StepSheet(
+        title = title,
+        initial = initialMeters ?: DEFAULT_DISTANCE_M,
+        range = DISTANCE_RANGE_M,
+        steps = listOf(-500.0, -100.0, 100.0, 500.0),
+        round = { it.roundToLong().toDouble() },
+        valueText = { "${it.roundToLong()} $label" },
+        onSave = onSave,
+        onDismiss = onDismiss,
+    )
+}
+
+/** Machines step speed and distance by fixed amounts, so the value moves by those steps instead of coming from a list. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun StepSheet(
+    title: String,
+    initial: Double,
+    range: ClosedFloatingPointRange<Double>,
+    steps: List<Double>,
+    round: (Double) -> Double,
+    valueText: (Double) -> String,
+    onSave: (Double?) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val haptics = LocalHapticFeedback.current
+    var value by rememberSaveable { mutableDoubleStateOf(round(initial.coerceIn(range))) }
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = MaterialTheme.colorScheme.surface,
+    ) {
+        Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                valueText(value),
+                style = NumberStyles.stat,
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                steps.forEach { step ->
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(MaterialTheme.lift.field)
+                            .clickable(role = Role.Button) {
+                                haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                value = round(value + step).coerceIn(range)
+                            },
+                    ) { Text(if (step > 0) "+${formatStep(step)}" else "-${formatStep(-step)}", style = NumberStyles.stat) }
+                }
+            }
+            Row {
+                TextButton(onClick = { onSave(null) }) { Text(stringResource(R.string.clear)) }
+                Spacer(Modifier.weight(1f))
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+                Button(onClick = { onSave(value) }) { Text(stringResource(R.string.save)) }
+            }
+        }
+    }
+}
+
+private fun formatStep(step: Double): String = if (step >= 1) step.toInt().toString() else step.toString()
+
+private const val DEFAULT_SPEED_KMH = 6.0
+private const val DEFAULT_DISTANCE_M = 2_000.0

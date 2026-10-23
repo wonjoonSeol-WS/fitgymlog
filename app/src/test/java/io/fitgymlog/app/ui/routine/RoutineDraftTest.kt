@@ -2,6 +2,7 @@ package io.fitgymlog.app.ui.routine
 
 import io.fitgymlog.app.model.Routine
 import io.fitgymlog.app.model.RoutineExercise
+import io.fitgymlog.app.model.WeightUnit
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -18,6 +19,21 @@ class RoutineDraftTest {
         assertEquals(1, plannedSets("0"))
         assertEquals(7, plannedSets("7"))
         assertNull(plannedSets(""))
+    }
+
+    @Test
+    fun `typed speed keeps what was typed, to a tenth of the shown unit, and the range applies when the routine is saved`() {
+        assertEquals(35.0, plannedSpeed("35", WeightUnit.KG)!!, 0.0)
+        assertEquals(0.0, plannedSpeed("0", WeightUnit.KG)!!, 0.0)
+        assertEquals(6.3, plannedSpeed("6.25", WeightUnit.KG)!!, 1e-9)
+        assertEquals(5 * 1.609344, plannedSpeed("4.98", WeightUnit.LB)!!, 1e-9)
+        assertNull(plannedSpeed("", WeightUnit.KG))
+        val treadmill = RoutineExercise("treadmill", sets = 1, reps = null, weightKg = null, restSeconds = 0)
+        val draft = RoutineDraft().add(treadmill).let { it.update(it.planned.single().key) { planned -> planned.copy(level = 35, speedKmh = 40.0) } }
+        val low = RoutineDraft().add(treadmill).let { it.update(it.planned.single().key) { planned -> planned.copy(level = -2, speedKmh = 0.1) } }
+
+        assertEquals(listOf<Any?>(20, 30.0), draft.toRoutine(id = 1).exercises.single().let { listOf(it.level, it.speedKmh) })
+        assertEquals(listOf<Any?>(0, 0.5), low.toRoutine(id = 1).exercises.single().let { listOf(it.level, it.speedKmh) })
     }
 
     @Test
@@ -61,5 +77,17 @@ class RoutineDraftTest {
         assertEquals(draft, restored)
         assertTrue(restored.hasChanges)
         assertEquals(3, restored.add(bench).planned.last().key)
+    }
+
+    @Test
+    fun `a cardio plan's time, level and speed survive the draft, saving and restoring it`() {
+        val treadmill = RoutineExercise("treadmill", sets = 2, reps = null, weightKg = null, restSeconds = 30, durationSeconds = 1_200, level = 12, speedKmh = 6.5)
+        val draft = RoutineDraft().add(treadmill)
+
+        val saved = draft.toRoutine(id = 3).exercises.single()
+        val restored = RoutineDraft.decode(draft.encode())!!.toRoutine(id = 3).exercises.single()
+
+        assertEquals(treadmill, saved)
+        assertEquals(treadmill, restored)
     }
 }

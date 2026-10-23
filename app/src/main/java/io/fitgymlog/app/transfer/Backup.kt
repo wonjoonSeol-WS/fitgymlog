@@ -28,7 +28,7 @@ data class BackupFile(
 ) {
     companion object {
         const val FORMAT = "fitgymlog-backup"
-        const val VERSION = 1
+        const val VERSION = 2
         private val json = Json { ignoreUnknownKeys = true; prettyPrint = true; encodeDefaults = true }
 
         fun looksLike(text: String): Boolean = text.removePrefix(BOM).trimStart().let { it.startsWith("{") && FORMAT in it.take(200) }
@@ -65,7 +65,16 @@ data class BackupLink(val exerciseId: String, val url: String)
 data class BackupRoutine(val name: String, val exercises: List<BackupRoutineExercise>)
 
 @Serializable
-data class BackupRoutineExercise(val exerciseId: String, val sets: Int, val reps: Int?, val weightKg: Double?, val restSeconds: Int)
+data class BackupRoutineExercise(
+    val exerciseId: String,
+    val sets: Int,
+    val reps: Int?,
+    val weightKg: Double?,
+    val restSeconds: Int,
+    val durationSeconds: Int? = null,
+    val level: Int? = null,
+    val speedKmh: Double? = null,
+)
 
 @Serializable
 data class BackupWorkout(
@@ -90,6 +99,8 @@ data class BackupSet(
     val durationSeconds: Int? = null,
     val completedAt: String? = null,
     val level: Int? = null,
+    val targetReps: Int? = null,
+    val speedKmh: Double? = null,
 )
 
 fun Workout.toBackup() = BackupWorkout(
@@ -104,7 +115,18 @@ fun Workout.toBackup() = BackupWorkout(
             restSeconds = exercise.restSeconds,
             notes = exercise.notes,
             sets = exercise.sets.map { set ->
-                BackupSet(set.type.name, set.weightKg, set.reps, set.rpe, set.distanceMeters, set.durationSeconds, set.completedAt?.toString(), set.level)
+                BackupSet(
+                    type = set.type.name,
+                    weightKg = set.weightKg,
+                    reps = set.reps,
+                    rpe = set.rpe,
+                    distanceMeters = set.distanceMeters,
+                    durationSeconds = set.durationSeconds,
+                    completedAt = set.completedAt?.toString(),
+                    level = set.level,
+                    targetReps = set.targetReps,
+                    speedKmh = set.speedKmh,
+                )
             },
         )
     },
@@ -127,11 +149,13 @@ fun BackupWorkout.toWorkout() = Workout(
                     type = SetType.entries.firstOrNull { it.name == set.type } ?: SetType.NORMAL,
                     weightKg = set.weightKg,
                     reps = set.reps,
+                    targetReps = set.targetReps,
                     rpe = set.rpe,
                     distanceMeters = set.distanceMeters,
                     durationSeconds = set.durationSeconds,
                     completedAt = set.completedAt?.let(Instant::parse),
                     level = set.level,
+                    speedKmh = set.speedKmh,
                 )
             },
         )
@@ -140,12 +164,34 @@ fun BackupWorkout.toWorkout() = Workout(
 
 fun Routine.toBackup() = BackupRoutine(
     name = name,
-    exercises = exercises.map { BackupRoutineExercise(it.exerciseId, it.sets, it.reps, it.weightKg, it.restSeconds) },
+    exercises = exercises.map {
+        BackupRoutineExercise(
+            exerciseId = it.exerciseId,
+            sets = it.sets,
+            reps = it.reps,
+            weightKg = it.weightKg,
+            restSeconds = it.restSeconds,
+            durationSeconds = it.durationSeconds,
+            level = it.level,
+            speedKmh = it.speedKmh,
+        )
+    },
 )
 
 fun BackupRoutine.toRoutine() = Routine(
     name = name,
-    exercises = exercises.map { RoutineExercise(it.exerciseId, it.sets, it.reps, it.weightKg, it.restSeconds) },
+    exercises = exercises.map {
+        RoutineExercise(
+            exerciseId = it.exerciseId,
+            sets = it.sets,
+            reps = it.reps,
+            weightKg = it.weightKg,
+            restSeconds = it.restSeconds,
+            durationSeconds = it.durationSeconds,
+            level = it.level,
+            speedKmh = it.speedKmh,
+        )
+    },
 )
 
 fun BackupCustomExercise.kindOrDefault(): ExerciseKind = ExerciseKind.entries.firstOrNull { it.name == kind } ?: ExerciseKind.WEIGHT_REPS

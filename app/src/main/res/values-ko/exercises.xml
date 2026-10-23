@@ -43,4 +43,5 @@
     <string name="exercise_treadmill">러닝머신</string>
     <string name="exercise_stair_machine">천국의 계단</string>
     <string name="exercise_stationary_bike">실내 사이클</string>
+    <string name="exercise_rowing_machine">로잉 머신</string>
 </resources>

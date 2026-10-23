@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -53,6 +54,7 @@ import io.fitgymlog.app.R
 import io.fitgymlog.app.container
 import io.fitgymlog.app.data.byId
 import io.fitgymlog.app.model.Exercise
+import io.fitgymlog.app.model.ExerciseKind
 import io.fitgymlog.app.model.NewExercise
 import io.fitgymlog.app.model.Routine
 import io.fitgymlog.app.model.WeightUnit
@@ -62,13 +64,19 @@ import io.fitgymlog.app.ui.ConfirmDialog
 import io.fitgymlog.app.ui.NumberField
 import io.fitgymlog.app.ui.ReadableWidth
 import io.fitgymlog.app.ui.exercise.ExercisePickerDialog
-import io.fitgymlog.app.ui.formatRest
+import io.fitgymlog.app.ui.formatSpeedNumber
 import io.fitgymlog.app.ui.formatWeightNumber
 import io.fitgymlog.app.ui.fromDisplayWeight
+import io.fitgymlog.app.ui.hasSpeed
+import io.fitgymlog.app.ui.levelLabel
 import io.fitgymlog.app.ui.localizedName
 import io.fitgymlog.app.ui.REST_CHOICES
+import io.fitgymlog.app.ui.restValue
+import io.fitgymlog.app.ui.speedUnitLabel
 import io.fitgymlog.app.ui.unitLabel
 import io.fitgymlog.app.ui.usesWeight
+import io.fitgymlog.app.ui.workout.amountOf
+import io.fitgymlog.app.ui.workout.secondsOf
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -129,8 +137,8 @@ fun RoutineEditorScreen(routineId: Long, onDone: () -> Unit) {
         },
     ) { padding ->
         if (phase == EditorPhase.LOADING || phase == EditorPhase.MISSING) return@Scaffold
-        ReadableWidth(Modifier.padding(padding)) {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(horizontal = 16.dp)) {
+        ReadableWidth(Modifier.padding(padding)) { gutter ->
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(horizontal = 16.dp + gutter)) {
                 item {
                     OutlinedTextField(
                         value = draft.name,
@@ -184,7 +192,7 @@ fun RoutineEditorScreen(routineId: Long, onDone: () -> Unit) {
             title = stringResource(R.string.rest_timer),
             options = REST_CHOICES,
             selected = draft.planned.firstOrNull { it.key == key }?.restSeconds ?: 0,
-            label = { if (it == 0) stringResource(R.string.rest_off) else formatRest(it) },
+            label = { restValue(it) },
             onSelect = { seconds -> editor.edit { it.update(key) { planned -> planned.copy(restSeconds = seconds) } } },
             onDismiss = { restEditor = null },
         )
@@ -269,29 +277,65 @@ private fun PlannedExerciseCard(
                     }
                 }
             }
+            val kind = exercise.kind
+            val previous = stringResource(R.string.previous_short)
+            val showSets = rememberSaveable(item.key) { kind != ExerciseKind.CARDIO || item.sets != 1 }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Labeled(stringResource(R.string.sets), Modifier.weight(1f)) {
-                    NumberField(item.sets.toString(), { text -> plannedSets(text)?.let { sets -> onChange { it.copy(sets = sets) } } }, decimal = false)
+                if (showSets) {
+                    Labeled(stringResource(R.string.sets), Modifier.weight(1f)) {
+                        NumberField(item.sets.toString(), { text -> plannedSets(text)?.let { sets -> onChange { it.copy(sets = sets) } } }, decimal = false)
+                    }
                 }
-                if (!exercise.kind.isTimed) {
+                if (!kind.isTimed) {
                     Labeled(stringResource(R.string.col_reps), Modifier.weight(1f)) {
                         NumberField(item.reps?.toString().orEmpty(), { text -> onChange { it.copy(reps = text.toIntOrNull()) } }, decimal = false, placeholder = "-")
                     }
                 }
-                if (exercise.kind.usesWeight()) {
+                if (kind.usesWeight()) {
                     Labeled(unitLabel(unit), Modifier.weight(1f)) {
                         NumberField(
                             item.weightKg?.let { formatWeightNumber(it, unit) }.orEmpty(),
                             { text -> onChange { it.copy(weightKg = text.toDoubleOrNull()?.let { value -> fromDisplayWeight(value, unit) }) } },
-                            placeholder = stringResource(R.string.previous_short),
+                            placeholder = previous,
                         )
                     }
                 }
-                Labeled(stringResource(R.string.rest), Modifier.weight(1f)) {
-                    Text(
-                        if (item.restSeconds == 0) stringResource(R.string.rest_off) else formatRest(item.restSeconds),
-                        modifier = Modifier.clickable(onClick = onEditRest).padding(vertical = 8.dp),
-                    )
+                if (kind == ExerciseKind.CARDIO) {
+                    Labeled(stringResource(exercise.levelLabel()), Modifier.weight(1f)) {
+                        NumberField(
+                            item.level?.toString().orEmpty(),
+                            { text -> onChange { it.copy(level = text.toIntOrNull()) } },
+                            decimal = false,
+                            placeholder = previous,
+                        )
+                    }
+                }
+                if (exercise.hasSpeed) {
+                    Labeled(speedUnitLabel(unit), Modifier.weight(1f)) {
+                        NumberField(
+                            item.speedKmh?.let { formatSpeedNumber(it, unit) }.orEmpty(),
+                            { text -> onChange { it.copy(speedKmh = plannedSpeed(text, unit)) } },
+                            placeholder = previous,
+                        )
+                    }
+                }
+                if (kind.isTimed) {
+                    Labeled(stringResource(if (kind == ExerciseKind.CARDIO) R.string.col_minutes else R.string.col_seconds), Modifier.weight(1f)) {
+                        NumberField(
+                            item.durationSeconds?.let(kind::amountOf)?.toString().orEmpty(),
+                            { text -> onChange { it.copy(durationSeconds = text.toIntOrNull()?.takeIf { amount -> amount > 0 }?.let(kind::secondsOf)) } },
+                            decimal = false,
+                            placeholder = previous,
+                        )
+                    }
+                }
+                if (kind != ExerciseKind.CARDIO) {
+                    Labeled(stringResource(R.string.rest), Modifier.weight(1f)) {
+                        Text(
+                            restValue(item.restSeconds),
+                            modifier = Modifier.clickable(onClick = onEditRest).padding(vertical = 8.dp),
+                        )
+                    }
                 }
             }
         }

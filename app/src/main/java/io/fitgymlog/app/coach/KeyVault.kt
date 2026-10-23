@@ -2,41 +2,63 @@ package io.fitgymlog.app.coach
 
 import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyPermanentlyInvalidatedException
 import android.security.keystore.KeyProperties
 import android.util.Base64
 import androidx.core.content.edit
-import io.fitgymlog.app.catching
 import java.security.KeyStore
+import java.security.UnrecoverableKeyException
+import javax.crypto.AEADBadTagException
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.withContext
 
-/** The API key, encrypted with a key that never leaves the phone's Android Keystore. */
+/** The key is kept with the address it was checked against and is only handed out for that address. */
 class KeyVault(context: Context) {
     private val prefs = context.getSharedPreferences("coach_key", Context.MODE_PRIVATE)
+    private val _savedFor = MutableStateFlow(prefs.getString(BASE_URL, null)?.takeIf { prefs.contains(STORED) })
+    val savedFor: StateFlow<String?> = _savedFor.asStateFlow()
 
-    val hasKey: Boolean get() = prefs.contains(STORED)
-
-    fun read(): String? {
-        val stored = prefs.getString(STORED, null) ?: return null
-        return catching {
+    /** A key that can no longer be decrypted, such as after the Keystore was reset, is dropped so the user is asked again. */
+    suspend fun read(baseUrl: String): String? = withContext(Dispatchers.IO) {
+        val stored = prefs.getString(STORED, null)?.takeIf { baseUrl == _savedFor.value } ?: return@withContext null
+        try {
             val (iv, sealed) = stored.split(':').map { Base64.decode(it, Base64.NO_WRAP) }
             val cipher = Cipher.getInstance(TRANSFORMATION).apply { init(Cipher.DECRYPT_MODE, secretKey(), GCMParameterSpec(TAG_BITS, iv)) }
             cipher.doFinal(sealed).decodeToString()
-        }.getOrNull()
+        } catch (error: Exception) {
+            if (!error.meansKeyIsGone()) throw error
+            clear()
+            null
+        }
     }
 
-    fun write(apiKey: String?) {
-        if (apiKey.isNullOrBlank()) {
-            prefs.edit { remove(STORED) }
-            return
-        }
+    suspend fun write(apiKey: String, baseUrl: String) = withContext(Dispatchers.IO + NonCancellable) {
         val cipher = Cipher.getInstance(TRANSFORMATION).apply { init(Cipher.ENCRYPT_MODE, secretKey()) }
         val sealed = cipher.doFinal(apiKey.trim().toByteArray())
-        prefs.edit { putString(STORED, "${Base64.encodeToString(cipher.iv, Base64.NO_WRAP)}:${Base64.encodeToString(sealed, Base64.NO_WRAP)}") }
+        prefs.edit(commit = true) {
+            putString(STORED, "${Base64.encodeToString(cipher.iv, Base64.NO_WRAP)}:${Base64.encodeToString(sealed, Base64.NO_WRAP)}")
+            putString(BASE_URL, baseUrl)
+        }
+        _savedFor.value = baseUrl
     }
 
+    fun clear() {
+        prefs.edit { remove(STORED); remove(BASE_URL) }
+        _savedFor.value = null
+    }
+
+    private fun Exception.meansKeyIsGone() = this is AEADBadTagException || this is KeyPermanentlyInvalidatedException ||
+        this is UnrecoverableKeyException || this is IllegalArgumentException || this is IndexOutOfBoundsException
+
+    @Synchronized
     private fun secretKey(): SecretKey {
         val store = KeyStore.getInstance(KEYSTORE).apply { load(null) }
         (store.getKey(ALIAS, null) as? SecretKey)?.let { return it }
@@ -55,5 +77,6 @@ class KeyVault(context: Context) {
         const val TAG_BITS = 128
         const val KEY_BITS = 256
         const val STORED = "api_key"
+        const val BASE_URL = "base_url"
     }
 }

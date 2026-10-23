@@ -30,6 +30,7 @@ import io.fitgymlog.app.ui.localizedName
 import io.fitgymlog.app.ui.setTypeName
 import io.fitgymlog.app.workout.ActiveWorkout
 import io.fitgymlog.app.workout.SetRef
+import io.fitgymlog.app.workout.previousRows
 
 internal sealed interface PickerTarget {
     data object Add : PickerTarget
@@ -49,7 +50,7 @@ internal val PickerTargetSaver = Saver<PickerTarget?, Int>(
     restore = { if (it == ADD_TARGET) PickerTarget.Add else PickerTarget.Replace(it) },
 )
 
-internal enum class SetField { WEIGHT, AMOUNT, LEVEL }
+internal enum class SetField { WEIGHT, AMOUNT, LEVEL, SPEED, DISTANCE }
 
 internal data class SetEditor(val field: SetField, val ref: SetRef)
 
@@ -79,10 +80,11 @@ internal fun SetEditorSheet(
     when (editor.field) {
         SetField.WEIGHT -> {
             val later = exercise.sets.drop(ref.setIndex + 1).filter { !it.isCompleted }
+            val lastTime = previousRows(exercise.sets, previous).getOrNull(ref.setIndex)
             WeightSheet(
                 title = setTitle,
-                initialKg = set.weightKg ?: previous.getOrNull(ref.setIndex)?.weightKg,
-                previousKg = previous.getOrNull(ref.setIndex)?.weightKg,
+                initialKg = set.weightKg ?: lastTime?.weightKg,
+                previousKg = lastTime?.weightKg,
                 equipment = info.equipment,
                 unit = settings.unit,
                 bar = settings.bar,
@@ -111,6 +113,25 @@ internal fun SetEditorSheet(
                 onDismiss = onDismiss,
             )
         }
+        SetField.SPEED -> SpeedSheet(
+            title = setTitle,
+            initialKmh = set.speedKmh ?: previousRows(exercise.sets, previous).getOrNull(ref.setIndex)?.speedKmh,
+            unit = settings.unit,
+            onSave = { kmh ->
+                onChange { it.setSpeed(ref, kmh) }
+                onDismiss()
+            },
+            onDismiss = onDismiss,
+        )
+        SetField.DISTANCE -> DistanceSheet(
+            title = setTitle,
+            initialMeters = set.distanceMeters ?: previousRows(exercise.sets, previous).getOrNull(ref.setIndex)?.distanceMeters,
+            onSave = { meters ->
+                onChange { it.setDistance(ref, meters) }
+                onDismiss()
+            },
+            onDismiss = onDismiss,
+        )
         SetField.LEVEL -> NumberPadSheet(
             title = setTitle,
             options = LEVEL_CHOICES,
@@ -126,12 +147,11 @@ internal fun SetEditorSheet(
 }
 
 @Composable
-internal fun WorkoutMenu(onRename: () -> Unit, onDiscard: () -> Unit, onCoach: (() -> Unit)?) {
+internal fun WorkoutMenu(onRename: () -> Unit, onDiscard: () -> Unit) {
     var open by remember { mutableStateOf(false) }
     Box {
         IconButton(onClick = { open = true }) { Icon(Icons.Default.MoreVert, stringResource(R.string.more)) }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            onCoach?.let { DropdownMenuItem(text = { Text(stringResource(R.string.coach_ask)) }, onClick = { open = false; it() }) }
             DropdownMenuItem(text = { Text(stringResource(R.string.rename_workout)) }, onClick = { open = false; onRename() })
             DropdownMenuItem(text = { Text(stringResource(R.string.discard_workout)) }, onClick = { open = false; onDiscard() })
         }

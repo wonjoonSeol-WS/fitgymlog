@@ -66,16 +66,16 @@ class DriveAppData(private val token: String) {
     data class RemoteFile(val id: String)
 
     /** Drive allows several files with one name and lists them in no set order, so every phone settles on the oldest. */
-    suspend fun find(): RemoteFile? = withContext(Dispatchers.IO) {
-        val query = URLEncoder.encode("name = '$FILE_NAME'", "UTF-8").replace("+", "%20")
+    suspend fun find(name: String = SYNC_FILE): RemoteFile? = withContext(Dispatchers.IO) {
+        val query = URLEncoder.encode("name = '$name'", "UTF-8").replace("+", "%20")
         oldestOf(request("GET", "$FILES?spaces=appDataFolder&orderBy=createdTime&fields=files(id,createdTime)&q=$query"))
     }
 
     suspend fun download(file: RemoteFile): String = withContext(Dispatchers.IO) { request("GET", "$FILES/${file.id}?alt=media") }
 
-    suspend fun create(content: String): Unit = withContext(Dispatchers.IO) {
+    suspend fun create(content: String, name: String = SYNC_FILE): Unit = withContext(Dispatchers.IO) {
         val boundary = "fitgymlog-${UUID.randomUUID()}"
-        val metadata = """{"name":"$FILE_NAME","parents":["appDataFolder"]}"""
+        val metadata = """{"name":"$name","parents":["appDataFolder"]}"""
         val body = "--$boundary\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n$metadata\r\n" +
             "--$boundary\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n$content\r\n--$boundary--\r\n"
         request("POST", "$UPLOAD?uploadType=multipart", body, "multipart/related; boundary=$boundary")
@@ -128,7 +128,7 @@ class DriveAppData(private val token: String) {
         fun oldestOf(listing: String): RemoteFile? =
             json.decodeFromString(FileList.serializer(), listing).files.minByOrNull { Instant.parse(it.createdTime) }?.let { RemoteFile(it.id) }
 
-        private const val FILE_NAME = "fitgymlog-sync.json"
+        private const val SYNC_FILE = "fitgymlog-sync.json"
         private const val API = "https://www.googleapis.com/drive/v3"
         private const val FILES = "$API/files"
         private const val UPLOAD = "https://www.googleapis.com/upload/drive/v3/files"

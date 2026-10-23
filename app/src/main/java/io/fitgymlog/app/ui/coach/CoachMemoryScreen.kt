@@ -10,6 +10,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -37,8 +38,10 @@ import io.fitgymlog.app.R
 import io.fitgymlog.app.coach.Memory
 import io.fitgymlog.app.coach.MemoryTopic
 import io.fitgymlog.app.container
+import io.fitgymlog.app.ui.ConfirmDialog
 import io.fitgymlog.app.ui.ReadableWidth
 import io.fitgymlog.app.ui.settings.SettingsSection
+import java.time.LocalDate
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,6 +51,7 @@ fun CoachMemoryScreen(onBack: () -> Unit) {
     val data by app.coach.store.data.collectAsStateWithLifecycle()
     var editing by rememberSaveable { mutableStateOf<String?>(null) }
     var adding by rememberSaveable { mutableStateOf(false) }
+    var deleting by rememberSaveable { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
@@ -58,8 +62,8 @@ fun CoachMemoryScreen(onBack: () -> Unit) {
             )
         },
     ) { padding ->
-        ReadableWidth(Modifier.padding(padding)) {
-            Column(Modifier.verticalScroll(rememberScrollState())) {
+        ReadableWidth(Modifier.padding(padding)) { gutter ->
+            Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = gutter)) {
                 Text(
                     stringResource(R.string.coach_memory_text),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -68,41 +72,72 @@ fun CoachMemoryScreen(onBack: () -> Unit) {
                 if (data.memories.isEmpty()) {
                     Text(stringResource(R.string.coach_memory_empty), modifier = Modifier.padding(16.dp))
                 }
+                val today = LocalDate.now()
+                val (active, ended) = data.memories.partition { it.isActive(today) }
                 MemoryTopic.entries.forEach { topic ->
-                    val notes = data.memories.filter { it.topic == topic }
+                    val notes = active.filter { it.topic == topic }
                     if (notes.isEmpty()) return@forEach
                     SettingsSection(stringResource(topicText(topic)))
                     notes.forEach { memory ->
                         ListItem(
                             headlineContent = { Text(memory.text) },
-                            supportingContent = { Text(stringResource(R.string.coach_memory_since, memory.savedAt)) },
+                            supportingContent = {
+                                Text(memory.until?.let { stringResource(R.string.coach_memory_until, memory.savedAt, it) } ?: stringResource(R.string.coach_memory_since, memory.savedAt))
+                            },
                             trailingContent = {
                                 Row {
-                                    TextButton(onClick = { editing = memory.id }) { Text(stringResource(R.string.coach_edit)) }
-                                    TextButton(onClick = { app.scope.launch { app.coach.store.forget(memory.id) } }) { Text(stringResource(R.string.delete)) }
+                                    TextButton(onClick = { editing = memory.key }) { Text(stringResource(R.string.coach_edit)) }
+                                    TextButton(onClick = { deleting = memory.key }) { Text(stringResource(R.string.delete)) }
                                 }
                             },
                         )
                     }
                 }
-                TextButton(onClick = { adding = true }, modifier = Modifier.padding(8.dp)) { Text("+ " + stringResource(R.string.coach_memory_add)) }
+                if (ended.isNotEmpty()) {
+                    SettingsSection(stringResource(R.string.coach_memory_ended))
+                    ended.forEach { memory ->
+                        ListItem(
+                            headlineContent = { Text(memory.text, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                            supportingContent = { Text(stringResource(R.string.coach_memory_ended_on, memory.until.orEmpty())) },
+                            trailingContent = {
+                                Row {
+                                    TextButton(onClick = { app.scope.launch { app.coach.store.remember(memory.key, memory.text) } }) { Text(stringResource(R.string.coach_keep)) }
+                                    TextButton(onClick = { deleting = memory.key }) { Text(stringResource(R.string.delete)) }
+                                }
+                            },
+                        )
+                    }
+                }
+                TextButton(onClick = { adding = true }, modifier = Modifier.padding(8.dp)) {
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                    Text(stringResource(R.string.coach_memory_add))
+                }
             }
         }
     }
 
-    data.memories.firstOrNull { it.id == editing }?.let { memory ->
+    data.memories.firstOrNull { it.key == editing }?.let { memory ->
         NoteDialog(
             title = stringResource(R.string.coach_memory_edit),
             initial = memory,
-            onSave = { _, text -> app.scope.launch { app.coach.store.editMemory(memory.id, text) } },
+            onSave = { _, text -> app.scope.launch { app.coach.store.remember(memory.key, text, memory.until) } },
             onDismiss = { editing = null },
+        )
+    }
+    deleting?.let { key ->
+        ConfirmDialog(
+            title = stringResource(R.string.coach_memory_delete_confirm),
+            text = data.memories.firstOrNull { it.key == key }?.text,
+            confirm = stringResource(R.string.delete),
+            onConfirm = { app.scope.launch { app.coach.store.forget(key) } },
+            onDismiss = { deleting = null },
         )
     }
     if (adding) {
         NoteDialog(
             title = stringResource(R.string.coach_memory_add),
             initial = null,
-            onSave = { topic, text -> app.scope.launch { app.coach.store.remember(topic, text) } },
+            onSave = { topic, text -> app.scope.launch { app.coach.store.add(topic, text) } },
             onDismiss = { adding = false },
         )
     }

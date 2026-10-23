@@ -41,6 +41,8 @@ data class Exercise(
     val userLinks: List<String> = emptyList(),
     val nameRes: Int? = null,
     val customName: String? = null,
+    /** Progresses 5 kg or 10 lb a session, as StrongLifts does for the deadlift. */
+    val largeIncrements: Boolean = false,
 ) {
     val isCustom: Boolean get() = nameRes == null
     val allLinks: List<String> get() = links + userLinks
@@ -55,8 +57,9 @@ data class WorkoutSet(
     val distanceMeters: Double? = null,
     val durationSeconds: Int? = null,
     val completedAt: Instant? = null,
-    /** A cardio machine's setting: the treadmill's incline, the stair machine's or bike's level. */
+    /** A cardio machine's setting: the treadmill's incline, the stair machine's, bike's or rower's level. */
     val level: Int? = null,
+    val speedKmh: Double? = null,
 ) {
     val isCompleted: Boolean get() = completedAt != null
 }
@@ -89,6 +92,9 @@ data class RoutineExercise(
     val reps: Int?,
     val weightKg: Double?,
     val restSeconds: Int,
+    val durationSeconds: Int? = null,
+    val level: Int? = null,
+    val speedKmh: Double? = null,
 )
 
 data class Routine(

@@ -12,6 +12,8 @@
     <string name="end_at_last_set">End at the last set, %1$s</string>
     <string name="times_order">The end has to be after the start.</string>
     <string name="times_outside">Every ticked set has to fit: start by %1$s and end at %2$s or later.</string>
+    <string name="times_future">The end can\'t be later than now.</string>
+    <string name="times_clash">Another workout named %1$s starts in that minute, and sync would keep only one of them. Move the start by a minute.</string>
     <string name="programs">Programs</string>
     <string name="add_program">Add a program</string>
     <string name="program_already_added">These routines are already in your list.</string>

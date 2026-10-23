@@ -17,8 +17,21 @@ class ExerciseCatalogTest {
     }
 
     @Test
+    fun `only the deadlift progresses in large steps`() {
+        assertEquals(listOf("deadlift_barbell"), ExerciseCatalog.all.filter { it.largeIncrements }.map { it.id })
+    }
+
+    @Test
     fun `every built-in exercise has a Korean name`() {
         assertEquals(emptyList<String>(), ExerciseCatalog.all.filter { resourceName(it.nameRes) !in korean }.map { it.id })
+    }
+
+    @Test
+    fun `every built-in exercise has a form video and a written guide`() {
+        fun isVideo(url: String) = "youtube.com/" in url || "youtu.be/" in url
+        val missing = ExerciseCatalog.all.filter { exercise -> exercise.links.none(::isVideo) || exercise.links.all(::isVideo) }
+
+        assertEquals(emptyList<String>(), missing.map { it.id })
     }
 
     @Test

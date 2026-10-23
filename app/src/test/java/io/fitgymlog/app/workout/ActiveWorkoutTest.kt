@@ -1,5 +1,6 @@
 package io.fitgymlog.app.workout
 
+import io.fitgymlog.app.model.SetType
 import io.fitgymlog.app.model.Workout
 import io.fitgymlog.app.model.WorkoutSet
 import java.time.Duration
@@ -105,10 +106,10 @@ class ActiveWorkoutTest {
     @Test
     fun `an added set copies the last set's minutes and level as well as its weight and reps`() {
         val cardio = ActiveWorkout(Workout(title = "Day A", startedAt = start, exercises = emptyList()))
-            .addExercise("treadmill", listOf(WorkoutSet(durationSeconds = 300, level = 8)), restSeconds = 0, now = start)
+            .addExercise("treadmill", listOf(WorkoutSet(durationSeconds = 300, level = 8, speedKmh = 7.0)), restSeconds = 0, now = start)
             .addSet(0)
 
-        assertEquals(WorkoutSet(durationSeconds = 300, level = 8), cardio.exercises[0].sets[1])
+        assertEquals(WorkoutSet(durationSeconds = 300, level = 8, speedKmh = 7.0), cardio.exercises[0].sets[1])
     }
 
     @Test
@@ -124,7 +125,7 @@ class ActiveWorkoutTest {
 
     @Test
     fun `a coach target changes only the working sets not done yet`() {
-        val warmup = WorkoutSet(type = io.fitgymlog.app.model.SetType.WARMUP, weightKg = 20.0, reps = 5)
+        val warmup = WorkoutSet(type = SetType.WARMUP, weightKg = 20.0, reps = 5)
         val started = ActiveWorkout(Workout(title = "Day A", startedAt = start, exercises = emptyList()))
             .addExercise("squat_barbell", listOf(warmup) + sets(3, 60.0, 5), restSeconds = 120, now = start)
             .toggleSet(SetRef(0, 1), start)
@@ -132,8 +133,168 @@ class ActiveWorkoutTest {
         val sets = started.applyTarget("squat_barbell", weightKg = 62.5, reps = 3).exercises[0].sets
 
         assertEquals(listOf(20.0, 60.0, 62.5, 62.5), sets.map { it.weightKg })
+        assertEquals(listOf(5, 5, 3, 3), sets.map { it.reps })
         assertEquals(listOf(5, 5, 3, 3), sets.map { it.targetReps })
         assertEquals(started, started.applyTarget("deadlift_barbell", 100.0, 5))
+    }
+
+    @Test
+    fun `a target with only reps keeps each set's weight`() {
+        val started = ActiveWorkout(Workout(title = "Day A", startedAt = start, exercises = emptyList()))
+            .addExercise("squat_barbell", sets(1, 60.0, 5) + sets(1, 50.0, 5), restSeconds = 120, now = start)
+
+        val sets = started.applyTarget("squat_barbell", weightKg = null, reps = 3).exercises[0].sets
+
+        assertEquals(listOf(60.0, 50.0), sets.map { it.weightKg })
+        assertEquals(listOf(3, 3), sets.map { it.reps })
+    }
+
+    @Test
+    fun `a target goes to the first block of an exercise and leaves drop and failure sets alone`() {
+        val drop = WorkoutSet(type = SetType.DROP, weightKg = 40.0, reps = 8)
+        val failure = WorkoutSet(type = SetType.FAILURE, weightKg = 40.0, reps = 6)
+        val started = ActiveWorkout(Workout(title = "Day A", startedAt = start, exercises = emptyList()))
+            .addExercise("squat_barbell", sets(1, 60.0, 5) + drop + failure, restSeconds = 120, now = start)
+            .addExercise("squat_barbell", sets(1, 50.0, 8), restSeconds = 120, now = start)
+
+        val exercises = started.applyTarget("squat_barbell", weightKg = 62.5, reps = 5).exercises
+
+        assertEquals(listOf(62.5, 40.0, 40.0), exercises[0].sets.map { it.weightKg })
+        assertEquals(listOf(50.0), exercises[1].sets.map { it.weightKg })
+    }
+
+    @Test
+    fun `a target's duration goes to open working sets only`() {
+        val ride = WorkoutSet(durationSeconds = 600, level = 5)
+        val started = ActiveWorkout(Workout(title = "Cardio", startedAt = start, exercises = emptyList()))
+            .addExercise("treadmill", listOf(ride.copy(type = SetType.WARMUP), ride, ride), restSeconds = 0, now = start)
+            .toggleSet(SetRef(0, 1), start)
+
+        val sets = started.applyTarget("treadmill", weightKg = null, reps = null, durationSeconds = 1800).exercises[0].sets
+
+        assertEquals(listOf(600, 600, 1800), sets.map { it.durationSeconds })
+    }
+
+    @Test
+    fun `a target goes to the first block that still has open sets`() {
+        val started = ActiveWorkout(Workout(title = "Day A", startedAt = start, exercises = emptyList()))
+            .addExercise("squat_barbell", sets(1, 60.0, 5), restSeconds = 120, now = start)
+            .addExercise("squat_barbell", sets(1, 50.0, 8), restSeconds = 120, now = start)
+            .toggleSet(SetRef(0, 0), start)
+
+        val exercises = started.applyTarget("squat_barbell", weightKg = 52.5, reps = 8).exercises
+
+        assertEquals(listOf(60.0), exercises[0].sets.map { it.weightKg })
+        assertEquals(listOf(52.5), exercises[1].sets.map { it.weightKg })
+    }
+
+    @Test
+    fun `more working sets copy the last working set and go right after it, before a drop set`() {
+        val drop = WorkoutSet(type = SetType.DROP, weightKg = 40.0, reps = 10)
+        val started = ActiveWorkout(Workout(title = "Day A", startedAt = start, exercises = emptyList()))
+            .addExercise("squat_barbell", sets(1, 60.0, 5) + sets(1, 62.5, 3) + drop, restSeconds = 120, now = start)
+            .toggleSet(SetRef(0, 2), start)
+
+        val grown = started.withWorkingSets("squat_barbell", 4)
+        val sets = grown.exercises[0].sets
+
+        assertEquals(listOf(60.0, 62.5, 62.5, 62.5, 40.0), sets.map { it.weightKg })
+        assertEquals(listOf(5, 3, 3, 3, 10), sets.map { it.reps })
+        assertEquals(listOf(SetType.NORMAL, SetType.NORMAL, SetType.NORMAL, SetType.NORMAL, SetType.DROP), sets.map { it.type })
+        assertEquals(SetRef(0, 4), grown.shownCompletedSet)
+    }
+
+    @Test
+    fun `dropping the open sets of the focused exercise moves focus to work, and the shown set follows its set`() {
+        val drop = WorkoutSet(type = SetType.DROP, weightKg = 40.0, reps = 10)
+        val started = ActiveWorkout(Workout(title = "Day A", startedAt = start, exercises = emptyList()))
+            .addExercise("squat_barbell", sets(1, 60.0, 5) + sets(2, 62.5, 5) + drop, restSeconds = 120, now = start)
+            .addExercise("overhead_press_barbell", sets(2, 30.0, 5), restSeconds = 90, now = start)
+            .toggleSet(SetRef(0, 0), start)
+            .toggleSet(SetRef(0, 3), start)
+
+        val dropped = started.withWorkingSets("squat_barbell", 1)
+        val removed = threeExercises().completeAll(1).focusExercise(0).withoutOpenSets("squat_barbell")
+
+        assertEquals(listOf(SetType.NORMAL, SetType.DROP), dropped.exercises[0].sets.map { it.type })
+        assertEquals(SetRef(0, 1), dropped.shownCompletedSet)
+        assertEquals("overhead_press_barbell", dropped.focusedId())
+        assertEquals("bench_press_barbell", removed.focusedId())
+    }
+
+    @Test
+    fun `the same number of working sets, or none open to drop, leaves the workout as it was`() {
+        val started = ActiveWorkout(Workout(title = "Day A", startedAt = start, exercises = emptyList()))
+            .addExercise("squat_barbell", sets(2, 60.0, 5), restSeconds = 120, now = start)
+            .toggleSet(SetRef(0, 0), start)
+            .toggleSet(SetRef(0, 1), start)
+
+        assertEquals(started, started.withWorkingSets("squat_barbell", 2))
+        assertEquals(started, started.withWorkingSets("squat_barbell", 1))
+    }
+
+    @Test
+    fun `fewer working sets drops open ones from the end, never a done set or a warm-up`() {
+        val warmup = WorkoutSet(type = SetType.WARMUP, weightKg = 20.0, reps = 10)
+        val started = ActiveWorkout(Workout(title = "Day A", startedAt = start, exercises = emptyList()))
+            .addExercise("squat_barbell", listOf(warmup) + sets(1, 60.0, 5) + sets(3, 62.5, 5), restSeconds = 120, now = start)
+            .toggleSet(SetRef(0, 1), start)
+
+        val two = started.withWorkingSets("squat_barbell", 2).exercises[0].sets
+        val none = started.withWorkingSets("squat_barbell", 0).exercises[0].sets
+
+        assertEquals(listOf(20.0, 60.0, 62.5), two.map { it.weightKg })
+        assertEquals(listOf(20.0, 60.0), none.map { it.weightKg })
+        assertTrue(none[1].isCompleted)
+    }
+
+    @Test
+    fun `taking out an exercise removes it, or once a set is done keeps only the done sets`() {
+        val started = threeExercises().toggleSet(SetRef(0, 0), start).focusExercise(2)
+
+        val untouched = started.withoutOpenSets("overhead_press_barbell")
+        val begun = started.withoutOpenSets("squat_barbell")
+
+        assertEquals(listOf("squat_barbell", "bench_press_barbell"), untouched.exercises.map { it.exerciseId })
+        assertEquals("bench_press_barbell", untouched.focusedId())
+        assertEquals(1, begun.exercises[0].sets.size)
+        assertTrue(begun.exercises[0].sets.single().isCompleted)
+        assertEquals(3, begun.exercises.size)
+        assertEquals(started, started.withoutOpenSets("deadlift_barbell"))
+    }
+
+    @Test
+    fun `taking out the open sets of the focused exercise moves focus on, and an exercise already done stays as it is`() {
+        val started = threeExercises().toggleSet(SetRef(0, 0), start)
+        val done = threeExercises().completeAll(0)
+
+        val trimmed = started.withoutOpenSets("squat_barbell")
+
+        assertEquals("overhead_press_barbell", trimmed.focusedId())
+        assertEquals(null, trimmed.shownCompletedSet)
+        assertEquals(done, done.withoutOpenSets("squat_barbell"))
+    }
+
+    @Test
+    fun `an added warm-up goes after the warm-ups already there and before the working sets`() {
+        val warmup = WorkoutSet(type = SetType.WARMUP, weightKg = 20.0, reps = 10)
+        val started = ActiveWorkout(Workout(title = "Day A", startedAt = start, exercises = emptyList()))
+            .addExercise("squat_barbell", listOf(warmup) + sets(2, 60.0, 5), restSeconds = 120, now = start)
+
+        val sets = started.addWarmup(0, weightKg = 40.0).exercises[0].sets
+
+        assertEquals(listOf(20.0, 40.0, 60.0, 60.0), sets.map { it.weightKg })
+        assertEquals(listOf(SetType.WARMUP, SetType.WARMUP, SetType.NORMAL, SetType.NORMAL), sets.map { it.type })
+        assertEquals(5, sets[1].reps)
+    }
+
+    @Test
+    fun `an added warm-up keeps pointing at the set just done`() {
+        val started = ActiveWorkout(Workout(title = "Day A", startedAt = start, exercises = emptyList()))
+            .addExercise("squat_barbell", sets(2, 60.0, 5), restSeconds = 120, now = start)
+            .toggleSet(SetRef(0, 0), start)
+
+        assertEquals(SetRef(0, 1), started.addWarmup(0, weightKg = 40.0).shownCompletedSet)
     }
 
     @Test

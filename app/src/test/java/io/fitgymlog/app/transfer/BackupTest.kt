@@ -29,17 +29,21 @@ class BackupTest {
                 sets = listOf(
                     WorkoutSet(type = SetType.WARMUP, weightKg = 40.0, reps = 8, completedAt = Instant.parse("2026-10-19T10:45:00Z")),
                     WorkoutSet(weightKg = null, reps = 8, rpe = 8.5),
+                    WorkoutSet(weightKg = 60.0, reps = 4, targetReps = 5, completedAt = Instant.parse("2026-10-19T10:55:00Z")),
                 ),
             ),
             WorkoutExercise(
                 key = 2,
                 exerciseId = "treadmill",
                 restSeconds = 0,
-                sets = listOf(WorkoutSet(durationSeconds = 300, level = 8, completedAt = Instant.parse("2026-10-19T13:00:00Z"))),
+                sets = listOf(WorkoutSet(durationSeconds = 300, level = 8, speedKmh = 7.5, completedAt = Instant.parse("2026-10-19T13:00:00Z"))),
             ),
         ),
     )
-    private val routine = Routine(name = "Day A", exercises = listOf(RoutineExercise("squat_barbell", 5, 8, 60.0, 180)))
+    private val routine = Routine(
+        name = "Day A",
+        exercises = listOf(RoutineExercise("squat_barbell", 5, 8, 60.0, 180), RoutineExercise("treadmill", 1, null, null, 0, durationSeconds = 1_200, level = 12, speedKmh = 6.5)),
+    )
 
     @Test
     fun `workouts and routines survive a round trip unchanged`() {
@@ -55,6 +59,56 @@ class BackupTest {
         assertEquals(workout, decoded.workouts.single().toWorkout())
         assertEquals(routine, decoded.routines.single().toRoutine())
         assertEquals(backup.customExercises, decoded.customExercises)
+    }
+
+    @Test
+    fun `a backup from before planned reps were kept reads them as unknown`() {
+        val older = BackupFile.encode(BackupFile(exportedAt = "x", customExercises = emptyList(), routines = emptyList(), workouts = listOf(workout.toBackup())))
+            .replace(Regex(""",\s*"targetReps":\s*\d+"""), "")
+
+        val sets = BackupFile.decode(older).workouts.single().toWorkout().exercises.first().sets
+
+        assertEquals(listOf<Int?>(null, null, null), sets.map { it.targetReps })
+        assertEquals(listOf(8, 8, 4), sets.map { it.reps })
+    }
+
+    @Test
+    fun `a backup from before routines planned cardio reads it as open`() {
+        val older = BackupFile.encode(BackupFile(exportedAt = "x", customExercises = emptyList(), routines = listOf(routine.toBackup()), workouts = emptyList()))
+            .replace(Regex(""",\s*"(durationSeconds|level|speedKmh)":\s*([\d.]+|null)"""), "")
+
+        val planned = BackupFile.decode(older).routines.single().toRoutine().exercises
+
+        assertEquals(listOf(null, null), planned.map { it.durationSeconds })
+        assertEquals(listOf(null, null), planned.map { it.level })
+        assertEquals(listOf(null, null), planned.map { it.speedKmh })
+        assertEquals(listOf(5, 1), planned.map { it.sets })
+    }
+
+    @Test
+    fun `reads a version 2 file by its field names, and a version 1 file too`() {
+        val file = """
+            {"format":"fitgymlog-backup","version":2,"exportedAt":"2026-10-22T00:00:00Z","customExercises":[],
+             "routines":[{"name":"Run","exercises":[
+               {"exerciseId":"treadmill","sets":2,"reps":null,"weightKg":null,"restSeconds":30,"durationSeconds":1200,"level":12,"speedKmh":6.5}]}],
+             "workouts":[{"title":"Day A","startedAt":"2026-10-19T10:38:00Z","endedAt":"2026-10-19T11:00:00Z","notes":"","source":"APP","exercises":[
+               {"exerciseId":"treadmill","restSeconds":0,"notes":"","sets":[
+                 {"type":"NORMAL","durationSeconds":600,"completedAt":"2026-10-19T10:50:00Z","level":4,"targetReps":null,"speedKmh":9.5}]}]}]}
+        """
+
+        val decoded = BackupFile.decode(file)
+        val older = BackupFile.decode(file.replace("\"version\":2", "\"version\":1"))
+
+        assertEquals(
+            RoutineExercise("treadmill", sets = 2, reps = null, weightKg = null, restSeconds = 30, durationSeconds = 1_200, level = 12, speedKmh = 6.5),
+            decoded.routines.single().toRoutine().exercises.single(),
+        )
+        assertEquals(
+            WorkoutSet(durationSeconds = 600, level = 4, speedKmh = 9.5, completedAt = Instant.parse("2026-10-19T10:50:00Z")),
+            decoded.workouts.single().toWorkout().exercises.single().sets.single(),
+        )
+        assertEquals(decoded.copy(version = 1), older)
+        assertEquals(2, BackupFile.VERSION)
     }
 
     private val empty = BackupFile.encode(BackupFile(exportedAt = "x", customExercises = emptyList(), routines = emptyList(), workouts = emptyList()))

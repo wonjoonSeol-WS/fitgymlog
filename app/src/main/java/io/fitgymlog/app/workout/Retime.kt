@@ -2,8 +2,10 @@ package io.fitgymlog.app.workout
 
 import io.fitgymlog.app.model.Workout
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 
-/** The latest a finished workout may start and the earliest it may end while still holding every ticked set. */
+enum class RetimeProblem { ORDER, FUTURE, OUTSIDE_SETS, CLASH }
+
 data class TimeBounds(val latestStart: Instant?, val earliestEnd: Instant?)
 
 fun Workout.timeBounds(): TimeBounds {
@@ -11,11 +13,16 @@ fun Workout.timeBounds(): TimeBounds {
     return TimeBounds(ticks.minOrNull(), ticks.maxOrNull())
 }
 
-/** Null when [end] isn't after [start] or a ticked set would fall outside them. */
-fun Workout.retimed(start: Instant, end: Instant): Workout? {
+/** Picked times are whole minutes, so an end in the minute of the last tick still holds it. */
+fun Workout.retimeProblem(start: Instant, end: Instant, now: Instant): RetimeProblem? {
     val bounds = timeBounds()
-    val fits = start.isBefore(end) &&
-        bounds.latestStart?.let { !start.isAfter(it) } != false &&
-        bounds.earliestEnd?.let { !end.isBefore(it) } != false
-    return if (fits) copy(startedAt = start, endedAt = end) else null
+    return when {
+        !start.isBefore(end) -> RetimeProblem.ORDER
+        end.isAfter(now) -> RetimeProblem.FUTURE
+        bounds.latestStart?.let { start.isAfter(it) } == true -> RetimeProblem.OUTSIDE_SETS
+        bounds.earliestEnd?.let { end.isBefore(it.truncatedTo(ChronoUnit.MINUTES)) } == true -> RetimeProblem.OUTSIDE_SETS
+        else -> null
+    }
 }
+
+fun Workout.retimed(start: Instant, end: Instant): Workout = copy(startedAt = start, endedAt = maxOf(end, timeBounds().earliestEnd ?: end))

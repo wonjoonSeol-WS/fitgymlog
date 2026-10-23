@@ -36,6 +36,7 @@ class StrongCsvTest {
         assertEquals(LocalDateTime.of(2025, 4, 29, 12, 10), chest.endedAt)
         assertEquals(listOf(10, 8), chest.exercises.single().sets.map { it.reps })
         assertEquals(8.0, result.workouts[1].exercises.single().sets.single().rpe)
+        assertTrue(result.workouts.flatMap { it.exercises }.flatMap { it.sets }.all { it.targetReps == null })
     }
 
     @Test
@@ -107,11 +108,11 @@ class StrongCsvTest {
                     name = "Bench Press (Barbell)",
                     notes = "pause at the chest",
                     sets = listOf(
-                        WorkoutSet(type = SetType.WARMUP, weightKg = 40.0, reps = 10),
-                        WorkoutSet(weightKg = 80.0, reps = 5),
-                        WorkoutSet(weightKg = 80.0, reps = 5),
-                        WorkoutSet(type = SetType.DROP, weightKg = 60.0, reps = 8),
-                        WorkoutSet(type = SetType.FAILURE, weightKg = 50.0, reps = 6),
+                        WorkoutSet(type = SetType.WARMUP, weightKg = 40.0, reps = 10, targetReps = null),
+                        WorkoutSet(weightKg = 80.0, reps = 5, targetReps = null),
+                        WorkoutSet(weightKg = 80.0, reps = 5, targetReps = null),
+                        WorkoutSet(type = SetType.DROP, weightKg = 60.0, reps = 8, targetReps = null),
+                        WorkoutSet(type = SetType.FAILURE, weightKg = 50.0, reps = 6, targetReps = null),
                     ),
                 ),
             ),

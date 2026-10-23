@@ -68,6 +68,7 @@ class SyncEngine(
     private val store: SyncStore,
     private val settings: SettingsRepository,
     private val scope: CoroutineScope,
+    private val side: SideSync,
 ) {
     private val auth = DriveAuth(context.applicationContext)
     private val mutex = Mutex()
@@ -89,6 +90,11 @@ class SyncEngine(
             settings.settings.map { it.syncEnabled }.distinctUntilChanged()
                 .flatMapLatest { on -> if (on) store.changes.drop(1).debounce(LOCAL_CHANGE_DEBOUNCE_MILLIS) else emptyFlow() }
                 .collect { if (fingerprint(store.snapshot()) != lastSyncedFingerprint) requestSync() }
+        }
+        scope.launch {
+            settings.settings.map { it.syncEnabled }.distinctUntilChanged()
+                .flatMapLatest { on -> if (on) side.changes.debounce(LOCAL_CHANGE_DEBOUNCE_MILLIS) else emptyFlow() }
+                .collect { if (side.enabled && side.changedSinceSync()) requestSync() }
         }
     }
 
@@ -156,9 +162,16 @@ class SyncEngine(
             if (remoteFile == null) drive.create(merged.encode()) else drive.update(remoteFile, merged.encode())
         }
         lastSyncedFingerprint = fingerprint(merged)
+        if (enabled && side.enabled) catching { syncSide(drive, now) }.onFailure { Log.w(LOG_TAG, "Side sync of ${side.fileName} failed", it) }
         val email = settings.settings.value.syncAccount.takeUnless { freshAccount } ?: drive.accountEmail()
         settings.update { if (it.syncEnabled) it.copy(lastSyncAt = now.toEpochMilli(), syncAccount = email) else it }
         return SyncStatus.Synced(now)
+    }
+
+    private suspend fun syncSide(drive: DriveAppData, now: Instant) {
+        val file = drive.find(side.fileName)
+        val upload = side.merge(file?.let { drive.download(it) }, now) ?: return
+        if (file == null) drive.create(upload, side.fileName) else drive.update(file, upload)
     }
 
     private fun failure(error: Throwable): SyncStatus.Failed {

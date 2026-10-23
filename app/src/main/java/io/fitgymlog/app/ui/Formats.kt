@@ -2,6 +2,7 @@ package io.fitgymlog.app.ui
 
 import android.content.Context
 import android.content.res.Resources
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import io.fitgymlog.app.R
@@ -13,6 +14,7 @@ import java.time.Duration
 import java.util.Locale
 
 private const val KG_PER_LB = 0.45359237
+private const val KM_PER_MILE = 1.609344
 
 fun formatDuration(resources: Resources, seconds: Int, kind: ExerciseKind): String = when {
     kind != ExerciseKind.CARDIO -> resources.getString(R.string.duration_seconds, seconds)
@@ -34,6 +36,24 @@ fun setTypeName(type: SetType): String = stringResource(
         SetType.FAILURE -> R.string.set_type_failure
     },
 )
+
+fun toDisplaySpeed(kmh: Double, unit: WeightUnit): Double = if (unit == WeightUnit.LB) kmh / KM_PER_MILE else kmh
+
+fun fromDisplaySpeed(value: Double, unit: WeightUnit): Double = if (unit == WeightUnit.LB) value * KM_PER_MILE else value
+
+fun formatSpeedNumber(kmh: Double, unit: WeightUnit): String = oneDecimal(toDisplaySpeed(kmh, unit))
+
+fun formatKmh(kmh: Double): String = oneDecimal(kmh)
+
+fun oneDecimal(value: Double): String = "%.1f".format(Locale.ROOT, value).removeSuffix(".0")
+
+@StringRes
+private fun speedUnit(unit: WeightUnit): Int = if (unit == WeightUnit.LB) R.string.unit_mph else R.string.unit_kmh
+
+@Composable
+fun speedUnitLabel(unit: WeightUnit): String = stringResource(speedUnit(unit))
+
+fun speedText(resources: Resources, kmh: Double, unit: WeightUnit): String = "${formatSpeedNumber(kmh, unit)} ${resources.getString(speedUnit(unit))}"
 
 fun toDisplayWeight(kg: Double, unit: WeightUnit): Double = if (unit == WeightUnit.LB) kg / KG_PER_LB else kg
 
@@ -65,3 +85,6 @@ fun formatClock(duration: Duration): String {
 }
 
 fun formatRest(seconds: Int): String = "%d:%02d".format(Locale.ROOT, seconds / 60, seconds % 60)
+
+@Composable
+fun restValue(seconds: Int): String = if (seconds == 0) stringResource(R.string.rest_off) else formatRest(seconds)

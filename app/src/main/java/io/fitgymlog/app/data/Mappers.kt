@@ -94,6 +94,7 @@ private fun WorkoutSetEntity.toSet() = WorkoutSet(
     durationSeconds = durationSeconds,
     completedAt = completedAt?.let(Instant::ofEpochMilli),
     level = level,
+    speedKmh = speedKmh,
 )
 
 private fun WorkoutSet.toEntity(position: Int) = WorkoutSetEntity(
@@ -108,6 +109,7 @@ private fun WorkoutSet.toEntity(position: Int) = WorkoutSetEntity(
     durationSeconds = durationSeconds,
     completedAt = completedAt?.toEpochMilli(),
     level = level,
+    speedKmh = speedKmh,
 )
 
 fun RoutineWithExercises.toRoutine(): Routine = Routine(
@@ -116,7 +118,16 @@ fun RoutineWithExercises.toRoutine(): Routine = Routine(
     updatedAt = Instant.ofEpochMilli(routine.updatedAt),
     name = routine.name,
     exercises = exercises.sortedBy { it.position }.map {
-        RoutineExercise(it.exerciseId, it.sets, it.reps, it.weightKg, it.restSeconds)
+        RoutineExercise(
+            exerciseId = it.exerciseId,
+            sets = it.sets,
+            reps = it.reps,
+            weightKg = it.weightKg,
+            restSeconds = it.restSeconds,
+            durationSeconds = it.durationSeconds,
+            level = it.level,
+            speedKmh = it.speedKmh,
+        )
     },
 )
 
@@ -128,6 +139,9 @@ fun RoutineExercise.toEntity(): RoutineExerciseEntity = RoutineExerciseEntity(
     reps = reps,
     weightKg = weightKg,
     restSeconds = restSeconds,
+    durationSeconds = durationSeconds,
+    level = level,
+    speedKmh = speedKmh,
 )
 
 fun CustomExerciseEntity.kindOrDefault(): ExerciseKind = enumValueOrDefault(kind, ExerciseKind.WEIGHT_REPS)

@@ -1,7 +1,9 @@
 package io.fitgymlog.app.sync
 
 import io.fitgymlog.app.transfer.BackupRoutine
+import io.fitgymlog.app.transfer.BackupSet
 import io.fitgymlog.app.transfer.BackupWorkout
+import io.fitgymlog.app.transfer.BackupWorkoutExercise
 import java.time.Duration
 import java.time.Instant
 import org.junit.Assert.assertEquals
@@ -45,6 +47,48 @@ class SyncMergeTest {
             links = replaced(links, changes.upsertLinks, changes.removeLinks.map(::linkKey), ::linkKey),
             tombstones = replaced(tombstones.filterNot { SyncMerge.isExpired(it.deletedAt, now) }, changes.tombstones, emptyList()) { "${it.kind}|${it.key}" },
         ).sorted()
+    }
+
+    @Test
+    fun `a tie with a file from the older format keeps this phone's copy, which has the fields that file lacks`() {
+        val mine = SyncSnapshot(workouts = listOf(workout("w-1", at(30), title = "Day A")), routines = listOf(routine("r-1", at(30), "Legs A")))
+        val theirWorkouts = listOf(workout("w-1", at(30), title = "Day B"))
+        val theirRoutines = listOf(routine("r-1", at(30), "Legs B"))
+
+        val fromOlder = SyncMerge.merge(mine, SyncSnapshot(version = 1, workouts = theirWorkouts, routines = theirRoutines), now)
+        val fromSame = SyncMerge.merge(mine, SyncSnapshot(workouts = theirWorkouts, routines = theirRoutines), now)
+
+        assertEquals(listOf("Day A"), fromOlder.workouts.map { it.workout.title })
+        assertEquals(listOf("Legs A"), fromOlder.routines.map { it.routine.name })
+        assertEquals(listOf("Day B"), fromSame.workouts.map { it.workout.title })
+        assertEquals(listOf("Legs B"), fromSame.routines.map { it.routine.name })
+        assertEquals(SyncSnapshot.VERSION, fromOlder.version)
+    }
+
+    @Test
+    fun `a newer edit from an older format's file still wins, since only ties keep this phone's copy`() {
+        val mine = SyncSnapshot(workouts = listOf(workout("w-1", at(30), title = "Day A")))
+
+        val merged = SyncMerge.merge(mine, SyncSnapshot(version = 1, workouts = listOf(workout("w-1", at(20), title = "Day B"))), now)
+
+        assertEquals(listOf("Day B"), merged.workouts.map { it.workout.title })
+    }
+
+    @Test
+    fun `on a tie the copy of the phone that recorded the workout wins, since only it knows which sets missed their target`() {
+        fun recorded(targetReps: Int) = SyncWorkout(
+            "w-1",
+            at(30),
+            BackupWorkout("Day A", "2026-10-19T10:38:00Z", "2026-10-19T13:05:00Z", "", "APP", listOf(BackupWorkoutExercise("squat_barbell", 180, "", listOf(BackupSet("NORMAL", 100.0, 8, targetReps = targetReps))))),
+        )
+        val recorder = snapshot(workouts = listOf(recorded(targetReps = 10)))
+        val receiver = snapshot(workouts = listOf(recorded(targetReps = 8)))
+
+        val onRecorder = SyncMerge.merge(recorder, receiver, now)
+        val onReceiver = SyncMerge.merge(receiver, recorder, now)
+
+        assertEquals(listOf(10), onRecorder.workouts.single().workout.exercises.single().sets.map { it.targetReps })
+        assertEquals(onRecorder, onReceiver)
     }
 
     @Test

@@ -14,6 +14,10 @@ data class Settings(
     val defaultRestSeconds: Int = 120,
     val healthConnectEnabled: Boolean = false,
     val healthSessionType: Int = ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING,
+    val skipRecordedCardio: Boolean = true,
+    val readBodyFromHealth: Boolean = true,
+    val warmupSet: Boolean = false,
+    val weeklyCheckIn: Boolean = true,
     val idleFinishMinutes: Int = 30,
     val bandRemoteEnabled: Boolean = true,
     val barKg: Double = 20.0,
@@ -43,6 +47,10 @@ class SettingsRepository(context: Context) {
             putInt(DEFAULT_REST, next.defaultRestSeconds)
             putBoolean(HEALTH_ENABLED, next.healthConnectEnabled)
             putInt(HEALTH_SESSION_TYPE, next.healthSessionType)
+            putBoolean(SKIP_RECORDED_CARDIO, next.skipRecordedCardio)
+            putBoolean(READ_BODY_FROM_HEALTH, next.readBodyFromHealth)
+            putBoolean(WARMUP_SET, next.warmupSet)
+            putBoolean(WEEKLY_CHECK_IN, next.weeklyCheckIn)
             putInt(IDLE_FINISH, next.idleFinishMinutes)
             putBoolean(BAND_REMOTE, next.bandRemoteEnabled)
             putFloat(BAR_KG, next.barKg.toFloat())
@@ -61,6 +69,10 @@ class SettingsRepository(context: Context) {
             defaultRestSeconds = prefs.getInt(DEFAULT_REST, defaults.defaultRestSeconds),
             healthConnectEnabled = prefs.getBoolean(HEALTH_ENABLED, defaults.healthConnectEnabled),
             healthSessionType = prefs.getInt(HEALTH_SESSION_TYPE, defaults.healthSessionType),
+            skipRecordedCardio = prefs.getBoolean(SKIP_RECORDED_CARDIO, defaults.skipRecordedCardio),
+            readBodyFromHealth = prefs.getBoolean(READ_BODY_FROM_HEALTH, defaults.readBodyFromHealth),
+            warmupSet = prefs.getBoolean(WARMUP_SET, defaults.warmupSet),
+            weeklyCheckIn = prefs.getBoolean(WEEKLY_CHECK_IN, defaults.weeklyCheckIn),
             idleFinishMinutes = prefs.getInt(IDLE_FINISH, defaults.idleFinishMinutes),
             bandRemoteEnabled = prefs.getBoolean(BAND_REMOTE, defaults.bandRemoteEnabled),
             barKg = prefs.getFloat(BAR_KG, defaults.barKg.toFloat()).toDouble(),
@@ -77,6 +89,10 @@ class SettingsRepository(context: Context) {
         const val DEFAULT_REST = "default_rest_seconds"
         const val HEALTH_ENABLED = "health_connect_enabled"
         const val HEALTH_SESSION_TYPE = "health_session_type"
+        const val SKIP_RECORDED_CARDIO = "skip_recorded_cardio"
+        const val READ_BODY_FROM_HEALTH = "read_body_from_health"
+        const val WARMUP_SET = "warmup_set"
+        const val WEEKLY_CHECK_IN = "weekly_check_in"
         const val IDLE_FINISH = "idle_finish_minutes"
         const val BAND_REMOTE = "band_remote_enabled"
         const val BAR_KG = "bar_kg"

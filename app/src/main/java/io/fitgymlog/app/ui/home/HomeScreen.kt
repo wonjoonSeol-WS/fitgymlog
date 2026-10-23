@@ -56,6 +56,7 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.fitgymlog.app.R
@@ -87,7 +88,8 @@ fun HomeScreen(onOpenWorkout: () -> Unit, onEditRoutine: (Long) -> Unit, onOpenB
     val otherLanguages = remember(context, configuration) { SHIPPED_LANGUAGES.map(context::resourcesIn) }
     val app = context.container
     val active by app.workouts.active.collectAsStateWithLifecycle()
-    val routines by app.routines.routines.collectAsStateWithLifecycle(emptyList())
+    val loaded by app.routines.routines.collectAsStateWithLifecycle(null)
+    val routines = loaded.orEmpty()
     val exercises by app.exercises.exercises.collectAsStateWithLifecycle()
     val settings by app.settings.settings.collectAsStateWithLifecycle()
     val coach by app.coach.settings.settings.collectAsStateWithLifecycle()
@@ -156,7 +158,7 @@ fun HomeScreen(onOpenWorkout: () -> Unit, onEditRoutine: (Long) -> Unit, onOpenB
                 GreyButton(stringResource(R.string.programs), Modifier.weight(1f), enabled = !addingProgram) { choosingProgram = true }
             }
         }
-        if (routines.isEmpty()) {
+        if (loaded?.isEmpty() == true) {
             item {
                 Text(
                     stringResource(R.string.no_routines),
@@ -190,7 +192,7 @@ fun HomeScreen(onOpenWorkout: () -> Unit, onEditRoutine: (Long) -> Unit, onOpenB
                 }
             }
         } else {
-            ReadableWidth { HomeColumn(content = { item { title() }; startItems(); routineItems() }) }
+            ReadableWidth { gutter -> HomeColumn(gutter = gutter, content = { item { title() }; startItems(); routineItems() }) }
         }
     }
 
@@ -246,10 +248,10 @@ private fun ActiveWorkoutCard(workout: Workout, onOpen: () -> Unit) {
 }
 
 @Composable
-private fun HomeColumn(modifier: Modifier = Modifier, content: LazyListScope.() -> Unit) {
+private fun HomeColumn(modifier: Modifier = Modifier, content: LazyListScope.() -> Unit, gutter: Dp = 0.dp) {
     LazyColumn(
         modifier = modifier,
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp + gutter, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
         content = content,
     )

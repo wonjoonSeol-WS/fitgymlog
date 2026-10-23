@@ -35,6 +35,14 @@ class HevyCsvTest {
     }
 
     @Test
+    fun `imported sets have no planned reps, since Hevy files only hold what was done`() {
+        val sets = HevyCsv.parse(koreanKg).workouts.flatMap { it.exercises }.flatMap { it.sets }
+
+        assertTrue(sets.isNotEmpty())
+        assertTrue(sets.all { it.targetReps == null })
+    }
+
+    @Test
     fun `keeps a blank weight as not recorded instead of zero`() {
         val press = HevyCsv.parse(koreanKg).workouts[0].exercises[1]
 

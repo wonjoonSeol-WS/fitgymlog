@@ -15,6 +15,9 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DisplayMode
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -23,13 +26,16 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -38,6 +44,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -45,24 +53,34 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.fitgymlog.app.R
 import io.fitgymlog.app.catching
+import io.fitgymlog.app.coach.BODYWEIGHT_KG
+import io.fitgymlog.app.coach.BodyMeasurement
+import io.fitgymlog.app.coach.Calories
+import io.fitgymlog.app.coach.currentWeighIn
 import io.fitgymlog.app.coach.CoachTask
 import io.fitgymlog.app.coach.Connection
 import io.fitgymlog.app.coach.Goal
+import io.fitgymlog.app.coach.Sex
 import io.fitgymlog.app.container
+import io.fitgymlog.app.model.WeightUnit
 import io.fitgymlog.app.ui.ChoiceDialog
 import io.fitgymlog.app.ui.ReadableWidth
-import io.fitgymlog.app.ui.formatWeight
-import io.fitgymlog.app.ui.fromDisplayWeight
 import io.fitgymlog.app.ui.formatWeightNumber
+import io.fitgymlog.app.ui.fromDisplayWeight
 import io.fitgymlog.app.ui.isDecimalInput
 import io.fitgymlog.app.ui.parseDecimal
 import io.fitgymlog.app.ui.settings.SettingsItem
 import io.fitgymlog.app.ui.settings.SettingsSection
 import io.fitgymlog.app.ui.settings.SettingsSwitch
+import io.fitgymlog.app.ui.stats.dateText
+import io.fitgymlog.app.ui.stats.measurementText
 import io.fitgymlog.app.ui.unitLabel
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
+import java.util.Locale
 import kotlinx.coroutines.launch
 
-/** Documented OpenAI-compatible base addresses; the key decides which models the list shows. */
 private enum class Provider(val label: String, val baseUrl: String) {
     OPENAI("OpenAI", "https://api.openai.com/v1"),
     GEMINI("Gemini", "https://generativelanguage.googleapis.com/v1beta/openai"),
@@ -74,58 +92,64 @@ private enum class Provider(val label: String, val baseUrl: String) {
 
 private sealed interface Picker {
     data class TaskModel(val task: CoachTask) : Picker
-    data object Goal : Picker
+    data object GoalChoice : Picker
+    data object SexChoice : Picker
 }
 
 private sealed interface Probe {
     data object Idle : Probe
     data object Running : Probe
     data class Found(val models: List<String>) : Probe
-    data class Failed(val message: Int) : Probe
+    data class Failed(val error: Throwable) : Probe
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CoachSettingsScreen(onBack: () -> Unit, onOpenMemory: () -> Unit) {
-    val context = LocalContext.current
-    val coach = context.container.coach
-    val app = context.container
+fun CoachSettingsScreen(onBack: () -> Unit, onOpenMemory: () -> Unit, onOpenBody: () -> Unit) {
+    val app = LocalContext.current.container
+    val coach = app.coach
     val settings by coach.settings.settings.collectAsStateWithLifecycle()
-    val unit = app.settings.settings.collectAsStateWithLifecycle().value.unit
+    val appSettings by app.settings.settings.collectAsStateWithLifecycle()
+    val keySavedFor by coach.keySavedFor.collectAsStateWithLifecycle()
+    val unit = appSettings.unit
     val data by coach.store.data.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     var address by rememberSaveable { mutableStateOf(settings.baseUrl) }
-    var typedKey by rememberSaveable { mutableStateOf("") }
-    var hasKey by remember { mutableStateOf(coach.hasKey) }
-    var editingKey by rememberSaveable { mutableStateOf(!coach.hasKey) }
+    var typedKey by remember { mutableStateOf("") }
+    var changingKey by rememberSaveable { mutableStateOf(false) }
     var probe by remember { mutableStateOf<Probe>(Probe.Idle) }
     var picker by remember { mutableStateOf<Picker?>(null) }
     var preview by remember { mutableStateOf<String?>(null) }
     val models = (probe as? Probe.Found)?.models.orEmpty()
     val validAddress = Connection.baseUrlOf(address)
+    val keyFitsAddress = keySavedFor != null && keySavedFor == validAddress
+    val askForKey = changingKey || !keyFitsAddress
+    val keyOptional = validAddress?.let(Connection::keyOptional) == true
     var weightText by rememberSaveable(unit) { mutableStateOf(settings.bodyweightKg?.let { formatWeightNumber(it, unit) }.orEmpty()) }
+    var heightText by rememberSaveable(unit) { mutableStateOf(settings.heightCm?.let { heightNumber(it, unit) }.orEmpty()) }
+    var choosingBirthDate by remember { mutableStateOf(false) }
+    val bodyHistory by produceState(emptyList<BodyMeasurement>(), data.measurements) { value = coach.bodyHistory() }
+    val calories by produceState<Calories?>(null, bodyHistory, settings.bodyweightKg, settings.heightCm, settings.sex, settings.birthDate, settings.goal) {
+        value = coach.calories(bodyHistory)
+    }
+    val measured = currentWeighIn(bodyHistory, LocalDate.now())
 
-    fun saveAddress(input: String) {
+    fun changeAddress(input: String) {
         address = input
-        Connection.baseUrlOf(input)?.let { base -> coach.settings.update { it.copy(baseUrl = base) } }
+        probe = Probe.Idle
     }
 
     fun connect() {
         val base = validAddress ?: return
-        if (typedKey.isNotBlank()) {
-            coach.saveKey(typedKey)
-            typedKey = ""
-            hasKey = true
-            editingKey = false
-        }
         probe = Probe.Running
         scope.launch {
-            probe = catching { coach.models(base, apiKey = null) }.fold(
+            probe = catching { app.inAppScope { coach.connect(base, typedKey.takeIf { askForKey }) } }.fold(
                 onSuccess = { found ->
-                    if (settings.model.isBlank()) found.firstOrNull()?.let { first -> coach.settings.update { it.copy(model = first) } }
+                    typedKey = ""
+                    changingKey = false
                     Probe.Found(found)
                 },
-                onFailure = { Probe.Failed(failureText(it)) },
+                onFailure = { Probe.Failed(it) },
             )
         }
     }
@@ -139,8 +163,8 @@ fun CoachSettingsScreen(onBack: () -> Unit, onOpenMemory: () -> Unit) {
             )
         },
     ) { padding ->
-        ReadableWidth(Modifier.padding(padding)) {
-            Column(Modifier.verticalScroll(rememberScrollState())) {
+        ReadableWidth(Modifier.padding(padding)) { gutter ->
+            Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = gutter)) {
                 SettingsSwitch(
                     title = stringResource(R.string.coach_enable),
                     help = stringResource(R.string.coach_setting_help),
@@ -154,14 +178,14 @@ fun CoachSettingsScreen(onBack: () -> Unit, onOpenMemory: () -> Unit) {
                         Provider.entries.forEach { provider ->
                             FilterChip(
                                 selected = validAddress == provider.baseUrl,
-                                onClick = { saveAddress(provider.baseUrl) },
+                                onClick = { changeAddress(provider.baseUrl) },
                                 label = { Text(provider.label) },
                             )
                         }
                     }
                     OutlinedTextField(
                         value = address,
-                        onValueChange = ::saveAddress,
+                        onValueChange = ::changeAddress,
                         label = { Text(stringResource(R.string.coach_address)) },
                         isError = address.isNotBlank() && validAddress == null,
                         supportingText = if (address.isNotBlank() && validAddress == null) {
@@ -173,11 +197,16 @@ fun CoachSettingsScreen(onBack: () -> Unit, onOpenMemory: () -> Unit) {
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    if (editingKey) {
+                    if (askForKey) {
                         OutlinedTextField(
                             value = typedKey,
                             onValueChange = { typedKey = it.trim() },
-                            label = { Text(stringResource(R.string.coach_key)) },
+                            label = { Text(stringResource(if (keyOptional) R.string.coach_key_optional else R.string.coach_key)) },
+                            supportingText = if (keySavedFor != null && !changingKey) {
+                                { Text(stringResource(R.string.coach_key_for_address)) }
+                            } else {
+                                null
+                            },
                             singleLine = true,
                             visualTransformation = PasswordVisualTransformation(),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -189,28 +218,24 @@ fun CoachSettingsScreen(onBack: () -> Unit, onOpenMemory: () -> Unit) {
                             supportingContent = { Text(stringResource(R.string.coach_key_saved)) },
                             trailingContent = {
                                 Row {
-                                    TextButton(onClick = { editingKey = true }) { Text(stringResource(R.string.coach_key_change)) }
+                                    TextButton(onClick = { changingKey = true }) { Text(stringResource(R.string.coach_key_change)) }
                                     TextButton(onClick = {
-                                        coach.saveKey(null)
-                                        hasKey = false
-                                        editingKey = true
+                                        coach.removeKey()
                                         probe = Probe.Idle
                                     }) { Text(stringResource(R.string.coach_key_remove)) }
                                 }
                             },
                         )
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Button(
-                            onClick = ::connect,
-                            enabled = validAddress != null && (hasKey || typedKey.isNotBlank()) && probe != Probe.Running,
-                        ) { Text(stringResource(R.string.coach_connect)) }
-                    }
+                    Button(
+                        onClick = ::connect,
+                        enabled = validAddress != null && (typedKey.isNotBlank() || !askForKey || keyOptional) && probe != Probe.Running,
+                    ) { Text(stringResource(R.string.coach_connect)) }
                     when (val state = probe) {
                         Probe.Idle -> Unit
                         Probe.Running -> Text(stringResource(R.string.coach_connecting), color = MaterialTheme.colorScheme.onSurfaceVariant)
                         is Probe.Found -> Text(pluralStringResource(R.plurals.coach_connected, state.models.size, state.models.size), color = MaterialTheme.colorScheme.primary)
-                        is Probe.Failed -> Text(stringResource(state.message), color = MaterialTheme.colorScheme.error)
+                        is Probe.Failed -> FailureText(state.error)
                     }
                     ModelField(
                         label = stringResource(R.string.coach_model),
@@ -228,28 +253,48 @@ fun CoachSettingsScreen(onBack: () -> Unit, onOpenMemory: () -> Unit) {
                 }
 
                 SettingsSection(stringResource(R.string.coach_about_you))
-                ListItem(
-                    headlineContent = { Text(stringResource(R.string.coach_bodyweight)) },
-                    supportingContent = {
-                        Text(settings.bodyweightKg?.let { formatWeight(context, it, unit) } ?: stringResource(R.string.coach_bodyweight_unset))
+                NumberItem(
+                    title = stringResource(R.string.coach_bodyweight),
+                    help = when {
+                        measured != null -> stringResource(R.string.coach_bodyweight_measured, "${formatWeightNumber(measured.weightKg!!, unit)} ${unitLabel(unit)}", dateText(measured.date))
+                        settings.bodyweightKg == null -> stringResource(R.string.coach_bodyweight_unset)
+                        else -> null
                     },
-                    trailingContent = {
-                        OutlinedTextField(
-                            value = weightText,
-                            onValueChange = { text ->
-                                if (!isDecimalInput(text)) return@OutlinedTextField
-                                weightText = text
-                                val kg = parseDecimal(text)?.let { fromDisplayWeight(it, unit) }?.takeIf { it in BODYWEIGHT_KG }
-                                coach.settings.update { it.copy(bodyweightKg = kg) }
-                            },
-                            suffix = { Text(unitLabel(unit)) },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            modifier = Modifier.padding(start = 8.dp).fillMaxWidth(0.4f),
-                        )
-                    },
+                    text = weightText,
+                    suffix = unitLabel(unit),
+                ) { text ->
+                    if (!isDecimalInput(text)) return@NumberItem
+                    weightText = text
+                    val kg = parseDecimal(text)?.let { fromDisplayWeight(it, unit) }?.takeIf { it in BODYWEIGHT_KG }
+                    coach.settings.update { it.copy(bodyweightKg = kg) }
+                }
+                NumberItem(
+                    title = stringResource(R.string.coach_height),
+                    text = heightText,
+                    suffix = stringResource(if (unit == WeightUnit.LB) R.string.unit_in else R.string.unit_cm),
+                ) { text ->
+                    if (!isDecimalInput(text)) return@NumberItem
+                    heightText = text
+                    val cm = parseDecimal(text)?.let { if (unit == WeightUnit.LB) it * CM_PER_INCH else it }?.takeIf { it in HEIGHT_CM }
+                    coach.settings.update { it.copy(heightCm = cm) }
+                }
+                SettingsItem(
+                    stringResource(R.string.coach_body),
+                    bodyHistory.lastOrNull()?.let { "${measurementText(it, unit)} (${dateText(it.date)})" } ?: stringResource(R.string.coach_body_summary_empty),
+                    onOpenBody,
                 )
-                SettingsItem(stringResource(R.string.coach_goal), stringResource(goalText(settings.goal))) { picker = Picker.Goal }
+                SettingsItem(stringResource(R.string.coach_sex), stringResource(sexText(settings.sex))) { picker = Picker.SexChoice }
+                SettingsItem(
+                    stringResource(R.string.coach_birth_date),
+                    settings.birthDate?.let { dateText(it) } ?: stringResource(R.string.coach_birth_date_unset),
+                ) { choosingBirthDate = true }
+                SettingsItem(stringResource(R.string.coach_goal), stringResource(goalText(settings.goal))) { picker = Picker.GoalChoice }
+                Text(
+                    calories?.let { stringResource(if (it.fromLeanMass) R.string.coach_calories_estimate_lean else R.string.coach_calories_estimate, it.target, it.maintenance) }
+                        ?: stringResource(R.string.coach_calories_unset),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                )
                 SettingsSwitch(
                     title = stringResource(R.string.coach_food_guide),
                     help = stringResource(R.string.coach_food_guide_help),
@@ -270,8 +315,18 @@ fun CoachSettingsScreen(onBack: () -> Unit, onOpenMemory: () -> Unit) {
                     onCheckedChange = { on -> coach.settings.update { it.copy(shareNotes = on) } },
                 )
                 SettingsItem(stringResource(R.string.coach_memory), pluralStringResource(R.plurals.coach_memory_count, data.memories.size, data.memories.size), onOpenMemory)
+                SettingsSwitch(
+                    title = stringResource(R.string.coach_sync_notes),
+                    help = stringResource(if (settings.syncNotes && !appSettings.syncEnabled) R.string.coach_sync_notes_needs_drive else R.string.coach_sync_notes_help),
+                    checked = settings.syncNotes,
+                    onCheckedChange = { on ->
+                        coach.settings.update { it.copy(syncNotes = on) }
+                        if (on) app.sync.requestSync()
+                    },
+                )
+                val nothingSent = stringResource(R.string.coach_preview_nothing)
                 SettingsItem(stringResource(R.string.coach_preview), stringResource(R.string.coach_preview_help)) {
-                    scope.launch { preview = coach.preview(app.workouts.active.value) }
+                    scope.launch { preview = catching { coach.preview() }.getOrNull() ?: nothingSent }
                 }
                 Text(
                     stringResource(R.string.coach_footer),
@@ -286,13 +341,13 @@ fun CoachSettingsScreen(onBack: () -> Unit, onOpenMemory: () -> Unit) {
     when (val open = picker) {
         is Picker.TaskModel -> ChoiceDialog(
             title = stringResource(taskText(open.task)),
-            options = listOf("") + (models.ifEmpty { listOf(settings.model) } + listOfNotNull(settings.taskModels[open.task])).filter { it.isNotBlank() }.distinct(),
+            options = taskModelChoices(models, settings.model, settings.taskModels[open.task]),
             selected = settings.taskModels[open.task].orEmpty(),
             label = { it.ifEmpty { stringResource(R.string.coach_model_default) } },
             onSelect = { model -> coach.settings.update { it.copy(taskModels = if (model.isEmpty()) it.taskModels - open.task else it.taskModels + (open.task to model)) } },
             onDismiss = { picker = null },
         )
-        Picker.Goal -> ChoiceDialog(
+        Picker.GoalChoice -> ChoiceDialog(
             title = stringResource(R.string.coach_goal),
             options = Goal.entries,
             selected = settings.goal,
@@ -300,7 +355,19 @@ fun CoachSettingsScreen(onBack: () -> Unit, onOpenMemory: () -> Unit) {
             onSelect = { goal -> coach.settings.update { it.copy(goal = goal) } },
             onDismiss = { picker = null },
         )
+        Picker.SexChoice -> ChoiceDialog(
+            title = stringResource(R.string.coach_sex),
+            options = listOf(Sex.MALE, Sex.FEMALE, null),
+            selected = settings.sex,
+            label = { stringResource(sexText(it)) },
+            onSelect = { sex -> coach.settings.update { it.copy(sex = sex) } },
+            onDismiss = { picker = null },
+        )
         null -> Unit
+    }
+
+    if (choosingBirthDate) {
+        BirthDateDialog(settings.birthDate, onPick = { picked -> coach.settings.update { it.copy(birthDate = picked) } }, onDismiss = { choosingBirthDate = false })
     }
 
     preview?.let { text ->
@@ -315,6 +382,25 @@ fun CoachSettingsScreen(onBack: () -> Unit, onOpenMemory: () -> Unit) {
             confirmButton = { TextButton(onClick = { preview = null }) { Text(stringResource(R.string.close)) } },
         )
     }
+}
+
+@Composable
+private fun NumberItem(title: String, text: String, help: String? = null, suffix: String? = null, decimal: Boolean = true, onText: (String) -> Unit) {
+    ListItem(
+        headlineContent = { Text(title) },
+        supportingContent = help?.let { { Text(it) } },
+        trailingContent = {
+            OutlinedTextField(
+                value = text,
+                onValueChange = onText,
+                textStyle = MaterialTheme.typography.bodyLarge,
+                suffix = suffix?.let { { Text(it) } },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = if (decimal) KeyboardType.Decimal else KeyboardType.Number),
+                modifier = Modifier.padding(start = 8.dp).fillMaxWidth(0.4f).semantics { contentDescription = title },
+            )
+        },
+    )
 }
 
 @Composable
@@ -345,10 +431,52 @@ private fun ModelField(label: String, value: String, models: List<String>, onCha
     }
 }
 
-private val BODYWEIGHT_KG = 25.0..300.0
+/** "" stands for the main model; without a fresh model list, the ones already chosen are offered. */
+private fun taskModelChoices(found: List<String>, main: String, current: String?): List<String> =
+    listOf("") + (found.ifEmpty { listOf(main) } + listOfNotNull(current)).filter { it.isNotBlank() }.distinct()
+
+private val HEIGHT_CM = 100.0..250.0
+private const val CM_PER_INCH = 2.54
+
+private fun heightNumber(cm: Double, unit: WeightUnit): String =
+    "%.1f".format(Locale.ROOT, if (unit == WeightUnit.LB) cm / CM_PER_INCH else cm).trimEnd('0').trimEnd('.')
 
 private fun taskText(task: CoachTask): Int = when (task) {
     CoachTask.TARGETS -> R.string.coach_task_targets
     CoachTask.REVIEW -> R.string.coach_task_review
     CoachTask.CHAT -> R.string.coach_task_chat
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun BirthDateDialog(current: LocalDate?, onPick: (LocalDate?) -> Unit, onDismiss: () -> Unit) {
+    val today = LocalDate.now()
+    val shown = current ?: today.minusYears(30)
+    val state = rememberDatePickerState(
+        initialSelectedDateMillis = current?.atStartOfDay(ZoneOffset.UTC)?.toInstant()?.toEpochMilli(),
+        initialDisplayedMonthMillis = shown.withDayOfMonth(1).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
+        yearRange = (today.year - 100)..today.year,
+        initialDisplayMode = DisplayMode.Input,
+        selectableDates = object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long) = !Instant.ofEpochMilli(utcTimeMillis).atZone(ZoneOffset.UTC).toLocalDate().isAfter(today)
+
+            override fun isSelectableYear(year: Int) = year <= today.year
+        },
+    )
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            val picked = state.selectedDateMillis
+            TextButton(enabled = picked != null, onClick = {
+                onPick(picked?.let { Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate() })
+                onDismiss()
+            }) { Text(stringResource(R.string.save)) }
+        },
+        dismissButton = {
+            Row {
+                if (current != null) TextButton(onClick = { onPick(null); onDismiss() }) { Text(stringResource(R.string.clear)) }
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+            }
+        },
+    ) { DatePicker(state) }
 }

@@ -2,6 +2,7 @@ package io.fitgymlog.app.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -40,6 +40,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.fitgymlog.app.R
 import java.time.Instant
@@ -51,13 +52,15 @@ val NavigationRailMinWidth = 600.dp
 /** Above this content width, screens split into a list and a detail pane. */
 val TwoPaneMinWidth = 720.dp
 
-/** Keeps wide screens such as an unfolded Fold readable by centring content at phone width. */
+/** Keeps wide screens such as an unfolded Fold readable at phone width; [content] puts the side gutter inside its own scrolling, so the margins scroll too. */
 @Composable
-fun ReadableWidth(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-        Box(modifier = Modifier.widthIn(max = 640.dp).fillMaxWidth()) { content() }
+fun ReadableWidth(modifier: Modifier = Modifier, content: @Composable (gutter: Dp) -> Unit) {
+    BoxWithConstraints(modifier.fillMaxSize()) {
+        content(((maxWidth - ReadableMaxWidth) / 2).coerceAtLeast(0.dp))
     }
 }
+
+private val ReadableMaxWidth = 640.dp
 
 private val DECIMAL_TEXT = Regex("""\d{0,4}([.,]\d{0,3})?""")
 private val WHOLE_TEXT = Regex("""\d{0,4}""")

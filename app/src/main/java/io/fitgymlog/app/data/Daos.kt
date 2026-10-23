@@ -28,8 +28,8 @@ abstract class WorkoutDao {
     abstract suspend fun allFinished(): List<WorkoutWithExercises>
 
     @Transaction
-    @Query("SELECT * FROM workout WHERE endedAt IS NOT NULL ORDER BY startedAt DESC LIMIT :limit")
-    abstract suspend fun recentFinished(limit: Int): List<WorkoutWithExercises>
+    @Query("SELECT * FROM workout WHERE endedAt IS NOT NULL AND startedAt < :before ORDER BY startedAt DESC LIMIT :limit")
+    abstract suspend fun finishedBefore(before: Long, limit: Int): List<WorkoutWithExercises>
 
     @Transaction
     @Query("SELECT * FROM workout WHERE id = :id")
@@ -51,6 +51,12 @@ abstract class WorkoutDao {
 
     @Query("SELECT startedAt, title FROM workout WHERE endedAt IS NOT NULL")
     abstract suspend fun finishedKeys(): List<WorkoutKey>
+
+    @Query("SELECT COUNT(*) FROM workout WHERE endedAt IS NOT NULL AND uuid != :uuid AND title = :title AND startedAt >= :from AND startedAt < :until")
+    abstract suspend fun countFinished(uuid: String, title: String, from: Long, until: Long): Int
+
+    @Query("SELECT COUNT(*) FROM workout WHERE endedAt IS NOT NULL AND startedAt >= :from")
+    abstract suspend fun countFinishedSince(from: Long): Int
 
     @Query("SELECT COUNT(*) AS count, COALESCE(SUM(updatedAt), 0) AS updatedAtSum FROM workout WHERE endedAt IS NOT NULL")
     abstract fun finishedStamp(): Flow<FinishedStamp>

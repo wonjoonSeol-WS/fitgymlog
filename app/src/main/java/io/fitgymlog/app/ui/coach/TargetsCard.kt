@@ -16,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -30,28 +31,31 @@ import io.fitgymlog.app.R
 import io.fitgymlog.app.coach.Target
 import io.fitgymlog.app.container
 import io.fitgymlog.app.model.Exercise
+import io.fitgymlog.app.model.ExerciseKind
 import io.fitgymlog.app.model.WeightUnit
 import io.fitgymlog.app.ui.NumberStyles
-import io.fitgymlog.app.ui.formatWeightNumber
 import io.fitgymlog.app.ui.localizedName
-import io.fitgymlog.app.ui.unitLabel
 import io.fitgymlog.app.workout.ActiveWorkout
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-/** Shown when a workout starts with the coach on, before anything is ticked. */
 @Composable
 fun TargetsCard(workout: ActiveWorkout, exerciseOf: (String) -> Exercise, unit: WeightUnit, onApply: (List<Target>) -> Unit) {
     val app = LocalContext.current.container
-    val coach by app.coach.settings.settings.collectAsStateWithLifecycle()
+    val coachReady by app.coach.ready.collectAsStateWithLifecycle()
     val todays by app.coach.todaysTargets.collectAsStateWithLifecycle()
     val untouched = workout.exercises.none { exercise -> exercise.sets.any { it.isCompleted } }
-    val ready = coach.enabled && coach.isConnected && app.coach.hasKey && workout.exercises.isNotEmpty()
+    val ready = coachReady && workout.exercises.isNotEmpty()
     val uuid = workout.workout.uuid
-    LaunchedEffect(uuid, ready, untouched) {
-        if (ready && untouched && todays?.workoutUuid != uuid) app.scope.launch { app.coach.loadTargets(workout) }
-    }
+    val exerciseIds = workout.exercises.map { it.exerciseId }.toSet()
     val current = todays?.takeIf { it.workoutUuid == uuid }
-    if (!ready || current?.dismissed == true || current?.targets?.isEmpty() == true) return
+    val dismissed = current?.dismissed == true
+    LaunchedEffect(uuid, ready, untouched, exerciseIds, dismissed) {
+        if (!ready || !untouched || dismissed) return@LaunchedEffect
+        delay(SETTLE_MILLIS)
+        app.scope.launch { app.coach.loadTargets(workout) }
+    }
+    if (!ready || dismissed || current?.targets?.isEmpty() == true) return
     if (current == null && !untouched) return
     Surface(
         color = MaterialTheme.colorScheme.primaryContainer,
@@ -69,30 +73,36 @@ fun TargetsCard(workout: ActiveWorkout, exerciseOf: (String) -> Exercise, unit: 
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            if (current.error != null) {
+                TextButton(onClick = { app.scope.launch { app.coach.loadTargets(workout, force = true) } }) {
+                    Text(stringResource(R.string.coach_retry))
+                }
+            }
             current.targets.forEach { target ->
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 val applied = target.exerciseId in current.applied
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth().clickable(enabled = !applied, role = Role.Button) {
+                    modifier = Modifier.fillMaxWidth().clickable(enabled = !applied, onClickLabel = stringResource(R.string.coach_apply), role = Role.Button) {
                         onApply(listOf(target))
                         app.coach.markApplied(listOf(target.exerciseId))
                     },
                 ) {
+                    val exercise = exerciseOf(target.exerciseId)
                     Column(Modifier.weight(1f)) {
-                        Text(exerciseOf(target.exerciseId).localizedName(), style = MaterialTheme.typography.titleSmall)
+                        Text(exercise.localizedName(), style = MaterialTheme.typography.titleSmall)
                         Text(
-                            target.note ?: stringResource(reasonText(target.reason)),
+                            target.note ?: reasonText(target.reason)?.let { stringResource(it) }.orEmpty(),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     Column(horizontalAlignment = Alignment.End) {
-                        Text(targetText(target, unit), style = NumberStyles.cell)
+                        Text(targetText(target.weightKg, target.reps, unit), style = NumberStyles.cell)
                         if (applied) {
                             Icon(Icons.Default.Check, stringResource(R.string.coach_applied), tint = MaterialTheme.colorScheme.primary)
                         } else {
-                            WeightChange(target.weightKg, target.lastWeightKg, unit)
+                            WeightChange(target.weightKg, target.lastWeightKg, unit, assisted = exercise.kind == ExerciseKind.ASSISTED_BODYWEIGHT)
                         }
                     }
                 }
@@ -109,8 +119,4 @@ fun TargetsCard(workout: ActiveWorkout, exerciseOf: (String) -> Exercise, unit: 
     }
 }
 
-@Composable
-private fun targetText(target: Target, unit: WeightUnit): String = listOfNotNull(
-    target.weightKg?.let { "${formatWeightNumber(it, unit)} ${unitLabel(unit)}" },
-    target.reps?.let { "x $it" },
-).joinToString(" ")
+private const val SETTLE_MILLIS = 1_000L
