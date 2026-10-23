@@ -148,9 +148,9 @@ private fun VideoCard(url: String, removable: Boolean, playing: Boolean, onRemov
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(16f / 9f)
-                .clip(RoundedCornerShape(16.dp))
-                .background(MaterialTheme.lift.field)
-                .then(if (playing) Modifier else Modifier.clickable(onClick = onPlay)),
+                // A WebView shows video through a surface behind it; a clip puts the card in a layer that covers that surface.
+                .then(if (playing) Modifier else Modifier.clip(RoundedCornerShape(16.dp)).clickable(onClick = onPlay))
+                .background(MaterialTheme.lift.field),
         ) {
             if (playing) {
                 InlineVideoPlayer(id, Modifier.fillMaxSize())

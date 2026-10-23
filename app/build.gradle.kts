@@ -102,6 +102,7 @@ dependencies {
     implementation(libs.play.services.auth)
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.play.services.wearable)
+    implementation(libs.youtube.player)
     implementation(project(":watchlink"))
     debugImplementation(libs.androidx.ui.tooling)
 
