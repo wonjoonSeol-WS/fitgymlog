@@ -21,4 +21,10 @@
     <string name="rest_left">휴식 %1$s</string>
     <string name="up_next">다음: %1$s</string>
     <string name="skip_rest">건너뛰기</string>
+    <string name="effort_question">얼마나 힘들었나요?</string>
+    <string name="effort_easy">쉬움</string>
+    <string name="effort_moderate">보통</string>
+    <string name="effort_hard">힘듦</string>
+    <string name="effort_all_out">전력</string>
+    <string name="effort_skip">건너뛰기</string>
 </resources>

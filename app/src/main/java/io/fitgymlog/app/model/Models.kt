@@ -84,6 +84,8 @@ data class Workout(
     val source: WorkoutSource = WorkoutSource.APP,
     val exercises: List<WorkoutExercise>,
     val updatedAt: Instant = startedAt,
+    /** How hard the whole workout felt, 1 to 10; null until rated. */
+    val effort: Int? = null,
 )
 
 data class RoutineExercise(

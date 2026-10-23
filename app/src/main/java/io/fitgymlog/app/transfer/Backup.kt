@@ -84,6 +84,8 @@ data class BackupWorkout(
     val notes: String,
     val source: String,
     val exercises: List<BackupWorkoutExercise>,
+    /** Absent from files written before 0.9.3, which read back as unrated. */
+    val effort: Int? = null,
 )
 
 @Serializable
@@ -109,6 +111,7 @@ fun Workout.toBackup() = BackupWorkout(
     endedAt = endedAt?.toString(),
     notes = notes,
     source = source.name,
+    effort = effort,
     exercises = exercises.map { exercise ->
         BackupWorkoutExercise(
             exerciseId = exercise.exerciseId,
@@ -138,6 +141,7 @@ fun BackupWorkout.toWorkout() = Workout(
     endedAt = endedAt?.let(Instant::parse),
     notes = notes,
     source = WorkoutSource.entries.firstOrNull { it.name == source } ?: WorkoutSource.BACKUP,
+    effort = effort?.takeIf { it in 1..10 },
     exercises = exercises.mapIndexed { index, exercise ->
         WorkoutExercise(
             key = index + 1L,

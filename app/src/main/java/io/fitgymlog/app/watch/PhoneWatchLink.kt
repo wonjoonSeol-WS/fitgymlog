@@ -29,11 +29,13 @@ import io.fitgymlog.watchlink.WatchSetRow
 import io.fitgymlog.watchlink.WatchState
 import io.fitgymlog.watchlink.WatchUnit
 import io.fitgymlog.watchlink.WatchWorkout
+import java.time.Duration
 import java.time.Instant
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -79,9 +81,9 @@ class PhoneWatchLink(private val context: Context, private val container: AppCon
                 WatchRoutine(routine.id, routine.name, routine.exercises.joinToString(", ") { container.exercises.find(it.exerciseId).name(context) })
             }
         },
-        container.settings.settings.map { it.unit }.distinctUntilChanged(),
+        container.settings.settings.map { it.unit to it.askEffort }.distinctUntilChanged(),
         language,
-    ) { active, routines, unit, _ -> WatchState(active?.let { watchWorkout(it, unit) }, routines) }
+    ) { active, routines, (unit, askEffort), _ -> WatchState(active?.let { watchWorkout(it, unit) }, routines, askEffort) }
 
     suspend fun handle(command: WatchCommand) {
         container.workouts.awaitLoaded()
@@ -92,12 +94,22 @@ class PhoneWatchLink(private val context: Context, private val container: AppCon
                 // Android refuses a foreground service to an app in the background, but the workout is saved first and runs without it.
                 catching { container.actions.startRoutine(routine) }.onFailure { Log.i(LOG_TAG, "Started from the watch without the workout service", it) }
             }
-            WatchCommand.Finish -> container.actions.finish()
+            WatchCommand.Finish -> finishedFromWatch = container.actions.finish()?.id
+            is WatchCommand.RateEffort -> justFinished()?.let { container.actions.rateEffort(it, command.effort) }
             // The watch app has just opened: the same state again, freshly stamped, gives it a reading of the phone's clock.
             WatchCommand.Hello -> lastPublished?.let { publish(it) }
             is WatchCommand.WorkoutEdit -> container.workouts.update { it.applyWatch(command, Instant.now()) }
         }
     }
+
+    /** The workout last finished from the watch, which a rating from the watch is about. */
+    @Volatile
+    private var finishedFromWatch: Long? = null
+
+    /** Falls back to the latest workout finished in the last two hours, should the app have restarted in between. */
+    private suspend fun justFinished(): Long? = finishedFromWatch ?: container.workouts.history.first()
+        .filter { it.endedAt?.isAfter(Instant.now().minus(Duration.ofHours(2))) == true }
+        .maxByOrNull { it.endedAt!! }?.id
 
     /** What the watch was last sent, unstamped; null outside Wear OS mode. */
     @Volatile

@@ -52,7 +52,8 @@ data class Done(val name: String, val kind: ExerciseKind, val sets: List<Workout
 
 data class NamedExercise(val exercise: Exercise, val name: String)
 
-data class PastWorkout(val date: LocalDate, val exercises: List<Done>)
+/** [effort] is how hard the whole workout felt, 1 to 10, when the lifter rated it. */
+data class PastWorkout(val date: LocalDate, val exercises: List<Done>, val effort: Int? = null)
 
 object Coach {
     private val json = Json { ignoreUnknownKeys = true; isLenient = true; coerceInputValues = true }
@@ -83,6 +84,7 @@ object Coach {
             aboutLifter(profile)
             protein?.let { put("proteinGramsToday", it.dailyGrams) }
             put("workout", JsonArray(workout.exercises.map(::doneJson)))
+            workout.effort?.let { put("effortOutOf10", it) }
             put("recentWorkouts", recentJson(recent))
         }
         val task = if (protein != null) "$REVIEW_TASK $FOOD_TASK" else REVIEW_TASK
@@ -496,7 +498,11 @@ object Coach {
     }
 
     private fun recentJson(recent: List<PastWorkout>) = JsonArray(recent.map { workout ->
-        buildJsonObject { put("date", workout.date.toString()); put("exercises", JsonArray(workout.exercises.map(::doneJson))) }
+        buildJsonObject {
+            put("date", workout.date.toString())
+            workout.effort?.let { put("effortOutOf10", it) }
+            put("exercises", JsonArray(workout.exercises.map(::doneJson)))
+        }
     })
 
     private fun doneJson(done: Done) = buildJsonObject {
@@ -627,13 +633,13 @@ object Coach {
 
     private const val TARGETS_TASK = """Set today's target for each exercise in the data. Each has the app's rule target and an allowed range. Keep the rule target unless the history or the notes give a reason, such as pain, repeated misses or reps far above the plan. Weights must stay between minKg and maxKg and move from lastKg in steps of stepKg; reps must stay between minReps and maxReps. For each exercise write a note of at most 12 words saying why."""
 
-    private const val REVIEW_TASK = """Review the workout just finished in 2 to 4 short sentences, as notes: what went well and what to change next time, such as weight, rest or order. Mention rest only if the rest times show something."""
+    private const val REVIEW_TASK = """Review the workout just finished in 2 to 4 short sentences, as notes: what went well and what to change next time, such as weight, rest or order. Mention rest only if the rest times show something. effortOutOf10, when present, is how hard the lifter felt the whole workout was; weigh it against the numbers, for example a hard rating on easy weights hints at fatigue."""
 
     private const val FOOD_TASK = """Also write foodSummary, one sentence about eating today given proteinGramsToday, targetKcal when present, and the goal, and mealIdeas, $MEAL_IDEAS simple meals of at most 6 words each that respect the food notes."""
 
     private const val BODY_TASK = """Read the body composition in this picture: a smart scale app, an InBody or similar result sheet, or a screenshot of one. Copy the numbers exactly as printed; never estimate or calculate. date is the measurement date as YYYY-MM-DD when shown, otherwise null. weight and skeletalMuscle are in massUnit, kg or lb as printed. skeletalMuscle is skeletal muscle mass only (InBody's SMM, 골격근량); leave it null when the picture shows only total muscle mass (근육량), lean or fat-free mass (제지방), or a muscle percentage. bodyFatPercent is the body fat percentage. visceralFatLevel is the visceral fat level or rating, a plain number such as InBody's 내장지방레벨; leave it null when only a visceral fat area in cm² is shown. Use null for anything not shown. If the picture holds several measurements, read the newest."""
 
-    private const val WEEK_TASK = """Look back on the lifter's week, from week and workoutsThisWeek, in reply: 2 to 4 short sentences on how it went and what to focus on next week. In changes, offer changes to the routines for next week only when they clearly help, such as fewer sets after a week of missed reps or more when everything was easy: adjust an exercise of a routine by the routine's id and the exercise's id, with sets as the number of working sets, reps, or minutes per set for cardio; remove one by its id; or add one at the end of a routine by its name copied exactly from exercisesInApp, with sets and reps, or minutes for cardio. Weights are left to the app's progression rules. Leave fields a change does not use null, and changes empty when nothing should change."""
+    private const val WEEK_TASK = """Look back on the lifter's week, from week and workoutsThisWeek, where effortOutOf10 is how hard a workout felt when rated, in reply: 2 to 4 short sentences on how it went and what to focus on next week. In changes, offer changes to the routines for next week only when they clearly help, such as fewer sets after a week of missed reps or more when everything was easy: adjust an exercise of a routine by the routine's id and the exercise's id, with sets as the number of working sets, reps, or minutes per set for cardio; remove one by its id; or add one at the end of a routine by its name copied exactly from exercisesInApp, with sets and reps, or minutes for cardio. Weights are left to the app's progression rules. Leave fields a change does not use null, and changes empty when nothing should change."""
 
     private const val SUMMARY_TASK = """Update the running summary of the earlier conversation with these messages. Keep what matters for training, health, food and plans, and drop small talk. At most $MAX_SUMMARY_CHARS characters."""
 

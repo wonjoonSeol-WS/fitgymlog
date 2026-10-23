@@ -44,7 +44,7 @@ data class SyncSnapshot(
 
     companion object {
         const val FORMAT = "fitgymlog-sync"
-        const val VERSION = 2
+        const val VERSION = 3
         private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
         fun decode(text: String): SyncSnapshot {

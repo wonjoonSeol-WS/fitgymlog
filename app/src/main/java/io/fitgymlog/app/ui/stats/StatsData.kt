@@ -89,7 +89,7 @@ internal fun compositionChanges(scans: List<BodyMeasurement>): CompositionChange
     return CompositionChanges(LocalDate.parse(latest.date), previous?.let { LocalDate.parse(it.date) }, first?.let { LocalDate.parse(it.date) }, rows)
 }
 
-internal enum class WeeklyMeasure { WORKOUTS, TIME, VOLUME }
+internal enum class WeeklyMeasure { WORKOUTS, TIME, VOLUME, LOAD }
 
 /** The last [weeks] weeks, oldest first, each from [firstDay]; time in minutes, volume as weight times reps over every set, as a workout's own total. */
 internal fun weeklyTotals(history: List<Workout>, measure: WeeklyMeasure, today: LocalDate, firstDay: DayOfWeek, zone: ZoneId, weeks: Int = WEEKS): List<ChartPoint> {
@@ -102,10 +102,43 @@ internal fun weeklyTotals(history: List<Workout>, measure: WeeklyMeasure, today:
             WeeklyMeasure.WORKOUTS -> workouts.size.toDouble()
             WeeklyMeasure.TIME -> workouts.sumOf { workout -> workout.endedAt?.let { Duration.between(workout.startedAt, it).toMinutes() } ?: 0L }.toDouble()
             WeeklyMeasure.VOLUME -> workouts.sumOf { workout -> workout.exercises.sumOf { exercise -> exercise.sets.sumOf { (it.weightKg ?: 0.0) * (it.reps ?: 0) } } }
+            WeeklyMeasure.LOAD -> workouts.sumOf { trainingLoad(it) }
         }
         ChartPoint(start, value)
     }
 }
+
+/** How hard it felt times how long it took (session RPE); a workout nobody rated counts for nothing, rather than a guess. */
+internal fun trainingLoad(workout: Workout): Double {
+    val effort = workout.effort ?: return 0.0
+    val endedAt = workout.endedAt ?: return 0.0
+    return effort * Duration.between(workout.startedAt, endedAt).toSeconds() / 60.0
+}
+
+internal enum class LoadTrend { ABOVE, STEADY, BELOW }
+
+/** The last 7 days against the weekly average of the last 28, as a percentage change. */
+internal data class LoadComparison(val percent: Int, val trend: LoadTrend)
+
+/**
+ * Null until there is a usual week to compare with: a rated workout from before the last 7 days, within 28. Within a tenth either way counts
+ * as steady, since one session more or less moves a week that much.
+ */
+internal fun loadComparison(history: List<Workout>, now: Instant): LoadComparison? {
+    fun loadSince(days: Long) = history.filter { it.startedAt.isAfter(now.minus(Duration.ofDays(days))) && !it.startedAt.isAfter(now) }.sumOf { trainingLoad(it) }
+    val lastWeek = loadSince(7)
+    val lastFourWeeks = loadSince(28)
+    if (lastFourWeeks - lastWeek <= 0.0) return null
+    val change = lastWeek / (lastFourWeeks / 4) - 1
+    val trend = when {
+        change > STEADY_BAND -> LoadTrend.ABOVE
+        change < -STEADY_BAND -> LoadTrend.BELOW
+        else -> LoadTrend.STEADY
+    }
+    return LoadComparison((change * 100).roundToInt(), trend)
+}
+
+private const val STEADY_BAND = 0.1
 
 internal data class ExerciseUse(val exerciseId: String, val sessions: Int, val lastDone: Instant)
 

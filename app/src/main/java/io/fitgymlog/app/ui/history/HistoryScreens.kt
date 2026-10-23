@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -186,6 +187,8 @@ fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (St
     var deleting by remember(workoutId) { mutableStateOf(false) }
     var routineSave by rememberSaveable(workoutId) { mutableStateOf(RoutineSave.IDLE) }
     var editingTimes by rememberSaveable(workoutId) { mutableStateOf(false) }
+    var ratingEffort by rememberSaveable(workoutId) { mutableStateOf(false) }
+    val effortPrompt by app.actions.effortPrompt.collectAsStateWithLifecycle()
 
     fun saveAsRoutine(current: Workout) {
         if (routineSave == RoutineSave.SAVING || routineSave == RoutineSave.SAVED) return
@@ -243,7 +246,7 @@ fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (St
                             RoutineSave.FAILED -> Text(stringResource(R.string.routine_save_failed), color = MaterialTheme.colorScheme.error)
                             RoutineSave.IDLE, RoutineSave.SAVING -> Unit
                         }
-                        WorkoutStats(current, settings.unit)
+                        WorkoutStats(current, settings.unit, onEffort = { ratingEffort = true })
                         if (current.notes.isNotBlank()) Text(current.notes)
                     }
                 }
@@ -282,6 +285,27 @@ fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (St
         }
     }
 
+    if (workout != null && (ratingEffort || effortPrompt == workout.id)) {
+        val done = {
+            ratingEffort = false
+            if (app.actions.effortPrompt.value == workout.id) app.actions.effortPrompt.value = null
+        }
+        EffortSheet(
+            initial = workout.effort,
+            onSave = { effort ->
+                app.scope.launch { app.actions.rateEffort(workout.id, effort) }
+                done()
+            },
+            onSkip = done,
+            onClear = workout.effort?.let {
+                {
+                    app.scope.launch { app.actions.rateEffort(workout.id, null) }
+                    done()
+                }
+            },
+        )
+    }
+
     if (editingTimes && workout != null) {
         EditTimesDialog(
             workout = workout,
@@ -315,13 +339,21 @@ private fun NewRecord(what: String) {
 }
 
 @Composable
-private fun WorkoutStats(workout: Workout, unit: WeightUnit) {
+private fun WorkoutStats(workout: Workout, unit: WeightUnit, onEffort: (() -> Unit)? = null) {
     val sets = workout.exercises.flatMap { it.sets }
     val volumeKg = sets.sumOf { (it.weightKg ?: 0.0) * (it.reps ?: 0) }
     Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
         workout.endedAt?.let { Stat(stringResource(R.string.duration), formatClock(Duration.between(workout.startedAt, it))) }
         Stat(stringResource(R.string.volume), "${formatWeightNumber(volumeKg, unit)} ${unitLabel(unit)}")
         Stat(stringResource(R.string.sets), sets.size.toString())
+        // On the workout itself, tap to rate how hard it felt or change it, whenever the user likes; lists only show a rating.
+        if (onEffort != null) {
+            Box(Modifier.clickable(onClickLabel = stringResource(R.string.effort_rate), onClick = onEffort)) {
+                Stat(stringResource(R.string.effort), workout.effort?.let { "$it/10" } ?: stringResource(R.string.effort_unrated), highlight = workout.effort == null)
+            }
+        } else {
+            workout.effort?.let { Stat(stringResource(R.string.effort), "$it/10") }
+        }
     }
 }
 

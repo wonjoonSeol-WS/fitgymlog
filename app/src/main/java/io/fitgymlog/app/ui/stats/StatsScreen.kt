@@ -375,6 +375,7 @@ private fun WeeklySection(history: List<Workout>, unit: WeightUnit, measure: Wee
                 WeeklyMeasure.WORKOUTS -> week
                 WeeklyMeasure.TIME -> week.copy(value = week.value / 60)
                 WeeklyMeasure.VOLUME -> week.copy(value = toDisplayWeight(week.value, unit))
+                WeeklyMeasure.LOAD -> week
             }
         }
     }
@@ -383,6 +384,7 @@ private fun WeeklySection(history: List<Workout>, unit: WeightUnit, measure: Wee
         WeeklyMeasure.WORKOUTS -> { value -> value.roundToInt().toString() }
         WeeklyMeasure.TIME -> { value -> resources.getString(R.string.hours_value, oneDecimal(value)) }
         WeeklyMeasure.VOLUME -> { value -> "${formatWeightNumber(fromDisplayWeight(value, unit), unit)} $unitText" }
+        WeeklyMeasure.LOAD -> { value -> value.roundToInt().toString() }
     }
     val name = stringResource(weeklyText(measure))
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -394,7 +396,20 @@ private fun WeeklySection(history: List<Workout>, unit: WeightUnit, measure: Wee
             minStep = if (measure == WeeklyMeasure.TIME) 0.0 else 1.0,
         )
         Text(stringResource(R.string.week_this, label(bars.last().value)), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (measure == WeeklyMeasure.LOAD) LoadText(history)
     }
+}
+
+/** Like Apple's training load: the last 7 days against the usual week, or how to get a reading at all. */
+@Composable
+private fun LoadText(history: List<Workout>) {
+    val comparison = remember(history) { loadComparison(history, Instant.now()) }
+    val text = if (comparison == null) stringResource(R.string.load_none) else when (comparison.trend) {
+        LoadTrend.ABOVE -> stringResource(R.string.load_above, comparison.percent)
+        LoadTrend.STEADY -> stringResource(R.string.load_steady)
+        LoadTrend.BELOW -> stringResource(R.string.load_below, -comparison.percent)
+    }
+    Text(text, style = MaterialTheme.typography.bodyMedium)
 }
 
 @StringRes
@@ -402,6 +417,7 @@ private fun weeklyText(measure: WeeklyMeasure): Int = when (measure) {
     WeeklyMeasure.WORKOUTS -> R.string.week_workouts
     WeeklyMeasure.TIME -> R.string.week_time
     WeeklyMeasure.VOLUME -> R.string.volume
+    WeeklyMeasure.LOAD -> R.string.week_load
 }
 
 @Composable

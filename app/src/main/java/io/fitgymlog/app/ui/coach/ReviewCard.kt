@@ -40,7 +40,10 @@ fun ReviewCard(workout: Workout) {
     val asking = pending[workout.uuid]
 
     val justFinished = workout.endedAt?.let { Duration.between(it, Instant.now()) < FRESH } == true
-    LaunchedEffect(workout.uuid, ready) {
+    // Waits while the workout is being rated, so the review knows how hard it felt.
+    val rating by app.actions.effortPrompt.collectAsStateWithLifecycle()
+    LaunchedEffect(workout.uuid, ready, rating) {
+        if (rating == workout.id) return@LaunchedEffect
         if (ready && review == null && justFinished && workout.uuid !in app.coach.reviewsPending.value) app.coach.requestReview(workout, onlyIfMissing = true)
     }
     if (review == null && !ready) return

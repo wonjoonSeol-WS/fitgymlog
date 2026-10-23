@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">FitGymLog</string>
     <string name="tab_workout">Workout</string>
     <string name="tab_history">History</string>
@@ -213,6 +213,24 @@
     <string name="use_on_band">Control with band</string>
     <string name="play_video">Play video</string>
     <string name="open_in_youtube">Open in YouTube</string>
+    <string name="effort">Effort</string>
+    <string name="week_load">Load</string>
+    <string name="load_none">Rate how hard your workouts felt, after you finish or from History. After a week of ratings, the last 7 days are compared with your usual week.</string>
+    <string name="load_above">Last 7 days: %1$d%% above your usual week. Good for getting fitter, but watch for fatigue.</string>
+    <string name="load_steady">Last 7 days: about your usual week.</string>
+    <string name="load_below">Last 7 days: %1$d%% below your usual week.</string>
+    <string name="effort_unrated">Rate</string>
+    <string name="effort_rate">Rate how hard it felt</string>
+    <string name="effort_question">How hard was this workout?</string>
+    <string name="effort_value" tools:ignore="PluralsCandidate">%1$d out of 10, %2$s</string>
+    <string name="effort_help">The whole workout, not one set: the lifting, the pace and how long it took.</string>
+    <string name="effort_clear">Clear</string>
+    <string name="effort_easy">Easy</string>
+    <string name="effort_moderate">Moderate</string>
+    <string name="effort_hard">Hard</string>
+    <string name="effort_all_out">All out</string>
+    <string name="setting_ask_effort">Ask how hard a workout was</string>
+    <string name="setting_ask_effort_help">After you finish on the phone or watch, rate it 1 to 10. You can always rate it later in History.</string>
     <string name="exact_alarm_title">Buzz right when rest ends</string>
     <string name="exact_alarm_text">Allow alarms and reminders for FitGymLog. Without it the rest buzz still comes, but with the phone still in a bag Android can hold it back a few minutes.</string>
     <string name="exact_alarm_allow">Allow</string>

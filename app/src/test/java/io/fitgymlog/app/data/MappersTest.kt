@@ -44,6 +44,15 @@ class MappersTest {
     }
 
     @Test
+    fun `a workout keeps its effort rating through the database, and an unrated one stays unrated`() {
+        val rated = Workout(id = 3, uuid = "w-3", title = "Day A", startedAt = Instant.ofEpochMilli(1_000), endedAt = Instant.ofEpochMilli(3_000), exercises = emptyList(), effort = 8)
+        fun stored(workout: Workout) = workout.toGraph().let { WorkoutWithExercises(it.workout, emptyList()) }.toWorkout()
+
+        assertEquals(8, stored(rated).effort)
+        assertEquals(null, stored(rated.copy(effort = null)).effort)
+    }
+
+    @Test
     fun `a routine's cardio plan maps to and from its database rows`() {
         val treadmill = RoutineExercise("treadmill", sets = 1, reps = null, weightKg = null, restSeconds = 0, durationSeconds = 1_200, level = 12, speedKmh = 6.5)
         val stored = RoutineWithExercises(RoutineEntity(id = 3, uuid = "r-1", updatedAt = 1, name = "Cardio", position = 0), listOf(treadmill.toEntity()))

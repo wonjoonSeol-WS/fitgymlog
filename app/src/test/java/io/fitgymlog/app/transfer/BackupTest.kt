@@ -19,6 +19,7 @@ class BackupTest {
         startedAt = Instant.parse("2026-10-19T10:38:00Z"),
         endedAt = Instant.parse("2026-10-19T13:05:00Z"),
         notes = "felt strong",
+        effort = 7,
         source = WorkoutSource.HEVY,
         exercises = listOf(
             WorkoutExercise(
@@ -98,6 +99,8 @@ class BackupTest {
 
         val decoded = BackupFile.decode(file)
         val older = BackupFile.decode(file.replace("\"version\":2", "\"version\":1"))
+        assertEquals(null, decoded.workouts.single().toWorkout().effort)
+        assertEquals(null, BackupFile.decode(file.replace("\"source\":\"APP\",", "\"source\":\"APP\",\"effort\":42,")).workouts.single().toWorkout().effort)
 
         assertEquals(
             RoutineExercise("treadmill", sets = 2, reps = null, weightKg = null, restSeconds = 30, durationSeconds = 1_200, level = 12, speedKmh = 6.5),

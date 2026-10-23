@@ -104,6 +104,30 @@ class GymDatabaseMigrationTest {
     }
 
     @Test
+    fun aVersionFourWorkoutKeepsEverythingAndIsUnratedAfterTheEffortColumnIsAdded() {
+        helper.createDatabase(NAME, 4).use { db ->
+            db.execSQL(
+                "INSERT INTO workout (id, uuid, updatedAt, title, startedAt, endedAt, notes, source, focus, lastActivityAt) " +
+                    "VALUES (1, 'w-1', 5000, 'Day B', 1000, 4000, 'Felt strong', 'APP', 0, 4000)",
+            )
+            db.execSQL("INSERT INTO workout_exercise (id, workoutId, position, `key`, exerciseId, restSeconds, notes) VALUES (1, 1, 0, 1, 'deadlift_barbell', 180, '')")
+            db.execSQL("INSERT INTO workout_set (id, workoutExerciseId, position, type, weightKg, reps, targetReps, completedAt) VALUES (1, 1, 0, 'NORMAL', 100.0, 5, 5, 3000)")
+        }
+
+        helper.runMigrationsAndValidate(NAME, 5, true).close()
+
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val database = Room.databaseBuilder(context, GymDatabase::class.java, NAME).build()
+        try {
+            val workout = runBlocking { database.workouts().allFinished() }.single().toWorkout()
+            assertEquals(listOf<Any?>("Day B", "Felt strong", 5000L, null), listOf(workout.title, workout.notes, workout.updatedAt.toEpochMilli(), workout.effort))
+            assertEquals(100.0, workout.exercises.single().sets.single().weightKg)
+        } finally {
+            database.close()
+        }
+    }
+
+    @Test
     fun aDatabaseFromTheLastReleaseKeepsItsWorkoutsAndRoutinesAfterEveryStepToNow() {
         helper.createDatabase(NAME, 2).use { db ->
             db.execSQL(
@@ -119,12 +143,14 @@ class GymDatabaseMigrationTest {
             db.execSQL("INSERT INTO routine_exercise (id, routineId, position, exerciseId, sets, reps, weightKg, restSeconds) VALUES (1, 1, 0, 'squat_barbell', 3, 5, 60.0, 180)")
         }
 
-        helper.runMigrationsAndValidate(NAME, 4, true).close()
+        helper.runMigrationsAndValidate(NAME, 5, true).close()
 
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val database = Room.databaseBuilder(context, GymDatabase::class.java, NAME).build()
         try {
-            val set = runBlocking { database.workouts().allFinished() }.single().toWorkout().exercises.single().sets.single()
+            val workout = runBlocking { database.workouts().allFinished() }.single().toWorkout()
+            val set = workout.exercises.single().sets.single()
+            assertEquals(null, workout.effort)
             val planned = runBlocking { database.routines().allNow() }.single().toRoutine().exercises.single()
             assertEquals(listOf<Any?>(62.5, 4, 5, 1500L, null, null), listOf(set.weightKg, set.reps, set.targetReps, set.completedAt?.toEpochMilli(), set.level, set.speedKmh))
             assertEquals(listOf<Any?>(3, 5, 60.0, 180, null, null, null), listOf(planned.sets, planned.reps, planned.weightKg, planned.restSeconds, planned.durationSeconds, planned.level, planned.speedKmh))

@@ -164,6 +164,10 @@ class HealthConnectWriterTest {
             summary(day),
         )
         assertEquals(listOf("Squat (Barbell): 60kg x 5, 60kg x 5", "Bench Press (Barbell): 60kg x 5, 60kg x 5"), sessions(day).filter { it.exerciseType == ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING }.map { it.notes })
+        assertEquals(
+            "Bench Press (Barbell): 60kg x 5, 60kg x 5\nEffort: 7/10",
+            sessions(day.copy(effort = 7)).last { it.exerciseType == ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING }.notes,
+        )
     }
 
     @Test

@@ -24,6 +24,7 @@ Download: [latest release](https://github.com/wonjoonSeol/fitgymlog/releases/lat
   chart (heaviest set, estimated 1RM, reps or time), with new records marked in History
 - A weekly check-in on the last evening of each week: workouts, time and volume against last week, new records, missed reps
   and the weight trend; with the coach on, it can suggest changes to your routines for next week
+- Rate how hard each workout felt, 1 to 10, right after you finish on the phone or watch, or later in History; Stats turns the ratings into a weekly training load, compared with your usual week as Apple Fitness does, and the coach takes them into account
 - An optional warm-up set: 5 reps on the empty bar before each barbell lift
 - Fix a finished workout's start and end, for the day you forgot to tap finish
 - Form guide videos and articles for the built-in lifts, with videos playing in the app (or in YouTube, if you prefer); add any YouTube or web link
@@ -129,7 +130,7 @@ Settings, and in Wear OS mode the workout goes only between your phone and your 
 The coach is off until you turn it on and connect a provider with your own API key, or a model on your own phone or
 network, which needs no key. It then sends your recent workouts, today's workout with its rest times, bodyweight, sex, goal,
 recent body measurements, the calorie target the app works out, messages with the names of the exercises in the app, your
-routines when you ask about a week in the check-in, and, if you allow it, saved notes to the provider or model you chose,
+routines when you ask about a week in the check-in, how hard you rated each workout, and, if you allow it, saved notes to the provider or model you chose,
 and nothing to the developer. A scale or InBody screenshot you ask it to read goes there too, and so
 do the recent body measurements it reads from Health Connect if you allow that. Height and birth date are only used on the
 phone for that calorie target. The key is

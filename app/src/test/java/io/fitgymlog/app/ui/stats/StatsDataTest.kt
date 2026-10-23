@@ -149,4 +149,36 @@ class StatsDataTest {
         assertEquals(uses, exerciseUses(history))
         assertEquals(Instant.parse("2026-10-22T10:00:00Z"), uses.first().lastDone)
     }
+
+    private fun rated(at: String, effort: Int?, minutes: Long = 60) = workout(at, "squat_barbell").let { it.copy(effort = effort, endedAt = it.startedAt.plusSeconds(minutes * 60)) }
+
+    @Test
+    fun `training load is effort times minutes, and an unrated workout adds nothing`() {
+        assertEquals(420.0, trainingLoad(rated("2026-10-20T10:00:00Z", effort = 7, minutes = 60)), 0.0)
+        assertEquals(0.0, trainingLoad(rated("2026-10-20T10:00:00Z", effort = null)), 0.0)
+    }
+
+    @Test
+    fun `the last 7 days compare with the weekly average of the last 28, and within a tenth is steady`() {
+        val now = Instant.parse("2026-10-24T12:00:00Z")
+        // Three weeks of one 60-minute workout at 5, then this week two at 7: 840 against (900 + 840) / 4 = 435.
+        val history = listOf("2026-10-02", "2026-10-09", "2026-10-16").map { rated("${it}T10:00:00Z", effort = 5) } +
+            listOf(rated("2026-10-20T10:00:00Z", effort = 7), rated("2026-10-22T10:00:00Z", effort = 7))
+        assertEquals(LoadComparison(93, LoadTrend.ABOVE), loadComparison(history, now))
+
+        val steady = listOf("2026-10-02", "2026-10-09", "2026-10-16", "2026-10-22").map { rated("${it}T10:00:00Z", effort = 6) }
+        assertEquals(LoadTrend.STEADY, loadComparison(steady, now)?.trend)
+
+        val lighter = steady.dropLast(1) + rated("2026-10-22T10:00:00Z", effort = 3)
+        assertEquals(LoadTrend.BELOW, loadComparison(lighter, now)?.trend)
+    }
+
+    @Test
+    fun `no comparison until there is a rated week before the last 7 days`() {
+        val now = Instant.parse("2026-10-24T12:00:00Z")
+        assertNull(loadComparison(listOf(rated("2026-10-22T10:00:00Z", effort = null)), now))
+        assertNull(loadComparison(listOf(rated("2026-09-01T10:00:00Z", effort = 8)), now))
+        // A first week of ratings has no usual week yet, rather than reading as four times above it.
+        assertNull(loadComparison(listOf(rated("2026-10-22T10:00:00Z", effort = 8), rated("2026-10-23T10:00:00Z", effort = 6)), now))
+    }
 }

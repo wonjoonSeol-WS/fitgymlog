@@ -173,7 +173,7 @@ internal fun sessionsOf(
                 end = part.end,
                 type = sessionType,
                 title = workout.title,
-                notes = summary(part.ticks, nameOf),
+                notes = listOfNotNull(summary(part.ticks, nameOf), workout.effort?.let { "Effort: $it/10" }).joinToString("\n"),
                 segments = segmentsOf(part),
                 clientRecordId = base?.let { if (part.index == 0) it else "$it-lifting-${part.index}" },
             )

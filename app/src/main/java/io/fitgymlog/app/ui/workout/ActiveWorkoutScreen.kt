@@ -324,7 +324,7 @@ fun ActiveWorkoutScreen(onBack: () -> Unit, onFinished: (Long?) -> Unit, onOpenE
             title = stringResource(R.string.finish_workout_title),
             text = if (open > 0) pluralStringResource(R.plurals.finish_drops_open_sets, open, open) else null,
             confirm = stringResource(R.string.finish),
-            onConfirm = { leave { app.actions.finish()?.id } },
+            onConfirm = { leave { app.actions.finish()?.id?.also { if (settings.askEffort) app.actions.effortPrompt.value = it } } },
             onDismiss = { confirmFinish = false },
         )
     }

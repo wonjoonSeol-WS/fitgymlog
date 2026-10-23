@@ -22,6 +22,7 @@ fun WorkoutWithExercises.toWorkout(): Workout = Workout(
     notes = workout.notes,
     routineId = workout.routineId,
     source = enumValueOrDefault(workout.source, WorkoutSource.APP),
+    effort = workout.effort,
     exercises = exercises.sortedBy { it.exercise.position }.map { (exercise, sets) ->
         WorkoutExercise(
             key = exercise.key,
@@ -57,6 +58,7 @@ fun Workout.toGraph(lastActivityAt: Instant = endedAt ?: startedAt): WorkoutGrap
         routineId = routineId,
         source = source.name,
         lastActivityAt = lastActivityAt.toEpochMilli(),
+        effort = effort,
     ),
     exercises = exercises.mapIndexed { position, exercise ->
         WorkoutExerciseEntity(

@@ -203,7 +203,7 @@ class CoachRepository(
         val review = Coach.review(
             completer = completer(CoachTask.REVIEW),
             profile = profile(),
-            workout = PastWorkout(date, done(workout)),
+            workout = PastWorkout(date, done(workout), workout.effort),
             recent = recent(before = workout.startedAt),
             unit = unit(),
             workoutUuid = workout.uuid,
@@ -272,7 +272,7 @@ class CoachRepository(
     )
 
     private suspend fun recent(before: Instant): List<PastWorkout> =
-        workouts.finishedBefore(before, RECENT_WORKOUTS).map { PastWorkout(dateOf(it.startedAt), done(it)) }
+        workouts.finishedBefore(before, RECENT_WORKOUTS).map { PastWorkout(dateOf(it.startedAt), done(it), it.effort) }
 
     private fun done(workout: Workout): List<Done> = workout.exercises.map { exercise ->
         val info = exercises.find(exercise.exerciseId)
@@ -370,7 +370,7 @@ class CoachRepository(
                     profile = profile(),
                     summary = summary,
                     nameOf = { exercises.find(it).name(context) },
-                    workouts = week.map { PastWorkout(dateOf(it.startedAt), done(it)) },
+                    workouts = week.map { PastWorkout(dateOf(it.startedAt), done(it), it.effort) },
                     routines = routines.all().map { routine ->
                         RoutinePlan(routine.id, routine.name, routine.exercises.map { planned -> exercises.find(planned.exerciseId).let { NamedExercise(it, it.name(context)) } to planned })
                     },

@@ -20,6 +20,7 @@ class WatchCodecTest {
             workout = WatchWorkout("Workout A", 1_000, listOf(squat), kg, focus = 0, next = WatchSetRef(0, 1), restEndsAtMillis = 61_000, restLengthMillis = 90_000),
             routines = listOf(WatchRoutine(4, "Workout B", "Squat, Overhead press, Deadlift")),
             sentAtMillis = 1_792_775_265_000,
+            askEffort = true,
         )
         assertEquals(state, WatchCodec.decodeState(WatchCodec.encode(state)))
     }
@@ -34,6 +35,7 @@ class WatchCodecTest {
             WatchCommand.SkipRest,
             WatchCommand.StartRoutine(7),
             WatchCommand.Finish,
+            WatchCommand.RateEffort(7),
             WatchCommand.Hello,
         ).forEach { assertEquals(it, WatchCodec.decodeCommand(WatchCodec.encode(it))) }
     }

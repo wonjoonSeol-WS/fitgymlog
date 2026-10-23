@@ -26,6 +26,7 @@ import io.fitgymlog.app.model.isTimed
 import io.fitgymlog.app.ui.fromDisplayWeight
 import io.fitgymlog.app.ui.name
 import java.time.Instant
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 
 /** Starting and ending workouts, which touch the database, the band service and Health Connect together. */
@@ -36,6 +37,9 @@ class WorkoutActions(
     private val settings: SettingsRepository,
     private val health: HealthConnectWriter,
 ) {
+    /** The workout to ask "how hard was it?" about, set when it is finished on the phone and cleared once answered or skipped. */
+    val effortPrompt = MutableStateFlow<Long?>(null)
+
     suspend fun startEmpty(): ActiveWorkout =
         workouts.start(context.getString(R.string.workout_default_title), routine = null, exercises = emptyList(), now = Instant.now())
             .also { WorkoutService.start(context) }
@@ -79,14 +83,26 @@ class WorkoutActions(
         val stored = workouts.observe(id).first()?.takeIf { it.endedAt != null } ?: return null
         stored.retimeProblem(start, end, Instant.now())?.let { return it }
         if (workouts.clashes(stored, start)) return RetimeProblem.CLASH
-        val edited = workouts.saveEdited(stored.retimed(start, end))
+        rewriteHealth(stored, workouts.saveEdited(stored.retimed(start, end)))
+        return null
+    }
+
+    /** How hard the workout felt, 1 to 10, or null to clear it; Health Connect's copy carries it in its notes. */
+    suspend fun rateEffort(id: Long, effort: Int?) {
+        val stored = workouts.observe(id).first()?.takeIf { it.endedAt != null } ?: return
+        val rating = effort?.coerceIn(1, 10)
+        if (stored.effort == rating) return
+        rewriteHealth(stored, workouts.saveEdited(stored.copy(effort = rating)))
+    }
+
+    /** Only a session this phone wrote is replaced, so one Samsung Health or another app recorded stays theirs. */
+    private suspend fun rewriteHealth(stored: Workout, edited: Workout) {
         val writtenHere = stored.source == WorkoutSource.APP && settings.settings.value.healthConnectEnabled &&
             catching { health.wrote(stored, exercises::find) }.getOrDefault(true)
         if (writtenHere) {
             safely { health.delete(stored, exercises::find) }
             writeToHealth(edited)
         }
-        return null
     }
 
     suspend fun discard() {

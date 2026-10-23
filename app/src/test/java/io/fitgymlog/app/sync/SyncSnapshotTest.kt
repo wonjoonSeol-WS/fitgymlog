@@ -19,11 +19,11 @@ class SyncSnapshotTest {
         val planned = "routine.exercises"
 
         assertEquals(
-            2 to listOf(
+            3 to listOf(
                 "uuid", "updatedAt", "workout", "workout.title", "workout.startedAt", "workout.endedAt", "workout.notes", "workout.source",
                 "workout.exercises", "workout.exercises.exerciseId", "workout.exercises.restSeconds", "workout.exercises.notes", sets,
                 "$sets.type", "$sets.weightKg", "$sets.reps", "$sets.rpe", "$sets.distanceMeters", "$sets.durationSeconds", "$sets.completedAt",
-                "$sets.level", "$sets.targetReps", "$sets.speedKmh",
+                "$sets.level", "$sets.targetReps", "$sets.speedKmh", "workout.effort",
                 "uuid", "updatedAt", "routine", "routine.name", planned, "$planned.exerciseId", "$planned.sets", "$planned.reps", "$planned.weightKg",
                 "$planned.restSeconds", "$planned.durationSeconds", "$planned.level", "$planned.speedKmh",
             ),

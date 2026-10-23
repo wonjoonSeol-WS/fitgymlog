@@ -24,6 +24,8 @@ data class WorkoutEntity(
     val shownSetIndex: Int? = null,
     val restEndsAt: Long? = null,
     val lastActivityAt: Long,
+    /** How hard the whole workout felt, 1 to 10, when the user rated it. */
+    val effort: Int? = null,
 )
 
 @Entity(

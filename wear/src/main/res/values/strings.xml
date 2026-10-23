@@ -25,4 +25,10 @@
     <string name="rest_left">Rest %1$s</string>
     <string name="up_next">Next: %1$s</string>
     <string name="skip_rest">Skip</string>
+    <string name="effort_question">How hard was it?</string>
+    <string name="effort_easy">Easy</string>
+    <string name="effort_moderate">Moderate</string>
+    <string name="effort_hard">Hard</string>
+    <string name="effort_all_out">All out</string>
+    <string name="effort_skip">Skip</string>
 </resources>

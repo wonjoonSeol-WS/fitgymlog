@@ -21,6 +21,8 @@ object WatchPaths {
 data class WatchState(
     val workout: WatchWorkout? = null,
     val routines: List<WatchRoutine> = emptyList(),
+    /** Whether finishing on the watch asks how hard the workout was. */
+    val askEffort: Boolean = false,
     /** The phone's clock when it sent this, so a watch whose clock has drifted can count rest and time in the phone's. */
     val sentAtMillis: Long = 0,
 )
@@ -109,6 +111,10 @@ sealed interface WatchCommand {
 
     @Serializable @SerialName("finish")
     data object Finish : WatchCommand
+
+    /** How hard the workout just finished from the watch felt, 1 to 10. */
+    @Serializable @SerialName("effort")
+    data class RateEffort(val effort: Int) : WatchCommand
 
     /** Sent when the watch app opens, so a phone app that hasn't run since boot wakes and publishes. */
     @Serializable @SerialName("hello")

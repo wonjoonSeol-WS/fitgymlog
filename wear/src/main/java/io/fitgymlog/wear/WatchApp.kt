@@ -9,6 +9,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -42,12 +43,19 @@ import kotlinx.coroutines.flow.drop
 fun WatchApp(send: (WatchCommand) -> Unit) {
     val state by PhoneLink.state.collectAsStateWithLifecycle()
     val unreachable by PhoneLink.unreachable.collectAsStateWithLifecycle()
+    // Finishing here asks how hard it was, when the phone says to, before the start screen comes back.
+    var ratingEffort by rememberSaveable { mutableStateOf(false) }
+    val sendAndAsk: (WatchCommand) -> Unit = { command ->
+        send(command)
+        if (command == WatchCommand.Finish && state?.askEffort == true) ratingEffort = true
+    }
     AppScaffold {
         val workout = state?.workout
         when {
+            ratingEffort -> EffortScreen(onRate = { send(WatchCommand.RateEffort(it)); ratingEffort = false }, onSkip = { ratingEffort = false })
             state == null -> Message(stringResource(R.string.open_phone))
-            workout != null -> Workout(workout, unreachable, send)
-            else -> StartScreen(state?.routines.orEmpty(), unreachable, send)
+            workout != null -> Workout(workout, unreachable, sendAndAsk)
+            else -> StartScreen(state?.routines.orEmpty(), unreachable, sendAndAsk)
         }
     }
 }
