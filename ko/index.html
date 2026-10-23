@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>FitGymLog: Galaxy Fit으로 조작하는 운동 기록 앱</title>
-  <meta name="description" content="Android용 운동 기록 앱이에요. Galaxy Fit의 음악 버튼으로 세트를 끝내고, 휴식이 끝나면 손목이 울리고, 원판을 눌러 무게를 맞춰요.">
+  <meta name="description" content="Android용 운동 기록 앱이에요. Galaxy Fit의 음악 버튼이나 Wear OS 워치로 세트를 끝내고, 휴식이 끝나면 손목이 울리고, 원판을 눌러 무게를 맞춰요.">
   <meta property="og:title" content="FitGymLog">
   <meta property="og:description" content="Galaxy Fit 밴드로 조작하는 Android 운동 기록 앱이에요.">
   <meta property="og:image" content="https://wonjoonseol.github.io/fitgymlog/images/og-ko.jpg">
@@ -49,7 +49,7 @@
             <a class="button" href="#setup">설정 방법 보기</a>
             <a class="button" href="https://github.com/wonjoonSeol/fitgymlog">GitHub</a>
           </div>
-          <p class="fine">MIT 라이선스의 무료 오픈소스예요. Android 13 이상에서 쓸 수 있고, Galaxy Fit3와 Galaxy Z 폴드에서 테스트했어요. 지금은 Google Play 대신 APK로 설치해요.</p>
+          <p class="fine">MIT 라이선스의 무료 오픈소스예요. Android 13 이상에서 쓸 수 있고, Galaxy Fit3, Galaxy Z 폴드, Wear OS 에뮬레이터에서 테스트했어요. 지금은 Google Play 대신 APK로 설치해요.</p>
         </div>
         <div class="stack">
           <div class="phone"><img src="../images/workout-ko.webp" width="540" height="1110" alt="진행 중인 운동: 스쿼트 60kg 8회 세트와 완료 체크 칸"></div>
@@ -114,6 +114,33 @@
       </div>
     </section>
 
+    <section class="block soft" id="watch">
+      <div class="wrap">
+        <h2>Wear OS 워치로도</h2>
+        <p class="lead">갤럭시 워치, 픽셀 워치 등 Wear OS 워치에서는 FitGymLog 워치 앱이 직접 돌아가서 밴드처럼 우회할 필요가 없어요.
+          설정의 손목 기기에서 Wear OS 워치를 고르세요. 운동 기록은 계속 휴대폰에 있어서 워치 때문에 세트를 잃을 일이 없어요.</p>
+        <ul class="shots">
+          <li><figure><div class="watch"><img src="../images/watch-exercise-ko.png" width="454" height="454" alt="워치의 스쿼트 (바벨) 화면: 60 kg x 5회로 1세트를 기록하는 버튼과 그 아래 세트 목록" loading="lazy"></div>
+            <figcaption>운동마다 한 페이지. 한 번 누르면 계획대로 다음 세트를 기록해요.</figcaption></figure></li>
+          <li><figure><div class="watch"><img src="../images/watch-dials-ko.png" width="454" height="454" alt="워치의 1세트 화면: 60 kg 다이얼과 5회 다이얼, 확인 버튼" loading="lazy"></div>
+            <figcaption>세트를 누르면 다이얼이 나와요. 손가락이나 크라운으로 돌려 실제로 든 무게를 기록해요.</figcaption></figure></li>
+          <li><figure><div class="watch"><img src="../images/watch-rest-ko.png" width="454" height="454" alt="워치의 휴식 화면: 링 안에 1:55 남음, 양옆에 -15와 +15 버튼, 다음 스쿼트 60 kg x 5회, 건너뛰기" loading="lazy"></div>
+            <figcaption>휴식은 화면 전체에 15초 단위 조절과 다음 세트로 보여요. 뒤로 밀면 운동 화면이 나와요.</figcaption></figure></li>
+        </ul>
+        <p class="note">루틴 시작과 운동 끝내기도 워치에서 할 수 있어요. 워치 화면의 FitGymLog 아이콘을 누르면 어디서든 운동으로 돌아와요.
+          휴식 끝 진동은 밴드와 같은 알림이에요.</p>
+        <h3>워치 앱 설치하기</h3>
+        <p>FitGymLog가 Google Play에 올라가기 전까지는 컴퓨터의
+          <a href="https://developer.android.com/tools/releases/platform-tools">adb</a>로 Wi-Fi를 통해 워치 앱을 설치해요. 휴대폰 앱과 같은 릴리스의 파일이어야 해요.</p>
+        <ol class="steps">
+          <li>워치에서 설정, 시스템, 정보, 버전으로 가서 빌드 번호를 일곱 번 누르세요.</li>
+          <li>설정, 개발자 옵션에서 무선 디버깅을 켜고 새 기기 페어링을 누르세요.</li>
+          <li>컴퓨터에서 워치에 보이는 주소와 코드로 <code>adb pair</code>를 실행하고, 무선 디버깅 아래 주소로 <code>adb connect</code>를 실행하세요.</li>
+          <li><a href="https://github.com/wonjoonSeol/fitgymlog/releases/latest">최신 릴리스</a>에서 <code>fitgymlog-wear-*.apk</code>를 받아 <code>adb install</code>로 설치하세요.</li>
+        </ol>
+      </div>
+    </section>
+
     <section class="block">
       <div class="wrap split flip">
         <div>
@@ -133,7 +160,7 @@
         <div>
           <h2>세트 사이에 자세를 확인해요</h2>
           <p class="lead">스쿼트, 벤치 프레스, 데드리프트, 오버헤드 프레스, 바벨 로우에는 StrongLifts 영상과 글이 들어 있어요.
-            어떤 운동에든 YouTube나 웹 링크를 넣으면 사진과 제목이 함께 보여요. 영상은 YouTube에서 열려요.</p>
+            어떤 운동에든 YouTube나 웹 링크를 넣으면 사진과 제목이 함께 보여요. 영상은 앱 안에서 바로 재생되고, 원하면 YouTube에서 열 수도 있어요.</p>
         </div>
         <div class="phone"><img src="../images/form-guide-ko.webp" width="540" height="1110" alt="StrongLifts 영상과 글이 있는 벤치 프레스 자세 가이드" loading="lazy"></div>
       </div>
@@ -235,6 +262,7 @@
               <td><input class="check" type="checkbox" aria-label="완료: Samsung Health와 Drive 연결하기"></td></tr>
           </tbody>
         </table>
+        <p class="note">밴드 대신 Wear OS 워치를 쓰면 3세트와 4세트는 건너뛰세요. 설정의 손목 기기를 Wear OS 워치로 바꾸고, 위의 방법으로 워치 앱을 설치하면 돼요.</p>
       </div>
     </section>
 
@@ -364,7 +392,7 @@
           <div><dt>코치는 얼마인가요?</dt>
             <dd>FitGymLog는 무료예요. AI 제공자에게 쓴 만큼만 내고, 보통 한 달에 몇십 원이에요. 금액은 <a href="#coach">코치 소개</a>에 있어요. 코치를 켜지 않아도 운동 기록은 모두 할 수 있어요.</dd></div>
           <div><dt>다른 워치에서도 되나요?</dt>
-            <dd>갤럭시 핏3로 만들고 테스트했어요. 휴대폰 음악을 조작하고 알림을 받는 워치라면 같은 방식으로 동작할 수도 있지만, 아직 테스트하지 않았어요.</dd></div>
+            <dd>네. 갤럭시 워치나 픽셀 워치 같은 Wear OS 워치에서는 FitGymLog 워치 앱이 직접 돌아가요. <a href="#watch">Wear OS 워치로도</a>를 참고하세요. 휴대폰 음악을 조작하고 알림을 받는 다른 밴드도 갤럭시 핏처럼 동작할 수 있지만, 테스트한 건 핏3뿐이에요.</dd></div>
         </dl>
       </div>
     </section>

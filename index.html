@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>FitGymLog: a workout log you can run from a Galaxy Fit</title>
-  <meta name="description" content="A workout log for Android. Complete sets with your Galaxy Fit's music buttons, feel a buzz when rest is over, and load the bar by tapping plates.">
+  <meta name="description" content="A workout log for Android. Complete sets with your Galaxy Fit's music buttons or a Wear OS watch, feel a buzz when rest is over, and load the bar by tapping plates.">
   <meta property="og:title" content="FitGymLog">
   <meta property="og:description" content="A workout log for Android that you can run from a Galaxy Fit band.">
   <meta property="og:image" content="https://wonjoonseol.github.io/fitgymlog/images/og-en.jpg">
@@ -48,7 +48,7 @@
             <a class="button" href="#setup">Set it up</a>
             <a class="button" href="https://github.com/wonjoonSeol/fitgymlog">GitHub</a>
           </div>
-          <p class="fine">Free and open source under the MIT License. Android 13 or newer, tested with a Galaxy Fit3 and a Galaxy Z Fold. Not on Google Play yet.</p>
+          <p class="fine">Free and open source under the MIT License. Android 13 or newer, tested with a Galaxy Fit3, a Galaxy Z Fold and Wear OS on the emulator. Not on Google Play yet.</p>
         </div>
         <div class="stack">
           <div class="phone"><img src="images/workout-en.webp" width="540" height="1110" alt="A workout in progress: squat sets of 60 kg for 8 reps with done boxes"></div>
@@ -114,6 +114,34 @@
       </div>
     </section>
 
+    <section class="block soft" id="watch">
+      <div class="wrap">
+        <h2>Or a Wear OS watch</h2>
+        <p class="lead">A Galaxy Watch, Pixel Watch or any other Wear OS watch runs FitGymLog's own watch app, so it needs none of
+          the band's tricks. In Settings, On your wrist, choose Wear OS watch.
+          The phone still keeps the workout, so the watch can't lose a set.</p>
+        <ul class="shots">
+          <li><figure><div class="watch"><img src="images/watch-exercise-en.png" width="454" height="454" alt="Squat (Barbell) on the watch: a button to log set 2 at 60 kg for 5 reps, the sets listed below it" loading="lazy"></div>
+            <figcaption>A page for each exercise. One tap logs the next set as planned.</figcaption></figure></li>
+          <li><figure><div class="watch"><img src="images/watch-dials-en.png" width="454" height="454" alt="Set 1 on the watch: a dial at 60 kg and a dial at 5 reps, with a check button" loading="lazy"></div>
+            <figcaption>Tap a set for dials, turned by touch or the crown, to log what you actually lifted.</figcaption></figure></li>
+          <li><figure><div class="watch"><img src="images/watch-rest-en.png" width="454" height="454" alt="Rest on the watch: 1:56 left inside a ring, minus 15 and plus 15 buttons either side, next squat 60 kg for 5 reps, and Skip" loading="lazy"></div>
+            <figcaption>Rest fills the face, with 15-second steps and the next set. Swipe back to see the workout.</figcaption></figure></li>
+        </ul>
+        <p class="note">Start a routine and finish the workout from the watch too. A FitGymLog icon on the watch face takes you back
+          to the workout from anywhere. The rest buzz is the same notification the band gets.</p>
+        <h3>Installing the watch app</h3>
+        <p>Until FitGymLog is on Google Play, the watch app installs over Wi-Fi from a computer with
+          <a href="https://developer.android.com/tools/releases/platform-tools">adb</a>. It must come from the same release as the phone app.</p>
+        <ol class="steps">
+          <li>On the watch, open Settings, then System, About, Versions, and tap Build number seven times.</li>
+          <li>In Settings, Developer options, turn on Wireless debugging and tap Pair new device.</li>
+          <li>On the computer, run <code>adb pair</code> with the address and code the watch shows, then <code>adb connect</code> with the address under Wireless debugging.</li>
+          <li>Download <code>fitgymlog-wear-*.apk</code> from the <a href="https://github.com/wonjoonSeol/fitgymlog/releases/latest">latest release</a> and run <code>adb install</code> with it.</li>
+        </ol>
+      </div>
+    </section>
+
     <section class="block">
       <div class="wrap split flip">
         <div>
@@ -133,7 +161,8 @@
         <div>
           <h2>Form check between sets</h2>
           <p class="lead">Squat, bench press, deadlift, overhead press and barbell row come with StrongLifts' videos and written
-            guides. Add a YouTube or web link to any exercise and it shows with its picture and title. Videos open in YouTube.</p>
+            guides. Add a YouTube or web link to any exercise and it shows with its picture and title. Videos play right in the app,
+            or in YouTube if you would rather.</p>
         </div>
         <div class="phone"><img src="images/form-guide-en.webp" width="540" height="1110" alt="The bench press form guide with a StrongLifts video and article" loading="lazy"></div>
       </div>
@@ -236,6 +265,7 @@
               <td><input class="check" type="checkbox" aria-label="Done: Samsung Health and Drive"></td></tr>
           </tbody>
         </table>
+        <p class="note">With a Wear OS watch instead of a band, skip sets 3 and 4: in Settings, set On your wrist to Wear OS watch, and install the watch app as below.</p>
       </div>
     </section>
 
@@ -365,7 +395,7 @@
           <div><dt>What does the coach cost?</dt>
             <dd>Nothing from FitGymLog. You pay your AI provider for what you use, usually a few cents a month; see <a href="#coach">the coach section</a>. The app works fully without it.</dd></div>
           <div><dt>Does it work with other watches?</dt>
-            <dd>FitGymLog is built and tested with a Galaxy Fit3. A watch that controls your phone's music and shows its notifications may work the same way, but it hasn't been tested.</dd></div>
+            <dd>Yes. Any Wear OS watch, such as a Galaxy Watch or Pixel Watch, runs FitGymLog's own watch app: see <a href="#watch">Or a Wear OS watch</a>. Other bands that control your phone's music and show its notifications may work like the Galaxy Fit, but only the Fit3 has been tested.</dd></div>
         </dl>
       </div>
     </section>
