@@ -106,13 +106,17 @@ you use, and nothing goes to the developer. From the app's measured requests, a 
 | A model on your own computer   | Free          | Free              |
 | Gemini 3.8 Flash, free tier    | Free          | Free (daily cap)  |
 | GPT-6 Luna                     | $0.01         | $0.02             |
+| DeepSeek Flash                 | $0.01         | $0.03             |
 | Claude Haiku 5.5               | $0.01         | $0.03             |
 | Gemini 3.8 Flash, paid         | $0.10         | $0.25             |
+| GPT-6.1 Sol                    | $0.20         | $0.40             |
 | Claude Sonnet 5.5              | $0.20         | $0.45             |
+| Claude Opus 5.5                | $0.40         | $0.90             |
 | GPT-6 Astra                    | $0.90         | $2.10             |
+| Claude Fable 5.1               | $1.00         | $2.25             |
 
 List prices from each provider on October 22, 2026, in US dollars before tax. Google may use free-tier requests to
-improve its products. See the [website](https://wonjoonseol.github.io/fitgymlog/) for details.
+improve its products, and DeepSeek costs double at peak hours. See the [website](https://wonjoonseol.github.io/fitgymlog/) for details.
 
 ## Building
 
