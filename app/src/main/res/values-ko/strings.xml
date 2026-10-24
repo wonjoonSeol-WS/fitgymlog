@@ -161,7 +161,7 @@
     <string name="setting_health_connect_help">Samsung Health가 여기서 가져가는데, 세트별 기록은 보여 주지 않아요.</string>
     <string name="setting_health_type">Samsung Health 운동 종류</string>
     <string name="setting_warmup">워밍업 세트</string>
-    <string name="setting_warmup_help">바벨 운동 앞에 지난번에 한 워밍업을 넣어요. 처음에는 빈 봉으로 5회 한 세트이고, 운동 중에 한 번 바꾸면 그대로 이어져요.</string>
+    <string name="setting_warmup_help">바벨 운동 앞에 지난번 워밍업을 넣어요. 처음에는 빈 봉으로 5회 한 세트를 넣고, 운동 중에 바꾸면 다음에도 그대로 이어져요.</string>
     <string name="setting_health_skip_cardio">이미 기록된 유산소 건너뛰기</string>
     <string name="setting_health_skip_cardio_help">밴드가 자동으로 잡은 달리기처럼 다른 앱이 이미 기록한 유산소는 다시 기록하지 않아요. Health Connect의 운동 읽기 권한을 써요.</string>
     <string name="setting_language">언어</string>
@@ -213,9 +213,9 @@
     <string name="play_video">영상 재생</string>
     <string name="open_in_youtube">YouTube에서 열기</string>
     <string name="effort">강도</string>
-    <string name="rpe_help">이 세트가 얼마나 힘들었는지예요. 10은 한 개도 더 못 할 때, 9는 1개 더, 8은 2개 더, 7은 3개 더, 6은 4개 이상 더 할 수 있었을 때.</string>
+    <string name="rpe_help">이 세트가 얼마나 힘들었나요? 한 개도 더 못 했다면 10, 1개 더 할 수 있었다면 9, 2개면 8, 3개면 7, 4개 이상이면 6이에요.</string>
     <string name="setting_log_rpe">세트별 RPE 기록</string>
-    <string name="setting_log_rpe_help">각 세트가 한계에 얼마나 가까웠는지 RPE 칸을 추가해요. 9.5나 10으로 끝낸 세트는 다음에 무게나 횟수를 올리지 않고 유지해요.</string>
+    <string name="setting_log_rpe_help">세트마다 한계에 얼마나 가까웠는지 적는 RPE 칸이 생겨요. 9.5나 10으로 끝낸 세트는 다음에도 무게나 횟수를 그대로 유지해요.</string>
     <string name="week_load">부하</string>
     <string name="load_none">운동을 끝낸 뒤나 기록에서 얼마나 힘들었는지 평가하세요. 일주일 넘게 평가하면 최근 7일을 평소 한 주와 비교해 보여 줘요.</string>
     <string name="load_above">최근 7일: 평소 한 주보다 %1$d%% 높아요. 체력을 키우기 좋지만 피로에 주의하세요.</string>
