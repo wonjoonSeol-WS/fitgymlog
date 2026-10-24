@@ -189,6 +189,7 @@ fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (St
     var routineSave by rememberSaveable(workoutId) { mutableStateOf(RoutineSave.IDLE) }
     var editingTimes by rememberSaveable(workoutId) { mutableStateOf(false) }
     var ratingEffort by rememberSaveable(workoutId) { mutableStateOf(false) }
+    var effortAnswered by rememberSaveable(workoutId) { mutableStateOf(false) }
     val effortPrompt by app.actions.effortPrompt.collectAsStateWithLifecycle()
 
     fun saveAsRoutine(current: Workout) {
@@ -286,24 +287,29 @@ fun WorkoutDetailScreen(workoutId: Long, onBack: () -> Unit, onOpenExercise: (St
         }
     }
 
-    if (workout != null && (ratingEffort || effortPrompt == workout.id)) {
+    if (workout != null && (ratingEffort || effortPrompt == workout.id && !effortAnswered)) {
         val done = {
             ratingEffort = false
             if (app.actions.effortPrompt.value == workout.id) app.actions.effortPrompt.value = null
         }
+
+        // The coach's review waits on the prompt, so a rating lets go of it only once stored, for the review to read.
+        fun rate(effort: Int?) {
+            ratingEffort = false
+            effortAnswered = true
+            app.scope.launch {
+                try {
+                    app.actions.rateEffort(workout.id, effort)
+                } finally {
+                    app.actions.effortPrompt.compareAndSet(workout.id, null)
+                }
+            }
+        }
         EffortSheet(
             initial = workout.effort,
-            onSave = { effort ->
-                app.scope.launch { app.actions.rateEffort(workout.id, effort) }
-                done()
-            },
+            onSave = { effort -> rate(effort) },
             onSkip = done,
-            onClear = workout.effort?.let {
-                {
-                    app.scope.launch { app.actions.rateEffort(workout.id, null) }
-                    done()
-                }
-            },
+            onClear = workout.effort?.let { { rate(null) } },
         )
     }
 

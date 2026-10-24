@@ -12,7 +12,7 @@ import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.roundToLong
 
-/** [HARD_SETS]: every rep was done, but at or near failure by the logged RPE, so the weight holds. */
+/** [HARD_SETS]: every rep was done, but at or near failure by the logged RPE, so the weight holds, or for bodyweight work the reps. */
 enum class TargetReason { FIRST_TIME, ALL_REPS_DONE, HARD_SETS, MISSED_REPS, STALLED, SAME_AS_LAST }
 
 /** What the rules suggest for an exercise today, and how far a coach model may move away from it. */
@@ -61,11 +61,15 @@ object Progression {
 
     private fun bodyweight(exerciseId: String, last: List<WorkoutSet>): RuleTarget {
         val reps = last.first().let { it.targetReps ?: it.reps } ?: return RuleTarget(exerciseId, TargetReason.FIRST_TIME)
-        val done = succeeded(last)
+        val reason = when {
+            !succeeded(last) -> TargetReason.MISSED_REPS
+            nearFailure(last) -> TargetReason.HARD_SETS
+            else -> TargetReason.ALL_REPS_DONE
+        }
         return RuleTarget(
             exerciseId = exerciseId,
-            reason = if (done) TargetReason.ALL_REPS_DONE else TargetReason.MISSED_REPS,
-            reps = if (done) reps + 1 else reps,
+            reason = reason,
+            reps = if (reason == TargetReason.ALL_REPS_DONE) reps + 1 else reps,
         )
     }
 
@@ -80,8 +84,7 @@ object Progression {
             working.take(STALL_SESSIONS).all { session -> sameWeight(hardest(session, assisted), lastWeight) && !succeeded(topSets(session, assisted)) }
         val forward = if (assisted) -step else step
         val (reason, weight) = when {
-            // Only a logged RPE can say a done set was a grind; without one, done means up, as it always has.
-            succeeded(topSets(last, assisted)) && topSets(last, assisted).any { (it.rpe ?: 0.0) >= NEAR_FAILURE_RPE } -> TargetReason.HARD_SETS to lastWeight
+            succeeded(topSets(last, assisted)) && nearFailure(topSets(last, assisted)) -> TargetReason.HARD_SETS to lastWeight
             succeeded(topSets(last, assisted)) -> TargetReason.ALL_REPS_DONE to tidy((lastWeight + forward).coerceAtLeast(0.0))
             stalled -> TargetReason.STALLED to if (assisted) roundUp(lastWeight / DELOAD, step) else roundDown(lastWeight * DELOAD, step)
             else -> TargetReason.MISSED_REPS to lastWeight
@@ -113,6 +116,9 @@ object Progression {
         val planned = sets.first().let { it.targetReps ?: it.reps } ?: return false
         return sets.all { (it.reps ?: 0) >= (it.targetReps ?: planned) }
     }
+
+    /** Only a logged RPE can say a done set was a grind; without one, done means up, as it always has. */
+    private fun nearFailure(sets: List<WorkoutSet>): Boolean = sets.any { (it.rpe ?: 0.0) >= NEAR_FAILURE_RPE }
 
     private fun roundDown(kg: Double, step: Double): Double = tidy(floor(kg / step + 1e-9) * step)
 

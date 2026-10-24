@@ -168,6 +168,17 @@ class ProgressionTest {
     }
 
     @Test
+    fun `bodyweight work done at RPE 9_5 or more keeps the plan, while easier RPE still adds a rep`() {
+        val grind = listOf(set(null, 10, target = 10).copy(rpe = 8.0), set(null, 10, target = 10).copy(rpe = 9.5))
+        val comfortable = grind.map { it.copy(rpe = 8.5) }
+
+        val held = Progression.target(pushUp, listOf(grind), WeightUnit.KG)
+        assertEquals(TargetReason.HARD_SETS, held.reason)
+        assertEquals(10, held.reps)
+        assertEquals(11, Progression.target(pushUp, listOf(comfortable), WeightUnit.KG).reps)
+    }
+
+    @Test
     fun `assisted work progresses by taking help away, and a stall gives some back`() {
         val passed = Progression.target(assisted, listOf(listOf(set(35.0, 8, target = 8), set(30.0, 8, target = 8))), WeightUnit.KG)
         val missed = sets30(6)

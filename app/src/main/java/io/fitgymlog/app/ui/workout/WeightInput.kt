@@ -511,10 +511,11 @@ fun RpeSheet(title: String, selected: Double?, onPick: (Double?) -> Unit, onDism
         ) {
             Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(stringResource(R.string.rpe_help), style = MaterialTheme.typography.bodyMedium)
+            val perRow = 5
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
-                maxItemsInEachRow = 5,
+                maxItemsInEachRow = perRow,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 RPE_CHOICES.forEach { option ->
@@ -538,6 +539,8 @@ fun RpeSheet(title: String, selected: Double?, onPick: (Double?) -> Unit, onDism
                         )
                     }
                 }
+                // Empty cells fill out the last row, so 8.5 to 10 are as wide as the buttons above them.
+                repeat((perRow - RPE_CHOICES.size % perRow) % perRow) { Spacer(Modifier.weight(1f)) }
             }
             Row {
                 TextButton(onClick = { onPick(null) }) { Text(stringResource(R.string.clear)) }

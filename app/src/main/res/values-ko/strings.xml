@@ -215,7 +215,7 @@
     <string name="effort">강도</string>
     <string name="rpe_help">남은 횟수예요. 10은 없음, 9는 1개, 8은 2개, 7은 3개, 6은 4개 이상.</string>
     <string name="setting_log_rpe">세트별 RPE 기록</string>
-    <string name="setting_log_rpe_help">각 세트가 한계에 얼마나 가까웠는지 RPE 칸을 추가해요. 9.5나 10으로 끝낸 세트는 다음에 무게를 올리지 않고 유지해요.</string>
+    <string name="setting_log_rpe_help">각 세트가 한계에 얼마나 가까웠는지 RPE 칸을 추가해요. 9.5나 10으로 끝낸 세트는 다음에 무게나 횟수를 올리지 않고 유지해요.</string>
     <string name="week_load">부하</string>
     <string name="load_none">운동을 끝낸 뒤나 기록에서 얼마나 힘들었는지 평가하세요. 일주일 넘게 평가하면 최근 7일을 평소 한 주와 비교해 보여 줘요.</string>
     <string name="load_above">최근 7일: 평소 한 주보다 %1$d%% 높아요. 체력을 키우기 좋지만 피로에 주의하세요.</string>

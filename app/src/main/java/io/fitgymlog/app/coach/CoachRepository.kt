@@ -198,7 +198,9 @@ class CoachRepository(
 
     suspend fun preview(): String? = workouts.active.value?.let { Coach.preview(profile(withBody = false), plan(it), unit(), LocalDate.now()) }
 
-    private suspend fun review(workout: Workout) {
+    private suspend fun review(requested: Workout) {
+        // The screen's copy can predate an effort rating stored a moment ago, which is what the review waited for.
+        val workout = workouts.observe(requested.id).first() ?: requested
         val date = dateOf(workout.startedAt)
         val review = Coach.review(
             completer = completer(CoachTask.REVIEW),
