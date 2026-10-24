@@ -63,6 +63,7 @@ import io.fitgymlog.app.R
 import io.fitgymlog.app.SHIPPED_LANGUAGES
 import io.fitgymlog.app.catching
 import io.fitgymlog.app.container
+import io.fitgymlog.app.data.WristDevice
 import io.fitgymlog.app.data.byId
 import io.fitgymlog.app.model.Routine
 import io.fitgymlog.app.model.Workout
@@ -132,7 +133,8 @@ fun HomeScreen(onOpenWorkout: () -> Unit, onEditRoutine: (Long) -> Unit, onOpenB
         active?.let { current ->
             item { ActiveWorkoutCard(current.workout, onOpenWorkout) }
         }
-        if (!settings.bandGuideDismissed) {
+        // Only for the band, as in Settings: with a Wear OS watch or nothing on the wrist there is no band to set up.
+        if (settings.wrist == WristDevice.FIT_BAND && !settings.bandGuideDismissed) {
             item {
                 BandGuideCard(
                     onOpen = onOpenBandGuide,
