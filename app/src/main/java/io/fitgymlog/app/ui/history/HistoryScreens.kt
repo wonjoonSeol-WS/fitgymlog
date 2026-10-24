@@ -8,6 +8,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -345,11 +347,13 @@ private fun NewRecord(what: String) {
     }
 }
 
+/** A stat that doesn't fit goes to the next line whole, rather than squeezed into a column a few letters wide. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun WorkoutStats(workout: Workout, unit: WeightUnit, onEffort: (() -> Unit)? = null) {
     val sets = workout.exercises.flatMap { it.sets }
     val volumeKg = sets.sumOf { (it.weightKg ?: 0.0) * (it.reps ?: 0) }
-    Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         workout.endedAt?.let { Stat(stringResource(R.string.duration), formatClock(Duration.between(workout.startedAt, it))) }
         Stat(stringResource(R.string.volume), "${formatWeightNumber(volumeKg, unit)} ${unitLabel(unit)}")
         Stat(stringResource(R.string.sets), sets.size.toString())
