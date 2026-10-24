@@ -177,7 +177,8 @@ class CoachRepository(
     private suspend fun newBlock(change: Change): NewBlock {
         val exercise = exercises.find(change.exerciseId)
         val current = appSettings.settings.value
-        val sets = current.warmedUp(exercise, setsToAdd(change, exercise.kind, workouts.previousSets(change.exerciseId)))
+        val previous = workouts.previousSets(change.exerciseId)
+        val sets = current.warmedUp(exercise, setsToAdd(change, exercise.kind, previous), previous)
         return NewBlock(sets, restToAdd(change, exercise.kind, current.defaultRestSeconds))
     }
 

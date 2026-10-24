@@ -31,7 +31,7 @@ data class Settings(
     val bandGuideDismissed: Boolean = false,
     val playVideosInApp: Boolean = true,
     val askEffort: Boolean = true,
-    val logRpe: Boolean = false,
+    val logRpe: Boolean = true,
     val syncEnabled: Boolean = false,
     val syncAccount: String? = null,
     val lastSyncAt: Long? = null,

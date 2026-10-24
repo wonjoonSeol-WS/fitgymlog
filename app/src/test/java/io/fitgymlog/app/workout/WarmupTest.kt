@@ -7,6 +7,7 @@ import io.fitgymlog.app.model.ExerciseKind
 import io.fitgymlog.app.model.SetType
 import io.fitgymlog.app.model.WeightUnit
 import io.fitgymlog.app.model.WorkoutSet
+import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -20,6 +21,20 @@ class WarmupTest {
 
         assertEquals(WorkoutSet(type = SetType.WARMUP, weightKg = 20.0, reps = 5), warmedUp.first())
         assertEquals(working, warmedUp.drop(1))
+    }
+
+    @Test
+    fun `last session's warm-ups come back as they were done, fresh to log, in place of five on the bar`() {
+        val done = Instant.parse("2026-10-23T10:00:00Z")
+        val last = listOf(
+            WorkoutSet(type = SetType.WARMUP, weightKg = 20.0, reps = 10, completedAt = done),
+            WorkoutSet(type = SetType.WARMUP, weightKg = 40.0, reps = 6, rpe = 6.0, completedAt = done),
+        ) + working.map { it.copy(completedAt = done) }
+
+        val warmedUp = withWarmup(working, barKg = 20.0, previous = last)
+
+        assertEquals(listOf(WorkoutSet(type = SetType.WARMUP, weightKg = 20.0, reps = 10), WorkoutSet(type = SetType.WARMUP, weightKg = 40.0, reps = 6)), warmedUp.take(2))
+        assertEquals(working, warmedUp.drop(2))
     }
 
     @Test

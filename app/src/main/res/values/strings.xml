@@ -161,7 +161,7 @@
     <string name="setting_health_connect_help">Samsung Health picks them up from there, but it doesn\'t show the individual sets.</string>
     <string name="setting_health_type">Exercise type in Samsung Health</string>
     <string name="setting_warmup">Warm-up set</string>
-    <string name="setting_warmup_help">Before a barbell lift, adds one set of 5 on the empty bar.</string>
+    <string name="setting_warmup_help">Before a barbell lift, adds the warm-ups you did last time, or one set of 5 on the empty bar the first time. Change it once in a workout and it stays.</string>
     <string name="setting_health_skip_cardio">Skip cardio already recorded</string>
     <string name="setting_health_skip_cardio_help">Cardio another app already recorded, such as a run your band detected, is not written again. Uses reading exercise from Health Connect.</string>
     <string name="setting_language">Language</string>
@@ -215,7 +215,7 @@
     <string name="open_in_youtube">Open in YouTube</string>
     <string name="effort">Effort</string>
     <string name="col_rpe" translatable="false">RPE</string>
-    <string name="rpe_help">How many reps you had left: 10 none, 9 one, 8 two, 7 three, 6 four or more.</string>
+    <string name="rpe_help">How hard this set was: 10 if you couldn’t do one more, 9 one more, 8 two more, 7 three more, 6 four or more.</string>
     <string name="setting_log_rpe">Log RPE per set</string>
     <string name="setting_log_rpe_help">Adds an RPE column for how close each set was to failure. A done set at 9.5 or 10 keeps its weight or reps next time instead of going up.</string>
     <string name="week_load">Load</string>

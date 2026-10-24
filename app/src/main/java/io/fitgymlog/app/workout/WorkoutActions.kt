@@ -48,11 +48,12 @@ class WorkoutActions(
         val current = settings.settings.value
         val planned = routine.exercises.mapIndexed { index, planned ->
             val exercise = exercises.find(planned.exerciseId)
+            val previous = workouts.previousSets(planned.exerciseId)
             WorkoutExercise(
                 key = index + 1L,
                 exerciseId = planned.exerciseId,
                 restSeconds = planned.restSeconds,
-                sets = current.warmedUp(exercise, startingSets(planned, exercise.kind, workouts.previousSets(planned.exerciseId))),
+                sets = current.warmedUp(exercise, startingSets(planned, exercise.kind, previous), previous),
             )
         }
         return workouts.start(routine.name, routine, planned, Instant.now()).also { WorkoutService.start(context) }
@@ -173,18 +174,23 @@ internal fun previousRows(sets: List<WorkoutSet>, previous: List<WorkoutSet>): L
 
 val Settings.barInKg: Double get() = fromDisplayWeight(bar, unit)
 
-internal fun Settings.warmedUp(exercise: Exercise, sets: List<WorkoutSet>): List<WorkoutSet> =
-    if (warmupSet && exercise.equipment == Equipment.BARBELL) withWarmup(sets, barInKg) else sets
+/** [previous] is last session's sets, whose warm-ups come back as they were done. */
+internal fun Settings.warmedUp(exercise: Exercise, sets: List<WorkoutSet>, previous: List<WorkoutSet> = emptyList()): List<WorkoutSet> =
+    if (warmupSet && exercise.equipment == Equipment.BARBELL) withWarmup(sets, barInKg, previous) else sets
 
-/** Not when the sets already hold a warm-up, such as one copied from last session, or when the work is the bar itself. */
-internal fun withWarmup(sets: List<WorkoutSet>, barKg: Double): List<WorkoutSet> {
+/**
+ * Last session's warm-ups, so a warm-up changed once stays changed, and five on the empty bar only before there are any.
+ * Not when the sets already hold a warm-up, such as one copied from last session, or when the work is the bar itself.
+ */
+internal fun withWarmup(sets: List<WorkoutSet>, barKg: Double, previous: List<WorkoutSet> = emptyList()): List<WorkoutSet> {
     if (sets.any { it.type == SetType.WARMUP }) return sets
     val working = sets.firstOrNull { it.type == SetType.NORMAL }?.weightKg
     if (working != null && working <= barKg) return sets
-    return listOf(warmup(barKg)) + sets
+    val last = previous.filter { it.type == SetType.WARMUP }.map { warmup(it.weightKg, it.targetReps ?: it.reps) }
+    return last.ifEmpty { listOf(warmup(barKg)) } + sets
 }
 
-internal fun warmup(weightKg: Double?) = WorkoutSet(type = SetType.WARMUP, weightKg = weightKg, reps = WARMUP_REPS)
+internal fun warmup(weightKg: Double?, reps: Int? = WARMUP_REPS) = WorkoutSet(type = SetType.WARMUP, weightKg = weightKg, reps = reps)
 
 private const val WARMUP_REPS = 5
 
