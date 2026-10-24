@@ -12,6 +12,15 @@ internal fun WatchSetRef.toSetRef() = SetRef(exercise, set)
 
 internal fun SetRef.toWatch() = WatchSetRef(exerciseIndex, setIndex)
 
+/** What a Finish from the watch kept: the saved workout's id, or null when no set was done and nothing was kept. */
+internal data class WatchFinish(val workoutId: Long?)
+
+/**
+ * The workout a rating from the watch is about: the one its last Finish kept, and none when that finish kept nothing,
+ * rather than an earlier workout. Only with no Finish seen, as when the app restarted in between, is it [latest].
+ */
+internal suspend fun ratedWorkout(finish: WatchFinish?, latest: suspend () -> Long?): Long? = if (finish == null) latest() else finish.workoutId
+
 /**
  * Applied the way the band's buttons are: the watch names the set it was showing, so an edit that crosses a change
  * made on the phone lands on that set or does nothing.

@@ -8,6 +8,7 @@ import io.fitgymlog.watchlink.WatchCommand
 import io.fitgymlog.watchlink.WatchCommand.WorkoutEdit
 import io.fitgymlog.watchlink.WatchSetRef
 import java.time.Instant
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -20,6 +21,16 @@ class WatchCommandsTest {
         .addExercise("overhead_press_barbell", List(2) { WorkoutSet(weightKg = 30.0, reps = 5) }, restSeconds = 90, now = start)
 
     private fun ActiveWorkout.apply(edit: WorkoutEdit, at: Instant = start) = applyWatch(edit, at)
+
+    @Test
+    fun `a rating after a finish that kept nothing rates nothing, not the workout before it`() = runTest {
+        val earlier = suspend { 7L }
+
+        assertNull(ratedWorkout(WatchFinish(null), earlier))
+        assertEquals(9L, ratedWorkout(WatchFinish(9L), earlier))
+        // With no Finish seen, as after a restart, the latest recent workout stands in.
+        assertEquals(7L, ratedWorkout(null, earlier))
+    }
 
     @Test
     fun `the check button logs the set as planned and starts the rest`() {

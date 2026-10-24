@@ -43,11 +43,12 @@ import kotlinx.coroutines.flow.drop
 fun WatchApp(send: (WatchCommand) -> Unit) {
     val state by PhoneLink.state.collectAsStateWithLifecycle()
     val unreachable by PhoneLink.unreachable.collectAsStateWithLifecycle()
-    // Finishing here asks how hard it was, when the phone says to, before the start screen comes back.
+    // Finishing here asks how hard it was, when the phone says to, before the start screen comes back. With no set
+    // done the phone keeps no workout, so there is nothing to rate.
     var ratingEffort by rememberSaveable { mutableStateOf(false) }
     val sendAndAsk: (WatchCommand) -> Unit = { command ->
         send(command)
-        if (command == WatchCommand.Finish && state?.askEffort == true) ratingEffort = true
+        if (command == WatchCommand.Finish && state?.askEffort == true && (state?.workout?.setsDone ?: 0) > 0) ratingEffort = true
     }
     AppScaffold {
         val workout = state?.workout

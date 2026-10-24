@@ -94,20 +94,20 @@ class PhoneWatchLink(private val context: Context, private val container: AppCon
                 // Android refuses a foreground service to an app in the background, but the workout is saved first and runs without it.
                 catching { container.actions.startRoutine(routine) }.onFailure { Log.i(LOG_TAG, "Started from the watch without the workout service", it) }
             }
-            WatchCommand.Finish -> finishedFromWatch = container.actions.finish()?.id
-            is WatchCommand.RateEffort -> justFinished()?.let { container.actions.rateEffort(it, command.effort) }
+            WatchCommand.Finish -> finishedFromWatch = WatchFinish(container.actions.finish()?.id)
+            is WatchCommand.RateEffort -> ratedWorkout(finishedFromWatch) { finishedLately() }?.let { container.actions.rateEffort(it, command.effort) }
             // The watch app has just opened: the same state again, freshly stamped, gives it a reading of the phone's clock.
             WatchCommand.Hello -> lastPublished?.let { publish(it) }
             is WatchCommand.WorkoutEdit -> container.workouts.update { it.applyWatch(command, Instant.now()) }
         }
     }
 
-    /** The workout last finished from the watch, which a rating from the watch is about. */
+    /** What the last Finish from the watch kept, which a rating from the watch is about; null until one comes in. */
     @Volatile
-    private var finishedFromWatch: Long? = null
+    private var finishedFromWatch: WatchFinish? = null
 
-    /** Falls back to the latest workout finished in the last two hours, should the app have restarted in between. */
-    private suspend fun justFinished(): Long? = finishedFromWatch ?: container.workouts.history.first()
+    /** The latest workout finished in the last two hours, for a rating whose Finish came before the app restarted. */
+    private suspend fun finishedLately(): Long? = container.workouts.history.first()
         .filter { it.endedAt?.isAfter(Instant.now().minus(Duration.ofHours(2))) == true }
         .maxByOrNull { it.endedAt!! }?.id
 
