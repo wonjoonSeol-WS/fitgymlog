@@ -231,7 +231,7 @@
     <string name="effort_rate">얼마나 힘들었는지 평가</string>
     <string name="effort_question">이번 운동은 얼마나 힘들었나요?</string>
     <string name="effort_value">10점 중 %1$d점, %2$s</string>
-    <string name="effort_help">세트 하나가 아니라 운동 전체를요. 무게, 속도, 걸린 시간까지 모두요.</string>
+    <string name="effort_help">세트 하나가 아니라 운동 전체를 평가해요. 무게, 속도, 걸린 시간까지 모두 포함해요.</string>
     <string name="effort_clear">지우기</string>
     <string name="effort_easy">쉬움</string>
     <string name="effort_moderate">보통</string>

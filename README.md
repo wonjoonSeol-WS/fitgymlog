@@ -24,7 +24,11 @@ Download: [latest release](https://github.com/wonjoonSeol/fitgymlog/releases/lat
   chart (heaviest set, estimated 1RM, reps or time), with new records marked in History
 - A weekly check-in on the last evening of each week: workouts, time and volume against last week, new records, missed reps
   and the weight trend; with the coach on, it can suggest changes to your routines for next week
-- Rate how hard each workout felt, 1 to 10, right after you finish on the phone or watch, or later in History; Stats turns the ratings into a training load screen that charts the last 7 days against your usual week as Apple Fitness does, and lists recent workouts to rate, and the coach takes them into account
+- Rate how hard the whole workout felt, 1 to 10: the phone or watch asks as soon as you finish, and you can skip it, rate
+  it later in History or turn the question off in Settings. It is a number of its own, not an average of set RPE, so it
+  works whether you log RPE or not, and it goes into the workout's notes in Health Connect, which has no effort field
+- Stats turns the ratings into a training load screen that charts the last 7 days against your usual week as Apple
+  Fitness does, and lists recent workouts to rate; the coach takes them into account
 - With the coach on, today's targets follow your routine: heavy sets of up to 6 reps add weight once every rep is done, as StrongLifts
   does; with more reps planned, every rep done adds a rep, up to four over the plan, and then weight, back at the plan's
   reps. An exercise no routine plans repeats last time instead
