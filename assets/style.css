@@ -190,6 +190,7 @@ section.soft { background: var(--bg-soft); }
 .shots { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
 @media (min-width: 861px) {
   .shots.two { grid-template-columns: repeat(2, minmax(0, 280px)); justify-content: center; gap: 64px; }
+  .shots.four { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
 }
 .shots figure { margin: 0; }
 .shots .phone { width: min(280px, 100%); }
