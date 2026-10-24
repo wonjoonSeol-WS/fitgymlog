@@ -42,8 +42,15 @@ data class Protein(val dailyGrams: Int, val mealGrams: Int)
 /** A routine as the coach sees it, each planned exercise with its name in the app's language. */
 data class RoutinePlan(val id: Long, val name: String, val exercises: List<Pair<NamedExercise, RoutineExercise>>)
 
-/** An exercise in today's workout with its past sessions, most recent first. */
-data class Planned(val exercise: Exercise, val name: String, val sessions: List<PastSession>, val today: List<WorkoutSet> = emptyList(), val restSeconds: Int? = null)
+/** An exercise in today's workout with its past sessions, most recent first, and the reps its routine plans, if it has one. */
+data class Planned(
+    val exercise: Exercise,
+    val name: String,
+    val sessions: List<PastSession>,
+    val today: List<WorkoutSet> = emptyList(),
+    val restSeconds: Int? = null,
+    val plannedReps: Int? = null,
+)
 
 data class InProgress(val minutes: Long, val restLeftSeconds: Long? = null)
 
@@ -61,7 +68,7 @@ object Coach {
     private val pretty = Json { prettyPrint = true }
 
     fun ruleTargets(plan: List<Planned>, unit: WeightUnit): List<RuleTarget> =
-        plan.map { Progression.target(it.exercise, it.sessions.map(PastSession::sets), unit) }
+        plan.map { Progression.target(it.exercise, it.sessions.map(PastSession::sets), unit, it.plannedReps) }
 
     fun ruleOnly(plan: List<Planned>, unit: WeightUnit): List<Target> = ruleTargets(plan, unit).map { targetOf(it, suggested = null) }
 

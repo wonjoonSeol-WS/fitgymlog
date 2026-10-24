@@ -132,6 +132,19 @@ class CoachTest {
     }
 
     @Test
+    fun `the rule reads the routine's planned reps, so a curl done at twelve climbs from its plan of ten instead of repeating`() {
+        val curls = listOf(PastSession(today.minusDays(3), sets(12.0, 12, 12, 12, 12)))
+
+        val routine = Coach.ruleOnly(listOf(Planned(curl, "덤벨 컬", curls, plannedReps = 10)), WeightUnit.KG).single()
+        val loose = Coach.ruleOnly(listOf(Planned(curl, "덤벨 컬", curls)), WeightUnit.KG).single()
+
+        assertEquals(TargetReason.MORE_REPS, routine.reason)
+        assertEquals(13, routine.reps)
+        assertEquals(TargetReason.SAME_AS_LAST, loose.reason)
+        assertEquals(12, loose.reps)
+    }
+
+    @Test
     fun `reps past thirty stay near the rule instead of failing the whole call`() = runTest {
         val highReps = listOf(planned(pushUp, "푸시업", sets(null, 40, 40, 40)))
         val model = Recorder("""{"targets":[{"id":"push_up","weightKg":null,"reps":50,"note":"ok"}]}""")

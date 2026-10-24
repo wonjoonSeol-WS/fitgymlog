@@ -66,6 +66,61 @@ class ProgressionTest {
     }
 
     @Test
+    fun `with more than six reps planned, every rep done adds a rep until four over the plan, then a step back at the plan`() {
+        val tens = List(3) { set(12.0, 10, target = 10) }
+        val fourteens = List(3) { set(12.0, 14, target = 14) }
+
+        val climbing = Progression.target(curl, listOf(tens), WeightUnit.KG, plannedReps = 10)
+        val topped = Progression.target(curl, listOf(fourteens), WeightUnit.KG, plannedReps = 10)
+
+        assertEquals(TargetReason.MORE_REPS, climbing.reason)
+        assertEquals(12.0, climbing.weightKg!!, 0.0)
+        assertEquals(11, climbing.reps)
+        assertEquals(TargetReason.ALL_REPS_DONE, topped.reason)
+        assertEquals(14.0, topped.weightKg!!, 0.0)
+        assertEquals(10, topped.reps)
+    }
+
+    @Test
+    fun `in a rep range a miss repeats the set, a grind holds it, and a stall eases off back at the plan`() {
+        val missed = listOf(set(12.0, 12, target = 12), set(12.0, 12, target = 12), set(12.0, 10, target = 12))
+        val grind = List(3) { set(12.0, 12, target = 12) }.mapIndexed { index, set -> if (index == 2) set.copy(rpe = 9.5) else set }
+
+        val repeat = Progression.target(curl, listOf(missed), WeightUnit.KG, plannedReps = 10)
+        val held = Progression.target(curl, listOf(grind), WeightUnit.KG, plannedReps = 10)
+        val stalled = Progression.target(curl, listOf(missed, missed, missed), WeightUnit.KG, plannedReps = 10)
+
+        assertEquals(TargetReason.MISSED_REPS, repeat.reason)
+        assertEquals(12, repeat.reps)
+        assertEquals(TargetReason.HARD_SETS, held.reason)
+        assertEquals(12, held.reps)
+        assertEquals(TargetReason.STALLED, stalled.reason)
+        assertEquals(10.0, stalled.weightKg!!, 0.0)
+        assertEquals(10, stalled.reps)
+    }
+
+    @Test
+    fun `a plan raised above last time's reps starts the climb at the plan`() {
+        val target = Progression.target(curl, listOf(List(3) { set(12.0, 8, target = 8) }), WeightUnit.KG, plannedReps = 10)
+
+        assertEquals(TargetReason.MORE_REPS, target.reason)
+        assertEquals(10, target.reps)
+    }
+
+    @Test
+    fun `without a plan, high-rep work done in full repeats rather than getting heavier, while heavy sets still go up`() {
+        val tens = List(3) { set(12.0, 10, target = 10) }
+
+        val repeated = Progression.target(curl, listOf(tens), WeightUnit.KG)
+
+        assertEquals(TargetReason.SAME_AS_LAST, repeated.reason)
+        assertEquals(12.0, repeated.weightKg!!, 0.0)
+        assertEquals(10, repeated.reps)
+        assertEquals(62.5, Progression.target(squat, listOf(fives(60.0, 5, 5, 5)), WeightUnit.KG).weightKg!!, 0.0)
+        assertEquals(62.5, Progression.target(squat, listOf(fives(60.0, 5, 5, 5)), WeightUnit.KG, plannedReps = 5).weightKg!!, 0.0)
+    }
+
+    @Test
     fun `three misses in a row at one weight drop it by ten percent, but a success among them does not`() {
         val missed = fives(60.0, 5, 5, 4, 4, 3)
         val stalled = Progression.target(squat, listOf(missed, missed, missed), WeightUnit.KG)
@@ -109,7 +164,7 @@ class ProgressionTest {
     fun `the step depends on the lift and the unit`() {
         assertEquals(105.0, Progression.target(deadlift, listOf(listOf(set(100.0, 5))), WeightUnit.KG).weightKg!!, 0.0)
         assertEquals(105.0, Progression.target(legPress, listOf(listOf(set(100.0, 5))), WeightUnit.KG).weightKg!!, 0.0)
-        assertEquals(14.0, Progression.target(curl, listOf(listOf(set(12.0, 10, target = 10))), WeightUnit.KG).weightKg!!, 0.0)
+        assertEquals(14.0, Progression.target(curl, listOf(listOf(set(12.0, 5))), WeightUnit.KG).weightKg!!, 0.0)
         val pounds = Progression.target(squat, listOf(fives(135 * 0.45359237, 5, 5, 5, 5, 5)), WeightUnit.LB)
         assertEquals(140.0, pounds.weightKg!! / 0.45359237, 0.001)
         val deadliftPounds = Progression.target(deadlift, listOf(fives(225 * 0.45359237, 5)), WeightUnit.LB)
@@ -180,7 +235,7 @@ class ProgressionTest {
 
     @Test
     fun `assisted work progresses by taking help away, and a stall gives some back`() {
-        val passed = Progression.target(assisted, listOf(listOf(set(35.0, 8, target = 8), set(30.0, 8, target = 8))), WeightUnit.KG)
+        val passed = Progression.target(assisted, listOf(listOf(set(35.0, 5), set(30.0, 5))), WeightUnit.KG)
         val missed = sets30(6)
         val stalled = Progression.target(assisted, listOf(missed, missed, missed), WeightUnit.KG)
 
@@ -195,7 +250,7 @@ class ProgressionTest {
 
     @Test
     fun `assistance never goes below none`() {
-        val target = Progression.target(assisted, listOf(listOf(set(2.5, 8, target = 8))), WeightUnit.KG)
+        val target = Progression.target(assisted, listOf(listOf(set(2.5, 5))), WeightUnit.KG)
 
         assertEquals(0.0, target.weightKg!!, 0.0)
         assertEquals(0.0, target.minWeightKg!!, 0.0)

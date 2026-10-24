@@ -257,15 +257,20 @@ class CoachRepository(
         }
     }
 
-    private suspend fun plan(active: ActiveWorkout, withToday: Boolean = false): List<Planned> = active.exercises.map { it.exerciseId }.distinct().map { id ->
-        val info = exercises.find(id)
-        val sessions = workouts.recentWith(id, Progression.HISTORY_SESSIONS).first().map { workout ->
-            PastSession(dateOf(workout.startedAt), workout.exercises.filter { it.exerciseId == id }.flatMap { it.sets })
-        }
-        if (withToday) {
-            Planned(info, info.name(context), sessions, active.exercises.filter { it.exerciseId == id }.flatMap { it.sets }, active.restSecondsOf(id))
-        } else {
-            Planned(info, info.name(context), sessions)
+    private suspend fun plan(active: ActiveWorkout, withToday: Boolean = false): List<Planned> {
+        // The routine's reps are the bottom of each rep range; the sets lose them once a target with more reps is applied.
+        val routine = active.workout.routineId?.let { routines.find(it) }
+        return active.exercises.map { it.exerciseId }.distinct().map { id ->
+            val info = exercises.find(id)
+            val sessions = workouts.recentWith(id, Progression.HISTORY_SESSIONS).first().map { workout ->
+                PastSession(dateOf(workout.startedAt), workout.exercises.filter { it.exerciseId == id }.flatMap { it.sets })
+            }
+            val plannedReps = routine?.exercises?.firstOrNull { it.exerciseId == id }?.reps
+            if (withToday) {
+                Planned(info, info.name(context), sessions, active.exercises.filter { it.exerciseId == id }.flatMap { it.sets }, active.restSecondsOf(id), plannedReps)
+            } else {
+                Planned(info, info.name(context), sessions, plannedReps = plannedReps)
+            }
         }
     }
 

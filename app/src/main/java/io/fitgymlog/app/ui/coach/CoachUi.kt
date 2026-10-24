@@ -47,14 +47,16 @@ fun FailureText(error: Throwable, modifier: Modifier = Modifier) {
     }
 }
 
-/** Null for reasons whose targets have nothing to set and are never shown. */
+/** Null for a first time, whose target has nothing to set and is never shown. */
 @StringRes
 fun reasonText(reason: TargetReason): Int? = when (reason) {
     TargetReason.ALL_REPS_DONE -> R.string.coach_reason_all_reps
+    TargetReason.MORE_REPS -> R.string.coach_reason_more_reps
     TargetReason.HARD_SETS -> R.string.coach_reason_hard_sets
     TargetReason.MISSED_REPS -> R.string.coach_reason_missed
     TargetReason.STALLED -> R.string.coach_reason_stalled
-    TargetReason.FIRST_TIME, TargetReason.SAME_AS_LAST -> null
+    TargetReason.SAME_AS_LAST -> R.string.coach_reason_same
+    TargetReason.FIRST_TIME -> null
 }
 
 @StringRes

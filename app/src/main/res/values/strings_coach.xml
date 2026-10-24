@@ -98,9 +98,11 @@
     <string name="coach_not_now">Not now</string>
     <string name="coach_applied">Applied</string>
     <string name="coach_reason_all_reps">All reps done last time</string>
+    <string name="coach_reason_more_reps">All reps done, so one more rep before more weight</string>
     <string name="coach_reason_hard_sets">All reps last time, but close to failure</string>
     <string name="coach_reason_missed">Missed reps, same weight</string>
     <string name="coach_reason_stalled">Third stall in a row, eased off</string>
+    <string name="coach_reason_same">Same as last time</string>
 
     <string name="coach_notes_title">Coach notes</string>
     <string name="coach_notes_get">Get coach notes</string>

@@ -97,10 +97,12 @@
     <string name="coach_apply">적용</string>
     <string name="coach_not_now">나중에</string>
     <string name="coach_applied">적용됨</string>
-    <string name="coach_reason_all_reps">지난번 모든 횟수 성공</string>
-    <string name="coach_reason_hard_sets">지난번 모든 횟수 성공, 하지만 한계에 가까움</string>
-    <string name="coach_reason_missed">횟수 미달, 같은 무게</string>
-    <string name="coach_reason_stalled">세 번 연속 정체, 강도 낮춤</string>
+    <string name="coach_reason_all_reps">지난번에 모든 횟수를 해냈어요</string>
+    <string name="coach_reason_more_reps">모두 해냈으니 무게보다 횟수를 먼저 하나 늘려요</string>
+    <string name="coach_reason_hard_sets">모두 해냈지만 한계에 가까웠어요</string>
+    <string name="coach_reason_missed">횟수를 다 못 채워서 같은 무게로 해요</string>
+    <string name="coach_reason_stalled">세 번 연속 막혀서 무게를 조금 낮췄어요</string>
+    <string name="coach_reason_same">지난번과 같아요</string>
 
     <string name="coach_notes_title">코치 코멘트</string>
     <string name="coach_notes_get">코치 코멘트 받기</string>

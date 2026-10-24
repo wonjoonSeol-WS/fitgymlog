@@ -15,8 +15,8 @@ Download: [latest release](https://github.com/wonjoonSeol/fitgymlog/releases/lat
 - Ready-made programs (StrongLifts 5x5, full body, upper/lower, push/pull/legs), plus your own routines
 - An optional coach on your own API key, with presets for OpenAI, Anthropic (Claude Opus, Sonnet, Haiku), Gemini,
   OpenRouter, Groq and DeepSeek, any other OpenAI-compatible provider over https, or a local model such as Ollama
-  over http on the phone or your network: today's targets checked against
-  StrongLifts rules, notes after each workout, and a chat that remembers what you let it, sees how long you have
+  over http on the phone or your network: today's targets checked against the app's progression rules, notes
+  after each workout, and a chat that remembers what you let it, sees how long you have
   trained and rested, and can change the workout in progress (weights, sets, rest, exercises in or out) once you apply it
 - A Stats tab: workouts, time or volume each week; a weight trend that evens out day-to-day swings, with its weekly
   pace, from Health Connect or typed in; body composition (body fat, fat mass, lean mass, skeletal muscle, visceral
@@ -25,6 +25,9 @@ Download: [latest release](https://github.com/wonjoonSeol/fitgymlog/releases/lat
 - A weekly check-in on the last evening of each week: workouts, time and volume against last week, new records, missed reps
   and the weight trend; with the coach on, it can suggest changes to your routines for next week
 - Rate how hard each workout felt, 1 to 10, right after you finish on the phone or watch, or later in History; Stats turns the ratings into a training load screen that charts the last 7 days against your usual week as Apple Fitness does, and lists recent workouts to rate, and the coach takes them into account
+- With the coach on, today's targets follow your routine: heavy sets of up to 6 reps add weight once every rep is done, as StrongLifts
+  does; with more reps planned, every rep done adds a rep, up to four over the plan, and then weight, back at the plan's
+  reps. An exercise no routine plans repeats last time instead
 - An RPE column on each set, for how many more reps you could have done: a set at 9.5 or 10 keeps its weight, or its reps
   for bodyweight work, next time instead of going up; on by default, and off in Settings if you don't want it
 - An optional warm-up before each barbell lift: 5 reps on the empty bar the first time, then the warm-ups you did last time
